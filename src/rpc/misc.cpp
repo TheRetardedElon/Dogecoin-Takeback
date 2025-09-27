@@ -139,7 +139,7 @@ public:
             obj.pushKV("hex", HexStr(subscript.begin(), subscript.end()));
             UniValue a(UniValue::VARR);
             BOOST_FOREACH(const CTxDestination& addr, addresses)
-                a.push_back(CBitcoinAddress(addr).ToString());
+                a.push_back(CDogecoinAddress(addr).ToString());
             obj.pushKV("addresses", a);
             if (whichType == TX_MULTISIG)
                 obj.pushKV("sigsrequired", nRequired);
@@ -183,7 +183,7 @@ UniValue validateaddress(const JSONRPCRequest& request)
     LOCK(cs_main);
 #endif
 
-    CBitcoinAddress address(request.params[0].get_str());
+    CDogecoinAddress address(request.params[0].get_str());
     bool isValid = address.IsValid();
 
     UniValue ret(UniValue::VOBJ);
@@ -249,7 +249,7 @@ CScript _createmultisig_redeemScript(const UniValue& params)
         const std::string& ks = keys[i].get_str();
 #ifdef ENABLE_WALLET
         // Case 1: Bitcoin address and we have full public key:
-        CBitcoinAddress address(ks);
+        CDogecoinAddress address(ks);
         if (pwalletMain && address.IsValid())
         {
             CKeyID keyID;
@@ -323,7 +323,7 @@ UniValue createmultisig(const JSONRPCRequest& request)
     // Construct using pay-to-script-hash:
     CScript inner = _createmultisig_redeemScript(request.params);
     CScriptID innerID(inner);
-    CBitcoinAddress address(innerID);
+    CDogecoinAddress address(innerID);
 
     UniValue result(UniValue::VOBJ);
     result.pushKV("address", address.ToString());
@@ -361,7 +361,7 @@ UniValue verifymessage(const JSONRPCRequest& request)
     string strSign     = request.params[1].get_str();
     string strMessage  = request.params[2].get_str();
 
-    CBitcoinAddress addr(strAddress);
+    CDogecoinAddress addr(strAddress);
     if (!addr.IsValid())
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid address");
 
@@ -409,7 +409,7 @@ UniValue signmessagewithprivkey(const JSONRPCRequest& request)
     string strPrivkey = request.params[0].get_str();
     string strMessage = request.params[1].get_str();
 
-    CBitcoinSecret vchSecret;
+    CDogecoinSecret vchSecret;
     bool fGood = vchSecret.SetString(strPrivkey);
     if (!fGood)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key");

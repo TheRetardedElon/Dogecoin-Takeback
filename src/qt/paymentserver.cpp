@@ -5,7 +5,7 @@
 
 #include "paymentserver.h"
 
-#include "bitcoinunits.h"
+#include "dogecoinunits.h"
 #include "guiutil.h"
 #include "optionsmodel.h"
 
@@ -91,9 +91,9 @@ void PaymentServer::ipcParseCommandLine(int argc, char* argv[])
             savedPaymentRequests.append(arg);
 
             SendCoinsRecipient r;
-            if (GUIUtil::parseBitcoinURI(arg, &r) && !r.address.isEmpty())
+            if (GUIUtil::parseDogecoinURI(arg, &r) && !r.address.isEmpty())
             {
-                CBitcoinAddress address(r.address.toStdString());
+                CDogecoinAddress address(r.address.toStdString());
 
                 if (address.IsValid(Params(CBaseChainParams::MAIN)))
                 {
@@ -236,9 +236,9 @@ void PaymentServer::handleURIOrFile(const QString& s)
         QUrlQuery uri((QUrl(s)));
 
         SendCoinsRecipient recipient;
-        if (GUIUtil::parseBitcoinURI(s, &recipient))
+        if (GUIUtil::parseDogecoinURI(s, &recipient))
         {
-            CBitcoinAddress address(recipient.address.toStdString());
+            CDogecoinAddress address(recipient.address.toStdString());
             if (!address.IsValid()) {
                 Q_EMIT message(tr("URI handling"), tr("Invalid payment address %1").arg(recipient.address),
                     CClientUIInterface::MSG_ERROR);

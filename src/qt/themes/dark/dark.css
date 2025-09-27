@@ -1,0 +1,416 @@
+/* Dark Theme - Modern Dark Interface */
+/* Clean dark theme with modern aesthetics */
+
+/* Main window styling */
+QMainWindow {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    font-size: 12px;
+}
+
+/* Base widget styling */
+QWidget {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    border: 1px solid #404040;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+}
+
+/* Dark-style buttons */
+QPushButton {
+    background-color: #3d3d3d;
+    color: #ffffff;
+    border: 1px solid #555555;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+QPushButton:hover {
+    background-color: #4d4d4d;
+    border-color: #666666;
+}
+
+QPushButton:pressed {
+    background-color: #555555;
+    border-color: #777777;
+}
+
+QPushButton:disabled {
+    background-color: #2d2d2d;
+    color: #666666;
+    border-color: #404040;
+}
+
+/* Dark-style labels */
+QLabel {
+    color: #ffffff;
+    font-weight: normal;
+    background-color: transparent;
+    border: none;
+}
+
+/* Dark-style group boxes */
+QGroupBox {
+    color: #cccccc;
+    border: 1px solid #555555;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-weight: 600;
+    background-color: #2d2d2d;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px 0 5px;
+    color: #cccccc;
+    background-color: #1e1e1e;
+    border: 1px solid #555555;
+}
+
+/* Dark-style combo boxes */
+QComboBox {
+    background-color: #3d3d3d;
+    color: #ffffff;
+    border: 1px solid #555555;
+    border-radius: 6px;
+    padding: 6px;
+    font-weight: normal;
+    min-width: 100px;
+}
+
+QComboBox::drop-down {
+    border: none;
+    background-color: #3d3d3d;
+    width: 20px;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #cccccc;
+    width: 0;
+    height: 0;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    border: 1px solid #555555;
+    selection-background-color: #4d4d4d;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+}
+
+/* Dark-style dialogs */
+QDialog {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    border: 1px solid #555555;
+}
+
+/* Dark-style scrollbars */
+QScrollBar:vertical {
+    background-color: #3d3d3d;
+    width: 15px;
+    border: 1px solid #555555;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #666666;
+    min-height: 20px;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #777777;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    background-color: #3d3d3d;
+    border: 1px solid #555555;
+}
+
+/* Dark-style text areas */
+QTextEdit, QPlainTextEdit {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border: 1px solid #555555;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    selection-background-color: #4d4d4d;
+    font-size: 11px;
+}
+
+/* Dark-style progress bars */
+QProgressBar {
+    background-color: #3d3d3d;
+    border: 1px solid #555555;
+    border-radius: 3px;
+    text-align: center;
+    color: #ffffff;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    font-size: 10px;
+}
+
+QProgressBar::chunk {
+    background-color: #007bff;
+    border-radius: 1px;
+}
+
+/* Dark-style line edits */
+QLineEdit {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border: 1px solid #555555;
+    border-radius: 3px;
+    padding: 5px;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    font-size: 11px;
+}
+
+QLineEdit:focus {
+    border-color: #007bff;
+    background-color: #2d2d2d;
+}
+
+/* Dark-style checkboxes */
+QCheckBox {
+    color: #ffffff;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    spacing: 5px;
+}
+
+QCheckBox::indicator {
+    width: 15px;
+    height: 15px;
+    border: 1px solid #555555;
+    border-radius: 3px;
+    background-color: #2d2d2d;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #007bff;
+    border-color: #0056b3;
+}
+
+QCheckBox::indicator:hover {
+    border-color: #007bff;
+}
+
+/* Dark-style radio buttons */
+QRadioButton {
+    color: #ffffff;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    spacing: 5px;
+}
+
+QRadioButton::indicator {
+    width: 15px;
+    height: 15px;
+    border: 1px solid #555555;
+    border-radius: 8px;
+    background-color: #2d2d2d;
+}
+
+QRadioButton::indicator:checked {
+    background-color: #007bff;
+    border-color: #0056b3;
+}
+
+QRadioButton::indicator:hover {
+    border-color: #007bff;
+}
+
+/* Dark-style sliders */
+QSlider::groove:horizontal {
+    background-color: #555555;
+    height: 6px;
+    border: 1px solid #666666;
+    border-radius: 3px;
+}
+
+QSlider::handle:horizontal {
+    background-color: #007bff;
+    width: 16px;
+    height: 16px;
+    border: 1px solid #0056b3;
+    border-radius: 8px;
+    margin: -6px 0;
+}
+
+QSlider::handle:horizontal:hover {
+    background-color: #0056b3;
+}
+
+/* Dark-style tabs */
+QTabWidget::pane {
+    border: 1px solid #555555;
+    background-color: #2d2d2d;
+}
+
+QTabBar::tab {
+    background-color: #3d3d3d;
+    color: #cccccc;
+    border: 1px solid #555555;
+    padding: 8px 12px;
+    margin-right: 2px;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+}
+
+QTabBar::tab:selected {
+    background-color: #2d2d2d;
+    border-bottom-color: #2d2d2d;
+    color: #007bff;
+}
+
+QTabBar::tab:hover {
+    background-color: #4d4d4d;
+}
+
+/* Dark-style tooltips */
+QToolTip {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    border: 1px solid #555555;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    font-size: 10px;
+}
+
+/* Dark-style menus */
+QMenuBar {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border-bottom: 1px solid #555555;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    color: #ffffff;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+}
+
+QMenuBar::item:selected {
+    background-color: #3d3d3d;
+    border: 1px solid #555555;
+}
+
+QMenu {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    border: 1px solid #555555;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+}
+
+QMenu::item {
+    background-color: transparent;
+    color: #ffffff;
+    padding: 8px 20px;
+}
+
+QMenu::item:selected {
+    background-color: #3d3d3d;
+}
+
+/* Dark-style status bar */
+QStatusBar {
+    background-color: #3d3d3d;
+    color: #cccccc;
+    border-top: 1px solid #555555;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    font-size: 10px;
+}
+
+/* Dark-style splitter */
+QSplitter::handle {
+    background-color: #555555;
+    border: 1px solid #666666;
+}
+
+QSplitter::handle:horizontal {
+    width: 3px;
+}
+
+QSplitter::handle:vertical {
+    height: 3px;
+}
+
+/* Dark-style list widgets */
+QListWidget {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border: 1px solid #555555;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    font-size: 11px;
+}
+
+QListWidget::item {
+    padding: 5px;
+    border-bottom: 1px solid #3d3d3d;
+}
+
+QListWidget::item:selected {
+    background-color: #3d3d3d;
+    color: #ffffff;
+}
+
+QListWidget::item:hover {
+    background-color: #2d2d2d;
+}
+
+/* Dark-style table widgets */
+QTableWidget {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border: 1px solid #555555;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    font-size: 11px;
+    gridline-color: #3d3d3d;
+}
+
+QHeaderView::section {
+    background-color: #3d3d3d;
+    color: #cccccc;
+    border: 1px solid #555555;
+    padding: 5px;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    font-weight: 600;
+}
+
+QTableWidget::item {
+    padding: 5px;
+    border-bottom: 1px solid #3d3d3d;
+}
+
+QTableWidget::item:selected {
+    background-color: #3d3d3d;
+    color: #ffffff;
+}
+
+/* Dark-style tree widgets */
+QTreeWidget {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border: 1px solid #555555;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    font-size: 11px;
+}
+
+QTreeWidget::item {
+    padding: 3px;
+}
+
+QTreeWidget::item:selected {
+    background-color: #3d3d3d;
+    color: #ffffff;
+}
+
+QTreeWidget::item:hover {
+    background-color: #2d2d2d;
+}

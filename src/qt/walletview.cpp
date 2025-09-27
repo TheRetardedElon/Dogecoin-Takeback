@@ -7,7 +7,7 @@
 
 #include "addressbookpage.h"
 #include "askpassphrasedialog.h"
-#include "bitcoingui.h"
+#include "dogecoingui.h"
 #include "clientmodel.h"
 #include "guiutil.h"
 #include "importkeysdialog.h"
@@ -89,7 +89,7 @@ WalletView::~WalletView()
 {
 }
 
-void WalletView::setBitcoinGUI(BitcoinGUI *gui)
+void WalletView::setDogecoinGUI(DogecoinGUI *gui)
 {
     if (gui)
     {

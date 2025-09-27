@@ -14,7 +14,7 @@
 #include "uint256.h"
 #include "util.h"
 #include "utilstrencodings.h"
-#include "test/test_bitcoin.h"
+#include "test/test_dogecoin.h"
 
 #include <vector>
 
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(bloom_create_insert_serialize_with_tweak)
 BOOST_AUTO_TEST_CASE(bloom_create_insert_key)
 {
     std::string strSecret = std::string("6KzLyjdh96x7mZ8rbCtQf2ef9TEe64hCBuGMchC5P4H5i4eTmD4");
-    CBitcoinSecret vchSecret;
+    CDogecoinSecret vchSecret;
     BOOST_CHECK(vchSecret.SetString(strSecret));
 
     CKey key = vchSecret.GetKey();

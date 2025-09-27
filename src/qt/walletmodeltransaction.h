@@ -7,7 +7,7 @@
 
 #include "walletmodel.h"
 
-#include "amount.h"
+#include "../amount.h"
 
 #include <QObject>
 

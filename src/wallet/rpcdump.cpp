@@ -128,7 +128,7 @@ UniValue importprivkey(const JSONRPCRequest& request)
     if (fRescan && fPruneMode)
         throw JSONRPCError(RPC_WALLET_ERROR, "Rescan is disabled in pruned mode");
 
-    CBitcoinSecret vchSecret;
+    CDogecoinSecret vchSecret;
     bool fGood = vchSecret.SetString(strSecret);
 
     if (!fGood) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key encoding");
@@ -188,7 +188,7 @@ void attemptRescanFromHeight(const uint32_t nHeight)
     pwalletMain->ReacceptWalletTransactions();
 }
 
-void ImportAddress(const CBitcoinAddress& address, const string& strLabel);
+void ImportAddress(const CDogecoinAddress& address, const string& strLabel);
 void ImportScript(const CScript& script, const string& strLabel, bool isRedeemScript)
 {
     if (!isRedeemScript && ::IsMine(*pwalletMain, script) == ISMINE_SPENDABLE)
@@ -202,7 +202,7 @@ void ImportScript(const CScript& script, const string& strLabel, bool isRedeemSc
     if (isRedeemScript) {
         if (!pwalletMain->HaveCScript(script) && !pwalletMain->AddCScript(script))
             throw JSONRPCError(RPC_WALLET_ERROR, "Error adding p2sh redeemScript to wallet");
-        ImportAddress(CBitcoinAddress(CScriptID(script)), strLabel);
+        ImportAddress(CDogecoinAddress(CScriptID(script)), strLabel);
     } else {
         CTxDestination destination;
         if (ExtractDestination(script, destination)) {
@@ -211,7 +211,7 @@ void ImportScript(const CScript& script, const string& strLabel, bool isRedeemSc
     }
 }
 
-void ImportAddress(const CBitcoinAddress& address, const string& strLabel)
+void ImportAddress(const CDogecoinAddress& address, const string& strLabel)
 {
     CScript script = GetScriptForDestination(address.Get());
     ImportScript(script, strLabel, false);
@@ -270,7 +270,7 @@ UniValue importaddress(const JSONRPCRequest& request)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    CBitcoinAddress address(request.params[0].get_str());
+    CDogecoinAddress address(request.params[0].get_str());
     if (address.IsValid()) {
         if (fP2SH)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Cannot use the p2sh flag with an address - use a script instead");
@@ -433,7 +433,7 @@ UniValue importpubkey(const JSONRPCRequest& request)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    ImportAddress(CBitcoinAddress(pubKey.GetID()), strLabel);
+    ImportAddress(CDogecoinAddress(pubKey.GetID()), strLabel);
     ImportScript(GetScriptForRawPubKey(pubKey), strLabel, false);
 
     if (fRescan) {
@@ -496,7 +496,7 @@ UniValue importwallet(const JSONRPCRequest& request)
         boost::split(vstr, line, boost::is_any_of(" "));
         if (vstr.size() < 2)
             continue;
-        CBitcoinSecret vchSecret;
+        CDogecoinSecret vchSecret;
         if (!vchSecret.SetString(vstr[0]))
             continue;
         CKey key = vchSecret.GetKey();
@@ -504,7 +504,7 @@ UniValue importwallet(const JSONRPCRequest& request)
         assert(key.VerifyPubKey(pubkey));
         CKeyID keyid = pubkey.GetID();
         if (pwalletMain->HaveKey(keyid)) {
-            LogPrintf("Skipping import of %s (key already present)\n", CBitcoinAddress(keyid).ToString());
+            LogPrintf("Skipping import of %s (key already present)\n", CDogecoinAddress(keyid).ToString());
             continue;
         }
         int64_t nTime = DecodeDumpTime(vstr[1]);
@@ -522,7 +522,7 @@ UniValue importwallet(const JSONRPCRequest& request)
                 fLabel = true;
             }
         }
-        LogPrintf("Importing %s...\n", CBitcoinAddress(keyid).ToString());
+        LogPrintf("Importing %s...\n", CDogecoinAddress(keyid).ToString());
         if (!pwalletMain->AddKeyPubKey(key, pubkey)) {
             fGood = false;
             continue;
@@ -573,7 +573,7 @@ UniValue dumpprivkey(const JSONRPCRequest& request)
     EnsureWalletIsUnlocked();
 
     string strAddress = request.params[0].get_str();
-    CBitcoinAddress address;
+    CDogecoinAddress address;
     if (!address.SetString(strAddress))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Dogecoin address");
     CKeyID keyID;
@@ -582,7 +582,7 @@ UniValue dumpprivkey(const JSONRPCRequest& request)
     CKey vchSecret;
     if (!pwalletMain->GetKey(keyID, vchSecret))
         throw JSONRPCError(RPC_WALLET_ERROR, "Private key for address " + strAddress + " is not known");
-    return CBitcoinSecret(vchSecret).ToString();
+    return CDogecoinSecret(vchSecret).ToString();
 }
 
 
@@ -652,7 +652,7 @@ UniValue dumpwallet(const JSONRPCRequest& request)
             CExtKey masterKey;
             masterKey.SetMaster(key.begin(), key.size());
 
-            CBitcoinExtKey b58extkey;
+            CDogecoinExtKey b58extkey;
             b58extkey.SetKey(masterKey);
 
             file << "# extended private masterkey: " << b58extkey.ToString() << "\n\n";
@@ -661,10 +661,10 @@ UniValue dumpwallet(const JSONRPCRequest& request)
     for (std::vector<std::pair<int64_t, CKeyID> >::const_iterator it = vKeyBirth.begin(); it != vKeyBirth.end(); it++) {
         const CKeyID &keyid = it->second;
         std::string strTime = EncodeDumpTime(it->first);
-        std::string strAddr = CBitcoinAddress(keyid).ToString();
+        std::string strAddr = CDogecoinAddress(keyid).ToString();
         CKey key;
         if (pwalletMain->GetKey(keyid, key)) {
-            file << strprintf("%s %s ", CBitcoinSecret(key).ToString(), strTime);
+            file << strprintf("%s %s ", CDogecoinSecret(key).ToString(), strTime);
             if (pwalletMain->mapAddressBook.count(keyid)) {
                 file << strprintf("label=%s", EncodeDumpString(pwalletMain->mapAddressBook[keyid].name));
             } else if (keyid == masterKeyID) {
@@ -713,10 +713,10 @@ UniValue ProcessImport(const UniValue& data, const int64_t timestamp)
 
         // Parse the output.
         CScript script;
-        CBitcoinAddress address;
+        CDogecoinAddress address;
 
         if (!isScript) {
-            address = CBitcoinAddress(output);
+            address = CDogecoinAddress(output);
             if (!address.IsValid()) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
             }
@@ -778,7 +778,7 @@ UniValue ProcessImport(const UniValue& data, const int64_t timestamp)
                 throw JSONRPCError(RPC_WALLET_ERROR, "Error adding p2sh redeemScript to wallet");
             }
 
-            CBitcoinAddress redeemAddress = CBitcoinAddress(CScriptID(redeemScript));
+            CDogecoinAddress redeemAddress = CDogecoinAddress(CScriptID(redeemScript));
             CScript redeemDestination = GetScriptForDestination(redeemAddress.Get());
 
             if (::IsMine(*pwalletMain, redeemDestination) == ISMINE_SPENDABLE) {
@@ -801,7 +801,7 @@ UniValue ProcessImport(const UniValue& data, const int64_t timestamp)
                 for (size_t i = 0; i < keys.size(); i++) {
                     const string& privkey = keys[i].get_str();
 
-                    CBitcoinSecret vchSecret;
+                    CDogecoinSecret vchSecret;
                     bool fGood = vchSecret.SetString(privkey);
 
                     if (!fGood) {
@@ -852,7 +852,7 @@ UniValue ProcessImport(const UniValue& data, const int64_t timestamp)
                     throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Pubkey is not a valid public key");
                 }
 
-                CBitcoinAddress pubKeyAddress = CBitcoinAddress(pubKey.GetID());
+                CDogecoinAddress pubKeyAddress = CDogecoinAddress(pubKey.GetID());
 
                 // Consistency check.
                 if (!isScript && !(pubKeyAddress.Get() == address.Get())) {
@@ -861,11 +861,11 @@ UniValue ProcessImport(const UniValue& data, const int64_t timestamp)
 
                 // Consistency check.
                 if (isScript) {
-                    CBitcoinAddress scriptAddress;
+                    CDogecoinAddress scriptAddress;
                     CTxDestination destination;
 
                     if (ExtractDestination(script, destination)) {
-                        scriptAddress = CBitcoinAddress(destination);
+                        scriptAddress = CDogecoinAddress(destination);
                         if (!(scriptAddress.Get() == pubKeyAddress.Get())) {
                             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Consistency check failed");
                         }
@@ -910,7 +910,7 @@ UniValue ProcessImport(const UniValue& data, const int64_t timestamp)
                 const string& strPrivkey = keys[0].get_str();
 
                 // Checks.
-                CBitcoinSecret vchSecret;
+                CDogecoinSecret vchSecret;
                 bool fGood = vchSecret.SetString(strPrivkey);
 
                 if (!fGood) {
@@ -925,7 +925,7 @@ UniValue ProcessImport(const UniValue& data, const int64_t timestamp)
                 CPubKey pubKey = key.GetPubKey();
                 assert(key.VerifyPubKey(pubKey));
 
-                CBitcoinAddress pubKeyAddress = CBitcoinAddress(pubKey.GetID());
+                CDogecoinAddress pubKeyAddress = CDogecoinAddress(pubKey.GetID());
 
                 // Consistency check.
                 if (!isScript && !(pubKeyAddress.Get() == address.Get())) {
@@ -934,11 +934,11 @@ UniValue ProcessImport(const UniValue& data, const int64_t timestamp)
 
                 // Consistency check.
                 if (isScript) {
-                    CBitcoinAddress scriptAddress;
+                    CDogecoinAddress scriptAddress;
                     CTxDestination destination;
 
                     if (ExtractDestination(script, destination)) {
-                        scriptAddress = CBitcoinAddress(destination);
+                        scriptAddress = CDogecoinAddress(destination);
                         if (!(scriptAddress.Get() == pubKeyAddress.Get())) {
                             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Consistency check failed");
                         }

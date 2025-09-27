@@ -46,9 +46,9 @@ namespace GUIUtil
     void setupAmountWidget(QLineEdit *widget, QWidget *parent);
 
     // Parse "bitcoin:" URI into recipient object, return true on successful parsing
-    bool parseBitcoinURI(const QUrl &uri, SendCoinsRecipient *out);
-    bool parseBitcoinURI(QString uri, SendCoinsRecipient *out);
-    QString formatBitcoinURI(const SendCoinsRecipient &info);
+    bool parseDogecoinURI(const QUrl &uri, SendCoinsRecipient *out);
+    bool parseDogecoinURI(QString uri, SendCoinsRecipient *out);
+    QString formatDogecoinURI(const SendCoinsRecipient &info);
 
 //Dogecoin: need wallet to establish dust from a wallet perspective
 #ifdef ENABLE_WALLET

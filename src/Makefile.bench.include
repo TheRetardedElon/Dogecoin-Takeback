@@ -11,7 +11,7 @@ RAW_TEST_FILES = \
 GENERATED_TEST_FILES = $(RAW_TEST_FILES:.raw=.raw.h)
 
 bench_bench_dogecoin_SOURCES = \
-  bench/bench_bitcoin.cpp \
+  bench/bench_dogecoin.cpp \
   bench/bench.cpp \
   bench/bench.h \
   bench/checkqueue.cpp \

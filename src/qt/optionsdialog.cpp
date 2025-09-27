@@ -5,8 +5,8 @@
 #include "optionsdialog.h"
 #include "ui_optionsdialog.h"
 
-#include "bitcoingui.h"
-#include "bitcoinunits.h"
+#include "dogecoingui.h"
+#include "dogecoinunits.h"
 #include "guiutil.h"
 #include "optionsmodel.h"
 #include "thememanager.h"
@@ -38,10 +38,8 @@ OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
     // Initialize theme switcher
     if (ui->themeSwitcher) {
         ui->themeSwitcher->loadSettings();
-        connect(ui->themeSwitcher, &ThemeSwitcher::themeChanged, this, [this]() {
-            // Apply theme changes immediately
-            ThemeManager::instance()->applyTheme(this);
-        });
+        // Don't apply theme locally - let the global theme system handle it
+        // The theme switcher already calls the global theme manager
     }
 
     /* Main elements init - minimal version for compilation */
@@ -114,7 +112,7 @@ void OptionsDialog::setModel(OptionsModel *model)
 void OptionsDialog::setMapper()
 {
     /* Main */
-    // mapper->addMapping(ui->bitcoinAtStartup, OptionsModel::StartAtStartup);
+    // mapper->addMapping(ui->dogecoinAtStartup, OptionsModel::StartAtStartup);
     // mapper->addMapping(ui->threadsScriptVerif, OptionsModel::ThreadsScriptVerif);
     // mapper->addMapping(ui->databaseCache, OptionsModel::DatabaseCache);
     // mapper->addMapping(ui->prune, OptionsModel::Prune);

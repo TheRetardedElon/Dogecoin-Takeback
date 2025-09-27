@@ -1253,7 +1253,7 @@
   <customwidget>
    <class>BitcoinAmountField</class>
    <extends>QLineEdit</extends>
-   <header>bitcoinamountfield.h</header>
+   <header>dogecoinamountfield.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

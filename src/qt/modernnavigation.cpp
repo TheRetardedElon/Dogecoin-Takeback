@@ -45,12 +45,14 @@ void ModernNavigation::setupUI()
         QPushButton {
             background-color: transparent;
             border: none;
-            padding: 15px 20px;
+            padding: 12px 16px;
+            margin: 2px;
             text-align: left;
             color: #cccccc;
             font-size: 14px;
             font-weight: 500;
-            border-radius: 0px;
+            border-radius: 6px;
+            min-height: 20px;
         }
         QPushButton:hover {
             background-color: #3d3d3d;
@@ -113,8 +115,6 @@ void ModernNavigation::setupUI()
     m_historyButton = new QPushButton("📋 History");
     m_addressBookButton = new QPushButton("👥 Address Book");
     m_consoleButton = new QPushButton("💻 Console");
-    m_settingsButton = new QPushButton("⚙️ Settings");
-    
     // Store buttons in map
     m_navButtons[Overview] = m_overviewButton;
     m_navButtons[Send] = m_sendButton;
@@ -122,16 +122,14 @@ void ModernNavigation::setupUI()
     m_navButtons[History] = m_historyButton;
     m_navButtons[AddressBook] = m_addressBookButton;
     m_navButtons[Console] = m_consoleButton;
-    // m_navButtons[Settings] = m_settingsButton; // Settings not in enum
     
-    // Add buttons to layout
+    // Add buttons to layout (Settings button removed - accessible via main menu)
     m_navLayout->addWidget(m_overviewButton);
     m_navLayout->addWidget(m_sendButton);
     m_navLayout->addWidget(m_receiveButton);
     m_navLayout->addWidget(m_historyButton);
     m_navLayout->addWidget(m_addressBookButton);
     m_navLayout->addWidget(m_consoleButton);
-    m_navLayout->addWidget(m_settingsButton);
     
     m_navLayout->addStretch();
     m_mainLayout->addWidget(m_navFrame);
@@ -162,7 +160,7 @@ void ModernNavigation::setupUI()
     connect(m_historyButton, &QPushButton::clicked, this, &ModernNavigation::onItemClicked);
     connect(m_addressBookButton, &QPushButton::clicked, this, &ModernNavigation::onItemClicked);
     connect(m_consoleButton, &QPushButton::clicked, this, &ModernNavigation::onItemClicked);
-    connect(m_settingsButton, &QPushButton::clicked, this, &ModernNavigation::onItemClicked);
+    // Settings button removed - no longer needed
     
     // Set initial state
     setCurrentItem(Overview);
@@ -238,9 +236,11 @@ void ModernNavigation::updateItemStyles()
         "    color: white;"
         "    border: none;"
         "    border-radius: 6px;"
-        "    padding: 8px 12px;"
+        "    padding: 12px 16px;"
+        "    margin: 2px;"
         "    text-align: left;"
         "    font-weight: 600;"
+        "    min-height: 20px;"
         "}"
     ).arg(primaryAccent.name());
     
@@ -250,9 +250,11 @@ void ModernNavigation::updateItemStyles()
         "    color: %1;"
         "    border: none;"
         "    border-radius: 6px;"
-        "    padding: 8px 12px;"
+        "    padding: 12px 16px;"
+        "    margin: 2px;"
         "    text-align: left;"
         "    font-weight: 500;"
+        "    min-height: 20px;"
         "}"
         "QPushButton:hover {"
         "    background-color: %2;"

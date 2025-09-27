@@ -4,7 +4,7 @@
 
 #include "modernoverviewpage.h"
 #include "thememanager.h"
-#include "bitcoinunits.h"
+#include "dogecoinunits.h"
 #include "clientmodel.h"
 #include "walletmodel.h"
 #include "guiconstants.h"
@@ -26,7 +26,7 @@ ModernOverviewPage::ModernOverviewPage(QWidget* parent)
     : QWidget(parent)
     , m_walletModel(nullptr)
     , m_clientModel(nullptr)
-    , m_displayUnit(BitcoinUnits::BTC)
+    , m_displayUnit(DogecoinUnits::BTC)
     , m_updateTimer(new QTimer(this))
 {
     setupUI();
@@ -416,10 +416,10 @@ void ModernOverviewPage::updateBalanceDisplay()
     CAmount watchOnlyBalance = m_walletModel->getWatchBalance();
     
     // Update labels
-    m_balanceLabel->setText(BitcoinUnits::formatWithUnit(m_displayUnit, balance, false, BitcoinUnits::separatorAlways));
-    m_pendingLabel->setText(BitcoinUnits::formatWithUnit(m_displayUnit, unconfirmedBalance, false, BitcoinUnits::separatorAlways));
-    m_immatureLabel->setText(BitcoinUnits::formatWithUnit(m_displayUnit, immatureBalance, false, BitcoinUnits::separatorAlways));
-    m_watchOnlyLabel->setText(BitcoinUnits::formatWithUnit(m_displayUnit, watchOnlyBalance, false, BitcoinUnits::separatorAlways));
+    m_balanceLabel->setText(DogecoinUnits::formatWithUnit(m_displayUnit, balance, false, DogecoinUnits::separatorAlways));
+    m_pendingLabel->setText(DogecoinUnits::formatWithUnit(m_displayUnit, unconfirmedBalance, false, DogecoinUnits::separatorAlways));
+    m_immatureLabel->setText(DogecoinUnits::formatWithUnit(m_displayUnit, immatureBalance, false, DogecoinUnits::separatorAlways));
+    m_watchOnlyLabel->setText(DogecoinUnits::formatWithUnit(m_displayUnit, watchOnlyBalance, false, DogecoinUnits::separatorAlways));
 }
 
 void ModernOverviewPage::updateTransactionDisplay()

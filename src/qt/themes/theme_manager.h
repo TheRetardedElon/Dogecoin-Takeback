@@ -10,7 +10,7 @@
 #include <QAction>
 #include <QWidget>
 
-class BitcoinGUI;
+class DogecoinGUI;
 
 struct ThemeInfo {
     QString name;
@@ -31,7 +31,7 @@ class EnhancedThemeManager : public QObject
     Q_OBJECT
 
 public:
-    explicit EnhancedThemeManager(BitcoinGUI* parent);
+    explicit EnhancedThemeManager(DogecoinGUI* parent);
     ~EnhancedThemeManager();
 
     void initializeThemes();
@@ -54,7 +54,7 @@ private Q_SLOTS:
     void onMenuAction();
 
 private:
-    BitcoinGUI* m_parent;
+    DogecoinGUI* m_parent;
     QMenuBar* m_menuBar;
     QMap<QString, ThemeInfo> m_themes;
     QString m_currentTheme;

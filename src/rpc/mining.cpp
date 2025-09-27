@@ -242,7 +242,7 @@ UniValue generatetoaddress(const JSONRPCRequest& request)
         nMineAuxPow = request.params[3].get_int();
     }
 
-    CBitcoinAddress address(request.params[1].get_str());
+    CDogecoinAddress address(request.params[1].get_str());
     if (!address.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Error: Invalid address");
 

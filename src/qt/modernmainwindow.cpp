@@ -65,10 +65,19 @@ void ModernMainWindow::setCurrentPage(ModernNavigation::NavItem item)
 
 void ModernMainWindow::setupUI()
 {
-    // Set window properties
+    // Set window properties with proper flags for window controls
     setWindowTitle("Dogecoin Core - Modern UI");
     setMinimumSize(1000, 700);
     resize(1200, 800);
+    
+    // Ensure proper window flags for dragging and controls
+    setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::WindowSystemMenuHint | 
+                   Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint | Qt::WindowContextHelpButtonHint);
+    
+    // Enable window dragging and proper event handling
+    setAttribute(Qt::WA_Hover, true);
+    setAttribute(Qt::WA_NoMouseReplay, false);
+    setAttribute(Qt::WA_MouseTracking, true);
     
     // Create main splitter
     m_mainSplitter = new QSplitter(Qt::Horizontal);

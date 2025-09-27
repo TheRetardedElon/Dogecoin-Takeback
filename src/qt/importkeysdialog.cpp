@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
-#include "config/bitcoin-config.h"
+#include "config/dogecoin-config.h"
 #endif
 
 #include "importkeysdialog.h"
@@ -89,7 +89,7 @@ bool ImportKeysDialog::importKey()
 
     resetDialogValues();
 
-    CBitcoinSecret vchSecret;
+    CDogecoinSecret vchSecret;
     bool fGood = vchSecret.SetString(privateKey.toStdString());
     if (!fGood) {
         vchSecret.SetString("");

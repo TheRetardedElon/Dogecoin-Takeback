@@ -1,5 +1,5 @@
 #include "theme_manager.h"
-#include "bitcoingui.h"
+#include "dogecoingui.h"
 #include <QApplication>
 #include <QMenuBar>
 #include <QMenu>
@@ -9,7 +9,7 @@
 #include <QTextStream>
 #include <QDir>
 
-EnhancedThemeManager::EnhancedThemeManager(BitcoinGUI* parent)
+EnhancedThemeManager::EnhancedThemeManager(DogecoinGUI* parent)
     : QObject(parent)
     , m_parent(parent)
     , m_menuBar(nullptr)

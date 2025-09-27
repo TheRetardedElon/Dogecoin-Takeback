@@ -239,10 +239,20 @@ void ThemeSwitcher::onThemeChanged()
     } else if (themeName == "Auto") {
         m_themeManager->switchToAuto();
         m_customGroup->setEnabled(false);
+    } else if (themeName == "Dogecoin" || themeName == "Neon" || themeName == "Classic") {
+        // Built-in themes
+        if (themeName == "Dogecoin") {
+            m_themeManager->switchToTheme(ThemeManager::Dogecoin);
+        } else if (themeName == "Neon") {
+            m_themeManager->switchToTheme(ThemeManager::Neon);
+        } else if (themeName == "Classic") {
+            m_themeManager->switchToTheme(ThemeManager::Classic);
+        }
+        m_customGroup->setEnabled(false);
     } else {
-        // Custom theme
-        m_themeManager->switchToCustom(themeName);
-        m_customGroup->setEnabled(true);
+        // CSS themes from themes folder or custom themes
+        m_themeManager->loadCSSTheme(themeName);
+        m_customGroup->setEnabled(false);
     }
     
     updatePreview();

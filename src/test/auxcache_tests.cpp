@@ -10,7 +10,7 @@
 #include "script/script.h"
 #include "utiltime.h"
 
-#include "test/test_bitcoin.h"
+#include "test/test_dogecoin.h"
 
 #include <boost/test/unit_test.hpp>
 #include <memory>

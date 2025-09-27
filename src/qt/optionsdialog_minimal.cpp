@@ -5,8 +5,8 @@
 #include "optionsdialog.h"
 #include "ui_optionsdialog.h"
 
-#include "bitcoingui.h"
-#include "bitcoinunits.h"
+#include "dogecoingui.h"
+#include "dogecoinunits.h"
 #include "guiutil.h"
 #include "optionsmodel.h"
 #include "thememanager.h"
@@ -114,7 +114,7 @@ void OptionsDialog::setModel(OptionsModel *model)
 void OptionsDialog::setMapper()
 {
     /* Main */
-    // mapper->addMapping(ui->bitcoinAtStartup, OptionsModel::StartAtStartup);
+    // mapper->addMapping(ui->dogecoinAtStartup, OptionsModel::StartAtStartup);
     // mapper->addMapping(ui->threadsScriptVerif, OptionsModel::ThreadsScriptVerif);
     // mapper->addMapping(ui->databaseCache, OptionsModel::DatabaseCache);
     // mapper->addMapping(ui->prune, OptionsModel::Prune);

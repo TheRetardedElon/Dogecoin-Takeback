@@ -1,0 +1,414 @@
+/* Neon Theme - Bright Electric Colors */
+/* High-contrast neon theme with electric colors */
+
+/* Main window styling */
+QMainWindow {
+    background-color: #0a0a0a;
+    color: #00ffff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+}
+
+/* Base widget styling */
+QWidget {
+    background-color: #1a1a1a;
+    color: #00ffff;
+    border: 1px solid #00ffff;
+    font-family: 'Consolas', 'Courier New', monospace;
+}
+
+/* Neon-style buttons */
+QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #00ffff, stop:1 #0080ff);
+    color: #000000;
+    border: 2px solid #00ffff;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+QPushButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #40ffff, stop:1 #4080ff);
+    box-shadow: 0 0 15px #00ffff;
+}
+
+QPushButton:pressed {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #0080ff, stop:1 #004080);
+}
+
+QPushButton:disabled {
+    background-color: #1a1a1a;
+    color: #004040;
+    border-color: #004040;
+}
+
+/* Neon-style labels */
+QLabel {
+    color: #00ffff;
+    font-weight: bold;
+    background-color: transparent;
+    border: none;
+}
+
+/* Neon-style group boxes */
+QGroupBox {
+    color: #00ffff;
+    border: 2px solid #00ffff;
+    border-radius: 10px;
+    margin-top: 10px;
+    font-weight: bold;
+    background-color: #1a1a1a;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px 0 5px;
+    color: #00ffff;
+    background-color: #0a0a0a;
+    border: 1px solid #00ffff;
+}
+
+/* Neon-style combo boxes */
+QComboBox {
+    background-color: #1a1a1a;
+    color: #00ffff;
+    border: 2px solid #00ffff;
+    border-radius: 8px;
+    padding: 8px;
+    font-weight: bold;
+    min-width: 100px;
+}
+
+QComboBox::drop-down {
+    border: none;
+    background-color: #1a1a1a;
+    width: 20px;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #00ffff;
+    width: 0;
+    height: 0;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #0a0a0a;
+    color: #00ffff;
+    border: 2px solid #00ffff;
+    selection-background-color: #1a1a1a;
+    font-family: 'Consolas', 'Courier New', monospace;
+}
+
+/* Neon-style dialogs */
+QDialog {
+    background-color: #0a0a0a;
+    color: #00ffff;
+    border: 2px solid #00ffff;
+}
+
+/* Neon-style scrollbars */
+QScrollBar:vertical {
+    background-color: #1a1a1a;
+    width: 15px;
+    border: 1px solid #00ffff;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #00ffff;
+    min-height: 20px;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #40ffff;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    background-color: #1a1a1a;
+    border: 1px solid #00ffff;
+}
+
+/* Neon-style text areas */
+QTextEdit, QPlainTextEdit {
+    background-color: #0a0a0a;
+    color: #00ffff;
+    border: 2px solid #00ffff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    selection-background-color: #1a1a1a;
+    font-size: 11px;
+}
+
+/* Neon-style progress bars */
+QProgressBar {
+    background-color: #1a1a1a;
+    border: 2px solid #00ffff;
+    border-radius: 3px;
+    text-align: center;
+    color: #00ffff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 10px;
+}
+
+QProgressBar::chunk {
+    background-color: #00ffff;
+    border-radius: 1px;
+}
+
+/* Neon-style line edits */
+QLineEdit {
+    background-color: #0a0a0a;
+    color: #00ffff;
+    border: 2px solid #00ffff;
+    border-radius: 3px;
+    padding: 5px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 11px;
+}
+
+QLineEdit:focus {
+    border-color: #40ffff;
+    background-color: #1a1a1a;
+}
+
+/* Neon-style checkboxes */
+QCheckBox {
+    color: #00ffff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    spacing: 5px;
+}
+
+QCheckBox::indicator {
+    width: 15px;
+    height: 15px;
+    border: 2px solid #00ffff;
+    border-radius: 3px;
+    background-color: #0a0a0a;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #00ffff;
+    border-color: #40ffff;
+}
+
+QCheckBox::indicator:hover {
+    border-color: #40ffff;
+}
+
+/* Neon-style radio buttons */
+QRadioButton {
+    color: #00ffff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    spacing: 5px;
+}
+
+QRadioButton::indicator {
+    width: 15px;
+    height: 15px;
+    border: 2px solid #00ffff;
+    border-radius: 8px;
+    background-color: #0a0a0a;
+}
+
+QRadioButton::indicator:checked {
+    background-color: #00ffff;
+    border-color: #40ffff;
+}
+
+QRadioButton::indicator:hover {
+    border-color: #40ffff;
+}
+
+/* Neon-style sliders */
+QSlider::groove:horizontal {
+    background-color: #1a1a1a;
+    height: 8px;
+    border: 1px solid #00ffff;
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal {
+    background-color: #00ffff;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #40ffff;
+    border-radius: 9px;
+    margin: -6px 0;
+}
+
+QSlider::handle:horizontal:hover {
+    background-color: #40ffff;
+}
+
+/* Neon-style tabs */
+QTabWidget::pane {
+    border: 2px solid #00ffff;
+    background-color: #0a0a0a;
+}
+
+QTabBar::tab {
+    background-color: #1a1a1a;
+    color: #00ffff;
+    border: 1px solid #00ffff;
+    padding: 8px 12px;
+    margin-right: 2px;
+    font-family: 'Consolas', 'Courier New', monospace;
+}
+
+QTabBar::tab:selected {
+    background-color: #2a2a2a;
+    border-color: #40ffff;
+}
+
+QTabBar::tab:hover {
+    background-color: #1a1a1a;
+}
+
+/* Neon-style tooltips */
+QToolTip {
+    background-color: #0a0a0a;
+    color: #00ffff;
+    border: 1px solid #00ffff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 10px;
+}
+
+/* Neon-style menus */
+QMenuBar {
+    background-color: #0a0a0a;
+    color: #00ffff;
+    border-bottom: 2px solid #00ffff;
+    font-family: 'Consolas', 'Courier New', monospace;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    color: #00ffff;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+}
+
+QMenuBar::item:selected {
+    background-color: #1a1a1a;
+    border: 1px solid #00ffff;
+}
+
+QMenu {
+    background-color: #0a0a0a;
+    color: #00ffff;
+    border: 2px solid #00ffff;
+    font-family: 'Consolas', 'Courier New', monospace;
+}
+
+QMenu::item {
+    background-color: transparent;
+    color: #00ffff;
+    padding: 8px 20px;
+}
+
+QMenu::item:selected {
+    background-color: #1a1a1a;
+}
+
+/* Neon-style status bar */
+QStatusBar {
+    background-color: #1a1a1a;
+    color: #00ffff;
+    border-top: 2px solid #00ffff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 10px;
+}
+
+/* Neon-style splitter */
+QSplitter::handle {
+    background-color: #00ffff;
+    border: 1px solid #40ffff;
+}
+
+QSplitter::handle:horizontal {
+    width: 3px;
+}
+
+QSplitter::handle:vertical {
+    height: 3px;
+}
+
+/* Neon-style list widgets */
+QListWidget {
+    background-color: #0a0a0a;
+    color: #00ffff;
+    border: 2px solid #00ffff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 11px;
+}
+
+QListWidget::item {
+    padding: 5px;
+    border-bottom: 1px solid #1a1a1a;
+}
+
+QListWidget::item:selected {
+    background-color: #1a1a1a;
+    color: #00ffff;
+}
+
+QListWidget::item:hover {
+    background-color: #0a0a0a;
+}
+
+/* Neon-style table widgets */
+QTableWidget {
+    background-color: #0a0a0a;
+    color: #00ffff;
+    border: 2px solid #00ffff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 11px;
+    gridline-color: #1a1a1a;
+}
+
+QHeaderView::section {
+    background-color: #1a1a1a;
+    color: #00ffff;
+    border: 1px solid #00ffff;
+    padding: 5px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-weight: bold;
+}
+
+QTableWidget::item {
+    padding: 5px;
+    border-bottom: 1px solid #1a1a1a;
+}
+
+QTableWidget::item:selected {
+    background-color: #1a1a1a;
+    color: #00ffff;
+}
+
+/* Neon-style tree widgets */
+QTreeWidget {
+    background-color: #0a0a0a;
+    color: #00ffff;
+    border: 2px solid #00ffff;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 11px;
+}
+
+QTreeWidget::item {
+    padding: 3px;
+}
+
+QTreeWidget::item:selected {
+    background-color: #1a1a1a;
+    color: #00ffff;
+}
+
+QTreeWidget::item:hover {
+    background-color: #0a0a0a;
+}

@@ -190,7 +190,7 @@ UniValue createauxblock(const JSONRPCRequest& request)
             );
 
     // Check coinbase payout address
-    CBitcoinAddress coinbaseAddress(request.params[0].get_str());
+    CDogecoinAddress coinbaseAddress(request.params[0].get_str());
 
     if (!coinbaseAddress.IsValid())
         throw JSONRPCError(RPC_INVALID_PARAMETER,"Invalid coinbase payout address");

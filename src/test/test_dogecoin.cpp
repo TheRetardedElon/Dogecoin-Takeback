@@ -5,7 +5,7 @@
 
 #define BOOST_TEST_MODULE Bitcoin Test Suite
 
-#include "test_bitcoin.h"
+#include "test_dogecoin.h"
 
 #include "chainparams.h"
 #include "consensus/consensus.h"

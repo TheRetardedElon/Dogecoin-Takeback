@@ -7,7 +7,7 @@
 
 // include config for experimental flag
 #if defined(HAVE_CONFIG_H)
-#include "config/bitcoin-config.h"
+#include "config/dogecoin-config.h"
 #endif //HAVE_CONFIG_H
 
 #if defined(ALLOW_DOGECOIN_EXPERIMENTAL)

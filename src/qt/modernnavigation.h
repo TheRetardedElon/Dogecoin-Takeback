@@ -64,7 +64,6 @@ private:
     QPushButton* m_addressBookButton;
     QPushButton* m_consoleButton;
     QPushButton* m_toggleButton;
-    QPushButton* m_settingsButton;
     
     QFrame* m_navFrame;
     QVBoxLayout* m_navLayout;

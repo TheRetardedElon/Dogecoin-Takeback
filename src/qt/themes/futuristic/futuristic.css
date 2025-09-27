@@ -1,0 +1,416 @@
+/* Futuristic Theme - High-Tech Silver and Blue */
+/* Sleek futuristic design with metallic colors */
+
+/* Main window styling */
+QMainWindow {
+    background-color: #0f1419;
+    color: #00d4ff;
+    font-family: 'Roboto', 'Arial', sans-serif;
+    font-size: 12px;
+}
+
+/* Base widget styling */
+QWidget {
+    background-color: #1a2332;
+    color: #00d4ff;
+    border: 1px solid #2d3748;
+    font-family: 'Roboto', 'Arial', sans-serif;
+}
+
+/* Futuristic-style buttons */
+QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #2d3748, stop:1 #1a2332);
+    color: #00d4ff;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+QPushButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4a5568, stop:1 #2d3748);
+    border-color: #00d4ff;
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+}
+
+QPushButton:pressed {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1a2332, stop:1 #0f1419);
+    border-color: #00a8cc;
+}
+
+QPushButton:disabled {
+    background-color: #1a2332;
+    color: #4a5568;
+    border-color: #2d3748;
+}
+
+/* Futuristic-style labels */
+QLabel {
+    color: #00d4ff;
+    font-weight: 500;
+    background-color: transparent;
+    border: none;
+}
+
+/* Futuristic-style group boxes */
+QGroupBox {
+    color: #00d4ff;
+    border: 1px solid #4a5568;
+    border-radius: 10px;
+    margin-top: 10px;
+    font-weight: 600;
+    background-color: #1a2332;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px 0 5px;
+    color: #00d4ff;
+    background-color: #0f1419;
+    border: 1px solid #4a5568;
+}
+
+/* Futuristic-style combo boxes */
+QComboBox {
+    background-color: #1a2332;
+    color: #00d4ff;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    padding: 8px;
+    font-weight: 500;
+    min-width: 100px;
+}
+
+QComboBox::drop-down {
+    border: none;
+    background-color: #1a2332;
+    width: 20px;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #00d4ff;
+    width: 0;
+    height: 0;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #0f1419;
+    color: #00d4ff;
+    border: 1px solid #4a5568;
+    selection-background-color: #2d3748;
+    font-family: 'Roboto', 'Arial', sans-serif;
+}
+
+/* Futuristic-style dialogs */
+QDialog {
+    background-color: #0f1419;
+    color: #00d4ff;
+    border: 1px solid #4a5568;
+}
+
+/* Futuristic-style scrollbars */
+QScrollBar:vertical {
+    background-color: #1a2332;
+    width: 15px;
+    border: 1px solid #4a5568;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #4a5568;
+    min-height: 20px;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #00d4ff;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    background-color: #1a2332;
+    border: 1px solid #4a5568;
+}
+
+/* Futuristic-style text areas */
+QTextEdit, QPlainTextEdit {
+    background-color: #0f1419;
+    color: #00d4ff;
+    border: 1px solid #4a5568;
+    font-family: 'Roboto', 'Arial', sans-serif;
+    selection-background-color: #2d3748;
+    font-size: 11px;
+}
+
+/* Futuristic-style progress bars */
+QProgressBar {
+    background-color: #1a2332;
+    border: 1px solid #4a5568;
+    border-radius: 3px;
+    text-align: center;
+    color: #00d4ff;
+    font-family: 'Roboto', 'Arial', sans-serif;
+    font-size: 10px;
+}
+
+QProgressBar::chunk {
+    background-color: #00d4ff;
+    border-radius: 1px;
+}
+
+/* Futuristic-style line edits */
+QLineEdit {
+    background-color: #0f1419;
+    color: #00d4ff;
+    border: 1px solid #4a5568;
+    border-radius: 3px;
+    padding: 5px;
+    font-family: 'Roboto', 'Arial', sans-serif;
+    font-size: 11px;
+}
+
+QLineEdit:focus {
+    border-color: #00d4ff;
+    background-color: #1a2332;
+}
+
+/* Futuristic-style checkboxes */
+QCheckBox {
+    color: #00d4ff;
+    font-family: 'Roboto', 'Arial', sans-serif;
+    spacing: 5px;
+}
+
+QCheckBox::indicator {
+    width: 15px;
+    height: 15px;
+    border: 1px solid #4a5568;
+    border-radius: 3px;
+    background-color: #0f1419;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #00d4ff;
+    border-color: #00a8cc;
+}
+
+QCheckBox::indicator:hover {
+    border-color: #00d4ff;
+}
+
+/* Futuristic-style radio buttons */
+QRadioButton {
+    color: #00d4ff;
+    font-family: 'Roboto', 'Arial', sans-serif;
+    spacing: 5px;
+}
+
+QRadioButton::indicator {
+    width: 15px;
+    height: 15px;
+    border: 1px solid #4a5568;
+    border-radius: 8px;
+    background-color: #0f1419;
+}
+
+QRadioButton::indicator:checked {
+    background-color: #00d4ff;
+    border-color: #00a8cc;
+}
+
+QRadioButton::indicator:hover {
+    border-color: #00d4ff;
+}
+
+/* Futuristic-style sliders */
+QSlider::groove:horizontal {
+    background-color: #1a2332;
+    height: 8px;
+    border: 1px solid #4a5568;
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal {
+    background-color: #00d4ff;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #00a8cc;
+    border-radius: 9px;
+    margin: -6px 0;
+}
+
+QSlider::handle:horizontal:hover {
+    background-color: #00a8cc;
+}
+
+/* Futuristic-style tabs */
+QTabWidget::pane {
+    border: 1px solid #4a5568;
+    background-color: #0f1419;
+}
+
+QTabBar::tab {
+    background-color: #1a2332;
+    color: #00d4ff;
+    border: 1px solid #4a5568;
+    padding: 8px 12px;
+    margin-right: 2px;
+    font-family: 'Roboto', 'Arial', sans-serif;
+}
+
+QTabBar::tab:selected {
+    background-color: #2d3748;
+    border-color: #00d4ff;
+}
+
+QTabBar::tab:hover {
+    background-color: #1a2332;
+}
+
+/* Futuristic-style tooltips */
+QToolTip {
+    background-color: #0f1419;
+    color: #00d4ff;
+    border: 1px solid #4a5568;
+    font-family: 'Roboto', 'Arial', sans-serif;
+    font-size: 10px;
+}
+
+/* Futuristic-style menus */
+QMenuBar {
+    background-color: #0f1419;
+    color: #00d4ff;
+    border-bottom: 1px solid #4a5568;
+    font-family: 'Roboto', 'Arial', sans-serif;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    color: #00d4ff;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+}
+
+QMenuBar::item:selected {
+    background-color: #1a2332;
+    border: 1px solid #4a5568;
+}
+
+QMenu {
+    background-color: #0f1419;
+    color: #00d4ff;
+    border: 1px solid #4a5568;
+    font-family: 'Roboto', 'Arial', sans-serif;
+}
+
+QMenu::item {
+    background-color: transparent;
+    color: #00d4ff;
+    padding: 8px 20px;
+}
+
+QMenu::item:selected {
+    background-color: #1a2332;
+}
+
+/* Futuristic-style status bar */
+QStatusBar {
+    background-color: #1a2332;
+    color: #00d4ff;
+    border-top: 1px solid #4a5568;
+    font-family: 'Roboto', 'Arial', sans-serif;
+    font-size: 10px;
+}
+
+/* Futuristic-style splitter */
+QSplitter::handle {
+    background-color: #4a5568;
+    border: 1px solid #00d4ff;
+}
+
+QSplitter::handle:horizontal {
+    width: 3px;
+}
+
+QSplitter::handle:vertical {
+    height: 3px;
+}
+
+/* Futuristic-style list widgets */
+QListWidget {
+    background-color: #0f1419;
+    color: #00d4ff;
+    border: 1px solid #4a5568;
+    font-family: 'Roboto', 'Arial', sans-serif;
+    font-size: 11px;
+}
+
+QListWidget::item {
+    padding: 5px;
+    border-bottom: 1px solid #1a2332;
+}
+
+QListWidget::item:selected {
+    background-color: #2d3748;
+    color: #00d4ff;
+}
+
+QListWidget::item:hover {
+    background-color: #1a2332;
+}
+
+/* Futuristic-style table widgets */
+QTableWidget {
+    background-color: #0f1419;
+    color: #00d4ff;
+    border: 1px solid #4a5568;
+    font-family: 'Roboto', 'Arial', sans-serif;
+    font-size: 11px;
+    gridline-color: #1a2332;
+}
+
+QHeaderView::section {
+    background-color: #1a2332;
+    color: #00d4ff;
+    border: 1px solid #4a5568;
+    padding: 5px;
+    font-family: 'Roboto', 'Arial', sans-serif;
+    font-weight: 600;
+}
+
+QTableWidget::item {
+    padding: 5px;
+    border-bottom: 1px solid #1a2332;
+}
+
+QTableWidget::item:selected {
+    background-color: #2d3748;
+    color: #00d4ff;
+}
+
+/* Futuristic-style tree widgets */
+QTreeWidget {
+    background-color: #0f1419;
+    color: #00d4ff;
+    border: 1px solid #4a5568;
+    font-family: 'Roboto', 'Arial', sans-serif;
+    font-size: 11px;
+}
+
+QTreeWidget::item {
+    padding: 3px;
+}
+
+QTreeWidget::item:selected {
+    background-color: #2d3748;
+    color: #00d4ff;
+}
+
+QTreeWidget::item:hover {
+    background-color: #1a2332;
+}

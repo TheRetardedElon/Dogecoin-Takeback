@@ -4,7 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
-#include "config/bitcoin-config.h"
+#include "config/dogecoin-config.h"
 #endif
 
 #include "utilitydialog.h"
@@ -12,7 +12,7 @@
 #include "ui_helpmessagedialog.h"
 #include "ui_paperwalletdialog.h"
 
-#include "bitcoinunits.h"
+#include "dogecoinunits.h"
 
 #ifdef ENABLE_WALLET
 #include "sendcoinsdialog.h"
@@ -21,7 +21,7 @@
 #endif
 
 #include "optionsmodel.h"
-#include "bitcoingui.h"
+#include "dogecoingui.h"
 #include "clientmodel.h"
 #include "guiconstants.h"
 #include "intro.h"
@@ -113,7 +113,7 @@ HelpMessageDialog::HelpMessageDialog(QWidget *parent, bool about) :
         strUsage += HelpMessageOpt("-splash", strprintf(tr("Show splash screen on startup (default: %u)").toStdString(), DEFAULT_SPLASHSCREEN));
         strUsage += HelpMessageOpt("-resetguisettings", tr("Reset all settings changed in the GUI").toStdString());
         if (showDebug) {
-            strUsage += HelpMessageOpt("-uiplatform", strprintf("Select platform to customize UI for (one of windows, macosx, other; default: %s)", BitcoinGUI::DEFAULT_UIPLATFORM));
+            strUsage += HelpMessageOpt("-uiplatform", strprintf("Select platform to customize UI for (one of windows, macosx, other; default: %s)", DogecoinGUI::DEFAULT_UIPLATFORM));
         }
         QString coreOptions = QString::fromStdString(strUsage);
         text = version + "\n" + header + "\n" + coreOptions;
@@ -235,11 +235,11 @@ void PaperWalletDialog::on_getNewAddress_clicked()
     CPubKey pubkey = privKey.GetPubKey();
 
     // Derive the public key hash
-    CBitcoinAddress pubkeyhash;
+    CDogecoinAddress pubkeyhash;
     pubkeyhash.Set(pubkey.GetID());
 
     // Create String versions of each
-    std::string myPrivKey = CBitcoinSecret(privKey).ToString();
+    std::string myPrivKey = CDogecoinSecret(privKey).ToString();
     std::string myPubKey = HexStr(pubkey.begin(), pubkey.end());
     std::string myAddress = pubkeyhash.ToString();
 
@@ -391,7 +391,7 @@ void PaperWalletDialog::on_printButton_clicked()
     while (true) {
         bool ok;
 
-        // Ask for an amount to send to each paper wallet. It might be better to try to use the BitcoinAmountField, but this works fine.
+        // Ask for an amount to send to each paper wallet. It might be better to try to use the DogecoinAmountField, but this works fine.
         double amountInput = QInputDialog::getDouble(this, tr("Load Paper Wallets"), tr("The paper wallet printing process has begun.<br/>Please wait for the wallets to print completely and verify that everything printed correctly.<br/>Check for misalignments, ink bleeding, smears, or anything else that could make the private keys unreadable.<br/>Now, enter the number of DOGE you wish to send to each wallet:"), 0, 0, 2147483647, 8, &ok);
 
         if (!ok) {
@@ -447,7 +447,7 @@ void PaperWalletDialog::on_printButton_clicked()
     if (txFee > 0) {
         // append fee string if a fee is required
         questionString.append("<hr /><span style='color:#aa0000;'>");
-        questionString.append(BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), txFee));
+        questionString.append(DogecoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), txFee));
         questionString.append("</span> ");
         questionString.append(tr("added as transaction fee"));
     }
@@ -456,13 +456,13 @@ void PaperWalletDialog::on_printButton_clicked()
     questionString.append("<hr />");
     qint64 totalAmount = tx->getTotalTransactionAmount() + txFee;
     QStringList alternativeUnits;
-    Q_FOREACH (BitcoinUnits::Unit u, BitcoinUnits::availableUnits()) {
+    Q_FOREACH (DogecoinUnits::Unit u, DogecoinUnits::availableUnits()) {
         if (u != model->getOptionsModel()->getDisplayUnit())
-            alternativeUnits.append(BitcoinUnits::formatWithUnit(u, totalAmount));
+            alternativeUnits.append(DogecoinUnits::formatWithUnit(u, totalAmount));
     }
 
     questionString.append(tr("Total Amount %1 (= %2)")
-                              .arg(BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), totalAmount))
+                              .arg(DogecoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), totalAmount))
                               .arg(alternativeUnits.join(" " + tr("or") + " ")));
 
     QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm send coins"), questionString.arg(formatted.join("<br />")), QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel);
@@ -493,7 +493,7 @@ ShutdownWindow::ShutdownWindow(QWidget *parent, Qt::WindowFlags f):
     setLayout(layout);
 }
 
-QWidget *ShutdownWindow::showShutdownWindow(BitcoinGUI *window)
+QWidget *ShutdownWindow::showShutdownWindow(DogecoinGUI *window)
 {
     if (!window)
         return nullptr;

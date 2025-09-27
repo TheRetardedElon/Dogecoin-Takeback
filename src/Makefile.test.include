@@ -129,8 +129,8 @@ BITCOIN_TESTS =\
   test/skiplist_tests.cpp \
   test/streams_tests.cpp \
   test/sync_tests.cpp \
-  test/test_bitcoin.cpp \
-  test/test_bitcoin.h \
+  test/test_dogecoin.cpp \
+  test/test_dogecoin.h \
   test/testutil.cpp \
   test/testutil.h \
   test/timedata_tests.cpp \
@@ -169,7 +169,7 @@ endif
 #
 
 # test_bitcoin_fuzzy binary #
-test_test_dogecoin_fuzzy_SOURCES = test/test_bitcoin_fuzzy.cpp
+test_test_dogecoin_fuzzy_SOURCES = test/test_dogecoin_fuzzy.cpp
 test_test_dogecoin_fuzzy_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 test_test_dogecoin_fuzzy_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 test_test_dogecoin_fuzzy_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)

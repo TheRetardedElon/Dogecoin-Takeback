@@ -22,7 +22,10 @@ public:
     enum ThemeType {
         Light,
         Dark,
-        Auto, // Follows system theme
+        Dogecoin, // Dogecoin-themed colors
+        Neon,     // High-contrast neon theme
+        Classic,  // Classic Bitcoin-style theme
+        Auto,     // Follows system theme
         Custom
     };
 
@@ -85,6 +88,7 @@ public:
     void switchToLight();
     void switchToDark();
     void switchToAuto();
+    void switchToTheme(ThemeType theme);
     void switchToCustom(const QString& themeName);
     
     // Custom theme management
@@ -101,6 +105,7 @@ public:
     void applyTheme(QApplication* app);
     void applyTheme(QWidget* widget);
     QString getStylesheet() const;
+    void loadCSSTheme(const QString& themeName);
 
 Q_SIGNALS:
     void themeChanged(ThemeType newTheme);
@@ -119,6 +124,9 @@ private:
     void updateColors();
     ThemeColors getLightThemeColors() const;
     ThemeColors getDarkThemeColors() const;
+    ThemeColors getDogecoinThemeColors() const;
+    ThemeColors getNeonThemeColors() const;
+    ThemeColors getClassicThemeColors() const;
     ThemeColors getCustomThemeColors(const QString& themeName) const;
     
     QMap<QString, ThemeColors> m_customThemes;

@@ -18,11 +18,11 @@ else
 LIBUNIVALUE = $(UNIVALUE_LIBS)
 endif
 
-BITCOIN_CONFIG_INCLUDES=-I$(builddir)/config
-BITCOIN_INCLUDES=-I$(builddir) -I$(builddir)/obj $(BDB_CPPFLAGS) $(BOOST_CPPFLAGS) $(LEVELDB_CPPFLAGS) $(CRYPTO_CFLAGS) $(SSL_CFLAGS)
+DOGECOIN_CONFIG_INCLUDES=-I$(builddir)/config
+DOGECOIN_INCLUDES=-I$(builddir) -I$(builddir)/obj $(BDB_CPPFLAGS) $(BOOST_CPPFLAGS) $(LEVELDB_CPPFLAGS) $(CRYPTO_CFLAGS) $(SSL_CFLAGS)
 
-BITCOIN_INCLUDES += -I$(srcdir)/secp256k1/include
-BITCOIN_INCLUDES += $(UNIVALUE_CFLAGS)
+DOGECOIN_INCLUDES += -I$(srcdir)/secp256k1/include
+DOGECOIN_INCLUDES += $(UNIVALUE_CFLAGS)
 
 LIBDOGECOIN_SERVER=libdogecoin_server.a
 LIBDOGECOIN_COMMON=libdogecoin_common.a
@@ -188,7 +188,7 @@ obj/build.h: FORCE
 libdogecoin_util_a-clientversion.$(OBJEXT): obj/build.h
 
 # server: shared between bitcoind and bitcoin-qt
-libdogecoin_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
+libdogecoin_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
 libdogecoin_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libdogecoin_server_a_SOURCES = \
   addrman.cpp \
@@ -232,7 +232,7 @@ libdogecoin_server_a_SOURCES = \
   $(BITCOIN_CORE_H)
 
 if ENABLE_ZMQ
-libdogecoin_zmq_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
+libdogecoin_zmq_a_CPPFLAGS = $(DOGECOIN_INCLUDES) $(ZMQ_CFLAGS)
 libdogecoin_zmq_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libdogecoin_zmq_a_SOURCES = \
   zmq/zmqabstractnotifier.cpp \
@@ -243,7 +243,7 @@ endif
 
 # wallet: shared between bitcoind and bitcoin-qt, but only linked
 # when wallet enabled
-libdogecoin_wallet_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libdogecoin_wallet_a_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES)
 libdogecoin_wallet_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libdogecoin_wallet_a_SOURCES = \
   wallet/crypter.cpp \
@@ -257,7 +257,7 @@ libdogecoin_wallet_a_SOURCES = \
   $(BITCOIN_CORE_H)
 
 # crypto primitives library
-crypto_libdogecoin_crypto_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_CONFIG_INCLUDES)
+crypto_libdogecoin_crypto_a_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_CONFIG_INCLUDES)
 crypto_libdogecoin_crypto_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 crypto_libdogecoin_crypto_a_SOURCES = \
   crypto/aes.cpp \
@@ -286,7 +286,7 @@ crypto_libdogecoin_crypto_a_SOURCES += crypto/scrypt-sse2.cpp
 endif
 
 # consensus: shared between all executables that validate any consensus rules.
-libdogecoin_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libdogecoin_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES)
 libdogecoin_consensus_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libdogecoin_consensus_a_SOURCES = \
   amount.h \
@@ -307,7 +307,7 @@ libdogecoin_consensus_a_SOURCES = \
   primitives/transaction.h \
   pubkey.cpp \
   pubkey.h \
-  script/bitcoinconsensus.cpp \
+  script/dogecoinconsensus.cpp \
   script/interpreter.cpp \
   script/interpreter.h \
   script/script.cpp \
@@ -323,7 +323,7 @@ libdogecoin_consensus_a_SOURCES = \
   version.h
 
 # common: shared between bitcoind, and bitcoin-qt and non-server tools
-libdogecoin_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libdogecoin_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES)
 libdogecoin_common_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libdogecoin_common_a_SOURCES = \
   amount.cpp \
@@ -352,7 +352,7 @@ libdogecoin_common_a_SOURCES = \
 # util: shared between all executables.
 # This library *must* be included to make sure that the glibc
 # backward-compatibility objects and their sanity checks are linked.
-libdogecoin_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libdogecoin_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES)
 libdogecoin_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libdogecoin_util_a_SOURCES = \
   support/lockedpool.cpp \
@@ -381,7 +381,7 @@ AM_LDFLAGS += $(COMPAT_LDFLAGS)
 endif
 
 # cli: shared between bitcoin-cli and bitcoin-qt
-libdogecoin_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libdogecoin_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES)
 libdogecoin_cli_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libdogecoin_cli_a_SOURCES = \
   rpc/client.cpp \
@@ -391,13 +391,13 @@ nodist_libdogecoin_util_a_SOURCES = $(srcdir)/obj/build.h
 #
 
 # bitcoind binary #
-dogecoind_SOURCES = bitcoind.cpp
-dogecoind_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+dogecoind_SOURCES = dogecoind.cpp
+dogecoind_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES)
 dogecoind_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 dogecoind_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
-dogecoind_SOURCES += bitcoind-res.rc
+dogecoind_SOURCES += dogecoind-res.rc
 endif
 
 dogecoind_LDADD = \
@@ -416,13 +416,13 @@ dogecoind_LDADD = \
 dogecoind_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS)
 
 # bitcoin-cli binary #
-dogecoin_cli_SOURCES = bitcoin-cli.cpp
-dogecoin_cli_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS)
+dogecoin_cli_SOURCES = dogecoin-cli.cpp
+dogecoin_cli_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES) $(EVENT_CFLAGS)
 dogecoin_cli_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 dogecoin_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
-dogecoin_cli_SOURCES += bitcoin-cli-res.rc
+dogecoin_cli_SOURCES += dogecoin-cli-res.rc
 endif
 
 dogecoin_cli_LDADD = \
@@ -435,13 +435,13 @@ dogecoin_cli_LDADD += $(BOOST_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(EVENT_LIBS)
 #
 
 # bitcoin-tx binary #
-dogecoin_tx_SOURCES = bitcoin-tx.cpp
-dogecoin_tx_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+dogecoin_tx_SOURCES = dogecoin-tx.cpp
+dogecoin_tx_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES)
 dogecoin_tx_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 dogecoin_tx_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 if TARGET_WINDOWS
-dogecoin_tx_SOURCES += bitcoin-tx-res.rc
+dogecoin_tx_SOURCES += dogecoin-tx-res.rc
 endif
 
 dogecoin_tx_LDADD = \
@@ -457,7 +457,7 @@ dogecoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 
 # bitcoinconsensus library #
 if BUILD_BITCOIN_LIBS
-include_HEADERS = script/bitcoinconsensus.h
+include_HEADERS = script/dogecoinconsensus.h
 libdogecoinconsensus_la_SOURCES = $(crypto_libdogecoin_crypto_a_SOURCES) $(libdogecoin_consensus_a_SOURCES)
 
 if GLIBC_BACK_COMPAT
@@ -498,12 +498,12 @@ DISTCLEANFILES = obj/build.h
 EXTRA_DIST = $(CTAES_DIST)
 
 
-config/bitcoin-config.h: config/stamp-h1
+config/dogecoin-config.h: config/stamp-h1
 	@$(MAKE) -C $(top_builddir) $(subdir)/$(@)
-config/stamp-h1: $(top_srcdir)/$(subdir)/config/bitcoin-config.h.in $(top_builddir)/config.status
+config/stamp-h1: $(top_srcdir)/$(subdir)/config/dogecoin-config.h.in $(top_builddir)/config.status
 	$(AM_V_at)$(MAKE) -C $(top_builddir) $(subdir)/$(@)
-$(top_srcdir)/$(subdir)/config/bitcoin-config.h.in:  $(am__configure_deps)
-	$(AM_V_at)$(MAKE) -C $(top_srcdir) $(subdir)/config/bitcoin-config.h.in
+$(top_srcdir)/$(subdir)/config/dogecoin-config.h.in:  $(am__configure_deps)
+	$(AM_V_at)$(MAKE) -C $(top_srcdir) $(subdir)/config/dogecoin-config.h.in
 
 clean-local:
 	-$(MAKE) -C secp256k1 clean

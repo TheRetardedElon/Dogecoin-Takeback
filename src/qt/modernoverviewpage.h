@@ -21,7 +21,7 @@
 
 #include "moderncard.h"
 #include "thememanager.h"
-#include "bitcoinunits.h"
+#include "dogecoinunits.h"
 
 class ClientModel;
 class WalletModel;
@@ -110,7 +110,7 @@ private:
     
     // Update timer
     QTimer* m_updateTimer;
-    BitcoinUnits::Unit m_displayUnit;
+    DogecoinUnits::Unit m_displayUnit;
 };
 
 #endif // BITCOIN_QT_MODERNOVERVIEWPAGE_H
