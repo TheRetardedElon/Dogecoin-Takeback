@@ -1,0 +1,431 @@
+/* Cyberpunk Theme - Neon Purple/Pink Futuristic */
+/* Inspired by cyberpunk aesthetics with neon colors and futuristic styling */
+
+/* Main window styling */
+QMainWindow {
+    background-color: #0a0a0a;
+    color: #ff00ff;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+    font-size: 12px;
+}
+
+/* Base widget styling */
+QWidget {
+    background-color: #1a0a1a;
+    color: #ff00ff;
+    border: 1px solid #ff00ff;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+}
+
+/* Cyberpunk-style buttons */
+QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff00ff, stop:1 #800080);
+    color: #000000;
+    border: 2px solid #ff00ff;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+QPushButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff44ff, stop:1 #aa00aa);
+    box-shadow: 0 0 15px #ff00ff;
+}
+
+QPushButton:pressed {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #cc00cc, stop:1 #660066);
+}
+
+QPushButton:disabled {
+    background-color: #330033;
+    color: #660066;
+    border-color: #440044;
+}
+
+/* Cyberpunk-style labels */
+QLabel {
+    color: #ff00ff;
+    font-weight: bold;
+    background-color: transparent;
+    border: none;
+}
+
+/* Cyberpunk-style group boxes */
+QGroupBox {
+    color: #ff00ff;
+    border: 2px solid #ff00ff;
+    border-radius: 10px;
+    margin-top: 10px;
+    font-weight: bold;
+    background-color: #1a0a1a;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px 0 5px;
+    color: #ff00ff;
+    background-color: #0a0a0a;
+    border: 1px solid #ff00ff;
+}
+
+/* Cyberpunk-style combo boxes */
+QComboBox {
+    background-color: #1a0a1a;
+    color: #ff00ff;
+    border: 2px solid #ff00ff;
+    border-radius: 8px;
+    padding: 8px;
+    font-weight: bold;
+    min-width: 100px;
+}
+
+QComboBox::drop-down {
+    border: none;
+    background-color: #1a0a1a;
+    width: 20px;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #ff00ff;
+    width: 0;
+    height: 0;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #0a0a0a;
+    color: #ff00ff;
+    border: 2px solid #ff00ff;
+    selection-background-color: #2a0a2a;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+}
+
+/* Cyberpunk-style dialogs */
+QDialog {
+    background-color: #0a0a0a;
+    color: #ff00ff;
+    border: 2px solid #ff00ff;
+}
+
+/* Cyberpunk-style scrollbars */
+QScrollBar:vertical {
+    background-color: #1a0a1a;
+    width: 15px;
+    border: 1px solid #ff00ff;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #ff00ff;
+    min-height: 20px;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #ff44ff;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    background-color: #1a0a1a;
+    border: 1px solid #ff00ff;
+}
+
+/* Cyberpunk neon glow effect for special elements */
+QFrame[objectName="cyberpunkFrame"] {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+        stop:0 #0a0a0a, stop:0.5 #1a0a1a, stop:1 #0a0a0a);
+    border: 2px solid #ff00ff;
+}
+
+/* Cyberpunk-style text areas */
+QTextEdit, QPlainTextEdit {
+    background-color: #0a0a0a;
+    color: #ff00ff;
+    border: 2px solid #ff00ff;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+    selection-background-color: #2a0a2a;
+    font-size: 11px;
+}
+
+/* Cyberpunk-style progress bars */
+QProgressBar {
+    background-color: #1a0a1a;
+    border: 2px solid #ff00ff;
+    border-radius: 3px;
+    text-align: center;
+    color: #ff00ff;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+    font-size: 10px;
+}
+
+QProgressBar::chunk {
+    background-color: #ff00ff;
+    border-radius: 1px;
+}
+
+/* Cyberpunk-style line edits */
+QLineEdit {
+    background-color: #0a0a0a;
+    color: #ff00ff;
+    border: 2px solid #ff00ff;
+    border-radius: 3px;
+    padding: 5px;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+    font-size: 11px;
+}
+
+QLineEdit:focus {
+    border-color: #ff44ff;
+    background-color: #1a0a1a;
+}
+
+/* Cyberpunk-style checkboxes */
+QCheckBox {
+    color: #ff00ff;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+    spacing: 5px;
+}
+
+QCheckBox::indicator {
+    width: 15px;
+    height: 15px;
+    border: 2px solid #ff00ff;
+    border-radius: 3px;
+    background-color: #0a0a0a;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #ff00ff;
+    border-color: #ff44ff;
+}
+
+QCheckBox::indicator:hover {
+    border-color: #ff44ff;
+}
+
+/* Cyberpunk-style radio buttons */
+QRadioButton {
+    color: #ff00ff;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+    spacing: 5px;
+}
+
+QRadioButton::indicator {
+    width: 15px;
+    height: 15px;
+    border: 2px solid #ff00ff;
+    border-radius: 8px;
+    background-color: #0a0a0a;
+}
+
+QRadioButton::indicator:checked {
+    background-color: #ff00ff;
+    border-color: #ff44ff;
+}
+
+QRadioButton::indicator:hover {
+    border-color: #ff44ff;
+}
+
+/* Cyberpunk-style sliders */
+QSlider::groove:horizontal {
+    background-color: #1a0a1a;
+    height: 8px;
+    border: 1px solid #ff00ff;
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal {
+    background-color: #ff00ff;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #ff44ff;
+    border-radius: 9px;
+    margin: -6px 0;
+}
+
+QSlider::handle:horizontal:hover {
+    background-color: #ff44ff;
+}
+
+/* Cyberpunk-style tabs */
+QTabWidget::pane {
+    border: 2px solid #ff00ff;
+    background-color: #0a0a0a;
+}
+
+QTabBar::tab {
+    background-color: #1a0a1a;
+    color: #ff00ff;
+    border: 1px solid #ff00ff;
+    padding: 8px 12px;
+    margin-right: 2px;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+}
+
+QTabBar::tab:selected {
+    background-color: #2a0a2a;
+    border-color: #ff44ff;
+}
+
+QTabBar::tab:hover {
+    background-color: #1a0a1a;
+}
+
+/* Cyberpunk-style tooltips */
+QToolTip {
+    background-color: #0a0a0a;
+    color: #ff00ff;
+    border: 1px solid #ff00ff;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+    font-size: 10px;
+}
+
+/* Cyberpunk-style menus */
+QMenuBar {
+    background-color: #0a0a0a;
+    color: #ff00ff;
+    border-bottom: 2px solid #ff00ff;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    color: #ff00ff;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+}
+
+QMenuBar::item:selected {
+    background-color: #2a0a2a;
+    border: 1px solid #ff00ff;
+}
+
+QMenu {
+    background-color: #0a0a0a;
+    color: #ff00ff;
+    border: 2px solid #ff00ff;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+}
+
+QMenu::item {
+    background-color: transparent;
+    color: #ff00ff;
+    padding: 8px 20px;
+}
+
+QMenu::item:selected {
+    background-color: #2a0a2a;
+}
+
+/* Cyberpunk-style status bar */
+QStatusBar {
+    background-color: #1a0a1a;
+    color: #ff00ff;
+    border-top: 2px solid #ff00ff;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+    font-size: 10px;
+}
+
+/* Cyberpunk-style splitter */
+QSplitter::handle {
+    background-color: #ff00ff;
+    border: 1px solid #ff44ff;
+}
+
+QSplitter::handle:horizontal {
+    width: 3px;
+}
+
+QSplitter::handle:vertical {
+    height: 3px;
+}
+
+/* Cyberpunk-style list widgets */
+QListWidget {
+    background-color: #0a0a0a;
+    color: #ff00ff;
+    border: 2px solid #ff00ff;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+    font-size: 11px;
+}
+
+QListWidget::item {
+    padding: 5px;
+    border-bottom: 1px solid #1a0a1a;
+}
+
+QListWidget::item:selected {
+    background-color: #2a0a2a;
+    color: #ff00ff;
+}
+
+QListWidget::item:hover {
+    background-color: #1a0a1a;
+}
+
+/* Cyberpunk-style table widgets */
+QTableWidget {
+    background-color: #0a0a0a;
+    color: #ff00ff;
+    border: 2px solid #ff00ff;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+    font-size: 11px;
+    gridline-color: #1a0a1a;
+}
+
+QHeaderView::section {
+    background-color: #1a0a1a;
+    color: #ff00ff;
+    border: 1px solid #ff00ff;
+    padding: 5px;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+    font-weight: bold;
+}
+
+QTableWidget::item {
+    padding: 5px;
+    border-bottom: 1px solid #1a0a1a;
+}
+
+QTableWidget::item:selected {
+    background-color: #2a0a2a;
+    color: #ff00ff;
+}
+
+/* Cyberpunk-style tree widgets */
+QTreeWidget {
+    background-color: #0a0a0a;
+    color: #ff00ff;
+    border: 2px solid #ff00ff;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+    font-size: 11px;
+}
+
+QTreeWidget::item {
+    padding: 3px;
+}
+
+QTreeWidget::item:selected {
+    background-color: #2a0a2a;
+    color: #ff00ff;
+}
+
+QTreeWidget::item:hover {
+    background-color: #1a0a1a;
+}
+
+/* Special Cyberpunk effects */
+.cyberpunk-glow {
+    box-shadow: 0 0 20px #ff00ff;
+}
+
+.cyberpunk-neon {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+        stop:0 rgba(255,0,255,0.1), stop:0.5 rgba(255,0,255,0.3), stop:1 rgba(255,0,255,0.1));
+}

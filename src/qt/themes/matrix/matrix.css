@@ -1,0 +1,435 @@
+/* Matrix Theme - Digital Green Terminal Aesthetic */
+/* Inspired by the iconic Matrix digital rain effect */
+
+/* Main window styling */
+QMainWindow {
+    background-color: #000000;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+/* Base widget styling */
+QWidget {
+    background-color: #000000;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    font-family: 'Courier New', monospace;
+}
+
+/* Matrix-style buttons */
+QPushButton {
+    background-color: #001100;
+    color: #00ff00;
+    border: 2px solid #00ff00;
+    border-radius: 3px;
+    padding: 8px 16px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 11px;
+}
+
+QPushButton:hover {
+    background-color: #002200;
+    box-shadow: 0 0 10px #00ff00;
+    border-color: #00cc00;
+}
+
+QPushButton:pressed {
+    background-color: #003300;
+    border-color: #009900;
+}
+
+QPushButton:disabled {
+    background-color: #000800;
+    color: #006600;
+    border-color: #004400;
+}
+
+/* Matrix-style labels */
+QLabel {
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    background-color: transparent;
+    border: none;
+}
+
+/* Matrix-style group boxes */
+QGroupBox {
+    color: #00ff00;
+    border: 2px solid #00ff00;
+    border-radius: 5px;
+    margin-top: 10px;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    background-color: #000800;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px 0 5px;
+    color: #00ff00;
+    background-color: #000000;
+    border: 1px solid #00ff00;
+}
+
+/* Matrix-style combo boxes */
+QComboBox {
+    background-color: #001100;
+    color: #00ff00;
+    border: 2px solid #00ff00;
+    border-radius: 3px;
+    padding: 5px;
+    font-family: 'Courier New', monospace;
+    min-width: 100px;
+}
+
+QComboBox::drop-down {
+    border: none;
+    background-color: #001100;
+    width: 20px;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #00ff00;
+    width: 0;
+    height: 0;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #000000;
+    color: #00ff00;
+    border: 2px solid #00ff00;
+    selection-background-color: #002200;
+    font-family: 'Courier New', monospace;
+}
+
+/* Matrix-style dialogs */
+QDialog {
+    background-color: #000000;
+    color: #00ff00;
+    border: 2px solid #00ff00;
+}
+
+/* Matrix-style scrollbars */
+QScrollBar:vertical {
+    background-color: #001100;
+    width: 15px;
+    border: 1px solid #00ff00;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #00ff00;
+    min-height: 20px;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #00cc00;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    background-color: #001100;
+    border: 1px solid #00ff00;
+}
+
+/* Matrix digital rain effect for special elements */
+QFrame[objectName="matrixFrame"] {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+        stop:0 #000000, stop:0.5 #001100, stop:1 #000000);
+    border: 2px solid #00ff00;
+}
+
+/* Terminal-style text areas */
+QTextEdit, QPlainTextEdit {
+    background-color: #000000;
+    color: #00ff00;
+    border: 2px solid #00ff00;
+    font-family: 'Courier New', monospace;
+    selection-background-color: #002200;
+    font-size: 11px;
+}
+
+/* Matrix-style progress bars */
+QProgressBar {
+    background-color: #001100;
+    border: 2px solid #00ff00;
+    border-radius: 3px;
+    text-align: center;
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+}
+
+QProgressBar::chunk {
+    background-color: #00ff00;
+    border-radius: 1px;
+}
+
+/* Matrix-style line edits */
+QLineEdit {
+    background-color: #000000;
+    color: #00ff00;
+    border: 2px solid #00ff00;
+    border-radius: 3px;
+    padding: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+}
+
+QLineEdit:focus {
+    border-color: #00cc00;
+    background-color: #000800;
+}
+
+/* Matrix-style checkboxes */
+QCheckBox {
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    spacing: 5px;
+}
+
+QCheckBox::indicator {
+    width: 15px;
+    height: 15px;
+    border: 2px solid #00ff00;
+    border-radius: 3px;
+    background-color: #000000;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #00ff00;
+    border-color: #00cc00;
+}
+
+QCheckBox::indicator:hover {
+    border-color: #00cc00;
+}
+
+/* Matrix-style radio buttons */
+QRadioButton {
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    spacing: 5px;
+}
+
+QRadioButton::indicator {
+    width: 15px;
+    height: 15px;
+    border: 2px solid #00ff00;
+    border-radius: 8px;
+    background-color: #000000;
+}
+
+QRadioButton::indicator:checked {
+    background-color: #00ff00;
+    border-color: #00cc00;
+}
+
+QRadioButton::indicator:hover {
+    border-color: #00cc00;
+}
+
+/* Matrix-style sliders */
+QSlider::groove:horizontal {
+    background-color: #001100;
+    height: 8px;
+    border: 1px solid #00ff00;
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal {
+    background-color: #00ff00;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #00cc00;
+    border-radius: 9px;
+    margin: -6px 0;
+}
+
+QSlider::handle:horizontal:hover {
+    background-color: #00cc00;
+}
+
+/* Matrix-style tabs */
+QTabWidget::pane {
+    border: 2px solid #00ff00;
+    background-color: #000000;
+}
+
+QTabBar::tab {
+    background-color: #001100;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    padding: 8px 12px;
+    margin-right: 2px;
+    font-family: 'Courier New', monospace;
+}
+
+QTabBar::tab:selected {
+    background-color: #002200;
+    border-color: #00cc00;
+}
+
+QTabBar::tab:hover {
+    background-color: #001a00;
+}
+
+/* Matrix-style tooltips */
+QToolTip {
+    background-color: #000000;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+}
+
+/* Matrix-style menus */
+QMenuBar {
+    background-color: #000000;
+    color: #00ff00;
+    border-bottom: 2px solid #00ff00;
+    font-family: 'Courier New', monospace;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    color: #00ff00;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+}
+
+QMenuBar::item:selected {
+    background-color: #002200;
+    border: 1px solid #00ff00;
+}
+
+QMenu {
+    background-color: #000000;
+    color: #00ff00;
+    border: 2px solid #00ff00;
+    font-family: 'Courier New', monospace;
+}
+
+QMenu::item {
+    background-color: transparent;
+    color: #00ff00;
+    padding: 8px 20px;
+}
+
+QMenu::item:selected {
+    background-color: #002200;
+}
+
+/* Matrix-style status bar */
+QStatusBar {
+    background-color: #001100;
+    color: #00ff00;
+    border-top: 2px solid #00ff00;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+}
+
+/* Matrix-style splitter */
+QSplitter::handle {
+    background-color: #00ff00;
+    border: 1px solid #00cc00;
+}
+
+QSplitter::handle:horizontal {
+    width: 3px;
+}
+
+QSplitter::handle:vertical {
+    height: 3px;
+}
+
+/* Matrix-style list widgets */
+QListWidget {
+    background-color: #000000;
+    color: #00ff00;
+    border: 2px solid #00ff00;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+}
+
+QListWidget::item {
+    padding: 5px;
+    border-bottom: 1px solid #001100;
+}
+
+QListWidget::item:selected {
+    background-color: #002200;
+    color: #00ff00;
+}
+
+QListWidget::item:hover {
+    background-color: #001100;
+}
+
+/* Matrix-style table widgets */
+QTableWidget {
+    background-color: #000000;
+    color: #00ff00;
+    border: 2px solid #00ff00;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    gridline-color: #001100;
+}
+
+QHeaderView::section {
+    background-color: #001100;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    padding: 5px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+
+QTableWidget::item {
+    padding: 5px;
+    border-bottom: 1px solid #001100;
+}
+
+QTableWidget::item:selected {
+    background-color: #002200;
+    color: #00ff00;
+}
+
+/* Matrix-style tree widgets */
+QTreeWidget {
+    background-color: #000000;
+    color: #00ff00;
+    border: 2px solid #00ff00;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+}
+
+QTreeWidget::item {
+    padding: 3px;
+}
+
+QTreeWidget::item:selected {
+    background-color: #002200;
+    color: #00ff00;
+}
+
+QTreeWidget::item:hover {
+    background-color: #001100;
+}
+
+/* Special Matrix effects */
+.matrix-glow {
+    box-shadow: 0 0 20px #00ff00;
+}
+
+.matrix-rain {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, 
+        stop:0 rgba(0,255,0,0.1), stop:0.5 rgba(0,255,0,0.3), stop:1 rgba(0,255,0,0.1));
+}
