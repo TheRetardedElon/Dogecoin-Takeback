@@ -152,6 +152,13 @@ void WalletFrame::gotoDogeBusinessPage(int tab)
         i.value()->gotoDogeBusinessPage(tab);
 }
 
+void WalletFrame::gotoNetworkPage()
+{
+    QMap<QString, WalletView*>::const_iterator i;
+    for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
+        i.value()->gotoNetworkPage();
+}
+
 void WalletFrame::gotoSignMessageTab(QString addr)
 {
     WalletView *walletView = currentWalletView();

@@ -39,15 +39,21 @@
 #include <QSettings>
 #include <QModelIndex>
 #include <QAbstractItemModel>
+#include <QTimer>
 
 DogeBusinessPage::DogeBusinessPage(const PlatformStyle* _platformStyle, QWidget* parent)
     : QWidget(parent),
       platformStyle(_platformStyle),
       walletModel(0),
       posBuffer(QStringLiteral("0")),
-      posCurrentAmount(0)
+      posCurrentAmount(0),
+      paymentCheckTimer(0)
 {
     setupUi();
+    paymentCheckTimer = new QTimer(this);
+    paymentCheckTimer->setSingleShot(true);
+    paymentCheckTimer->setInterval(400);
+    connect(paymentCheckTimer, SIGNAL(timeout()), this, SLOT(checkIncomingPayments()));
     loadInvoices();
     rebuildInvoiceTable();
     updateDashboard();
@@ -259,18 +265,24 @@ void DogeBusinessPage::wireWalletSignals()
 {
     if (!walletModel)
         return;
-    // New balance / new txs → re-scan open invoices
+    // Coalesce rapid model updates into one scan (throttle)
     connect(walletModel, SIGNAL(balanceChanged(CAmount,CAmount,CAmount,CAmount,CAmount,CAmount)),
-            this, SLOT(checkIncomingPayments()), Qt::UniqueConnection);
+            this, SLOT(schedulePaymentCheck()), Qt::UniqueConnection);
     TransactionTableModel* ttm = walletModel->getTransactionTableModel();
     if (ttm) {
         connect(ttm, SIGNAL(rowsInserted(QModelIndex,int,int)),
-                this, SLOT(checkIncomingPayments()), Qt::UniqueConnection);
+                this, SLOT(schedulePaymentCheck()), Qt::UniqueConnection);
         connect(ttm, SIGNAL(modelReset()),
-                this, SLOT(checkIncomingPayments()), Qt::UniqueConnection);
+                this, SLOT(schedulePaymentCheck()), Qt::UniqueConnection);
         connect(ttm, SIGNAL(dataChanged(QModelIndex,QModelIndex)),
-                this, SLOT(checkIncomingPayments()), Qt::UniqueConnection);
+                this, SLOT(schedulePaymentCheck()), Qt::UniqueConnection);
     }
+}
+
+void DogeBusinessPage::schedulePaymentCheck()
+{
+    if (paymentCheckTimer && !paymentCheckTimer->isActive())
+        paymentCheckTimer->start();
 }
 
 void DogeBusinessPage::checkIncomingPayments()

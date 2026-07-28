@@ -149,7 +149,8 @@ QT_MOC_CPP = \
   qt/moc_memestreamclient.cpp \
   qt/moc_memestreampage.cpp \
   qt/moc_memestreamrail.cpp \
-  qt/moc_dogebusinesspage.cpp
+  qt/moc_dogebusinesspage.cpp \
+  qt/moc_networkpage.cpp
 
 DOGECOIN_MM = \
   qt/macdockiconhandler.mm \
@@ -182,6 +183,7 @@ DOGECOIN_QT_H = \
   qt/memestreampage.h \
   qt/memestreampublishkey.h \
   qt/memestreamrail.h \
+  qt/networkpage.h \
   qt/clientmodel.h \
   qt/coincontroldialog.h \
   qt/coincontroltreewidget.h \
@@ -332,6 +334,7 @@ DOGECOIN_QT_WALLET_CPP = \
   qt/memestreampage.cpp \
   qt/memestreampublishkey.cpp \
   qt/memestreamrail.cpp \
+  qt/networkpage.cpp \
   qt/openuridialog.cpp \
   qt/overviewpage.cpp \
   qt/paymentserver.cpp \

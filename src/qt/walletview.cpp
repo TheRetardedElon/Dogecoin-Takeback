@@ -14,6 +14,7 @@
 #include "importkeysdialog.h"
 #include "memestreampage.h"
 #include "memestreamrail.h"
+#include "networkpage.h"
 #include "optionsmodel.h"
 #include "overviewpage.h"
 #include "platformstyle.h"
@@ -118,6 +119,7 @@ WalletView::WalletView(const PlatformStyle *_platformStyle, QWidget *parent):
     sendCoinsPage = new SendCoinsDialog(platformStyle);
     memeStreamPage = new MemeStreamPage(platformStyle, this);
     dogeBusinessPage = new DogeBusinessPage(platformStyle, this);
+    networkPage = new NetworkPage(platformStyle, this);
 
     usedSendingAddressesPage = new AddressBookPage(platformStyle, AddressBookPage::ForEditing, AddressBookPage::SendingTab, this);
     usedReceivingAddressesPage = new AddressBookPage(platformStyle, AddressBookPage::ForEditing, AddressBookPage::ReceivingTab, this);
@@ -128,6 +130,7 @@ WalletView::WalletView(const PlatformStyle *_platformStyle, QWidget *parent):
     addWidget(sendCoinsPage);
     addWidget(memeStreamPage);
     addWidget(dogeBusinessPage);
+    addWidget(networkPage);
 
     importKeysDialog = new ImportKeysDialog(platformStyle);
 
@@ -177,6 +180,9 @@ void WalletView::setDogecoinGUI(DogecoinGUI *gui)
 
         // Connect HD enabled state signal 
         connect(this, SIGNAL(hdEnabledStatusChanged(int)), gui, SLOT(setHDStatus(int)));
+
+        if (networkPage)
+            connect(networkPage, SIGNAL(openDebugConsole()), gui, SLOT(showDebugWindow()));
     }
 }
 
@@ -186,6 +192,8 @@ void WalletView::setClientModel(ClientModel *_clientModel)
 
     overviewPage->setClientModel(_clientModel);
     sendCoinsPage->setClientModel(_clientModel);
+    if (networkPage)
+        networkPage->setClientModel(_clientModel);
 }
 
 void WalletView::setWalletModel(WalletModel *_walletModel)
@@ -269,6 +277,13 @@ void WalletView::gotoDogeBusinessPage(int tab)
 {
     setCurrentWidget(dogeBusinessPage);
     dogeBusinessPage->showTab(tab);
+}
+
+void WalletView::gotoNetworkPage()
+{
+    setCurrentWidget(networkPage);
+    if (networkPage)
+        networkPage->refresh();
 }
 
 void WalletView::gotoReceiveCoinsPage()

@@ -75,6 +75,8 @@ public Q_SLOTS:
     void gotoMemeStreamPage();
     /** Switch to Doge Business Center (0 dashboard, 1 invoices, 2 POS) */
     void gotoDogeBusinessPage(int tab = 0);
+    /** Switch to Network page */
+    void gotoNetworkPage();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");

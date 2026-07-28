@@ -24,6 +24,7 @@ class ImportKeysDialog;
 class MemeStreamPage;
 class MemeStreamRail;
 class DogeBusinessPage;
+class NetworkPage;
 
 QT_BEGIN_NAMESPACE
 class QModelIndex;
@@ -74,6 +75,7 @@ private:
     ImportKeysDialog *importKeysDialog;
     MemeStreamPage *memeStreamPage;
     DogeBusinessPage *dogeBusinessPage;
+    NetworkPage *networkPage;
 
     TransactionView *transactionView;
 
@@ -95,6 +97,8 @@ public Q_SLOTS:
     void gotoMemeStreamPage();
     /** Switch to Doge Business Center (optional tab: 0 dashboard, 1 invoices, 2 POS) */
     void gotoDogeBusinessPage(int tab = 0);
+    /** Switch to Network status page */
+    void gotoNetworkPage();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");

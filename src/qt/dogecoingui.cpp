@@ -251,8 +251,10 @@ DogecoinGUI::DogecoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle
             }
         });
         connect(networkBtn, &QPushButton::clicked, [this]() {
-            // Network polish TBD — Debug Console holds peers/bans/traffic today
-            showDebugWindow();
+            if (walletFrame)
+                gotoNetworkPage();
+            else
+                showDebugWindow();
         });
         connect(businessBtn, &QPushButton::clicked, [this]() {
             if (walletFrame) {
@@ -2027,6 +2029,11 @@ void DogecoinGUI::gotoMemeStreamPage()
 void DogecoinGUI::gotoDogeBusinessPage(int tab)
 {
     if (walletFrame) walletFrame->gotoDogeBusinessPage(tab);
+}
+
+void DogecoinGUI::gotoNetworkPage()
+{
+    if (walletFrame) walletFrame->gotoNetworkPage();
 }
 
 void DogecoinGUI::gotoSignMessageTab(QString addr)

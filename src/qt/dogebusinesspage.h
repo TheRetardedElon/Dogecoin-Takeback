@@ -22,6 +22,7 @@ class QTabWidget;
 class QTableWidget;
 class QPlainTextEdit;
 class QPushButton;
+class QTimer;
 QT_END_NAMESPACE
 
 /**
@@ -67,6 +68,7 @@ private Q_SLOTS:
     void onSelectionChanged();
     /** Scan wallet txs; mark open invoices paid when address is funded. */
     void checkIncomingPayments();
+    void schedulePaymentCheck();
 
 private:
     void setupUi();
@@ -106,6 +108,7 @@ private:
     QString posBuffer;
     QString posCurrentAddress;
     CAmount posCurrentAmount;
+    QTimer* paymentCheckTimer;
 };
 
 #endif // DOGECOIN_QT_DOGEBUSINESSPAGE_H
