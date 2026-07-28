@@ -61,10 +61,11 @@
         <li class="done"><strong>T1:</strong> <code>BUILD_DOGECOIN_INTERNAL</code> / consensus API usage in benches</li>
         <li class="done"><strong>T1:</strong> i18n context <code>dogecoin-core</code> in C++ and all 64 <code>.ts</code> files</li>
         <li class="done"><strong>T1:</strong> user-facing “bitcoins” → “dogecoins” in wallet RPC + dialogs</li>
+        <li class="done"><strong>T3 (2026-07-28):</strong> mechanical <code>BITCOIN_*</code> → <code>DOGECOIN_*</code> guards/macros (~580 hits, ~200 files; vendor excluded)</li>
       </ul>
 
-      <h2>Scan summary (2026-07-27)</h2>
-      <p>Scope: <code>src/**/*.{cpp,h}</code> excluding vendor (leveldb, secp256k1, univalue), moc/ui, locales.</p>
+      <h2>Scan summary</h2>
+      <p>Baseline 2026-07-27; T3 completed 2026-07-28. Scope: <code>src/**/*.{cpp,h}</code> excluding vendor (leveldb, secp256k1, univalue), moc/ui, locales.</p>
       <table>
         <thead>
           <tr><th>Category</th><th>Hits</th><th>Tier</th><th>Action</th></tr>
@@ -72,9 +73,9 @@
         <tbody>
           <tr>
             <td>Header guards <code>BITCOIN_*</code></td>
-            <td>~563</td>
-            <td>T3 mechanical</td>
-            <td>Rename to <code>DOGECOIN_*</code> with script + compile</td>
+            <td>0 (was ~563)</td>
+            <td>T3 done</td>
+            <td>Renamed to <code>DOGECOIN_*</code>; dogecoind rebuild OK</td>
           </tr>
           <tr>
             <td>Copyright Bitcoin Core developers</td>
@@ -211,12 +212,12 @@
 
       <h2>Definition of “conversion complete”</h2>
       <ul class="checklist">
-        <li class="todo">No user-facing “Bitcoin” in Qt UI or RPC help (except intentional history)</li>
-        <li class="todo">No public C++ API still named Bitcoin* / bitcoinconsensus* inconsistently</li>
-        <li class="todo">All app/resources/tests use dogecoin product names</li>
-        <li class="todo">Header guards consistently DOGECOIN_* (optional but desired)</li>
-        <li class="todo">Scan script clean under agreed allowlist (copyrights, URLs)</li>
-        <li class="todo">Document allowlist in this page</li>
+        <li class="done">No user-facing “Bitcoin” in Qt UI or RPC help (except intentional history)</li>
+        <li class="done">No public C++ API still named Bitcoin* / bitcoinconsensus* inconsistently</li>
+        <li class="done">All app/resources/tests use dogecoin product names</li>
+        <li class="done">Header guards consistently DOGECOIN_*</li>
+        <li class="partial">Scan clean under allowlist (copyrights, historical URLs remain)</li>
+        <li class="done">Document allowlist in this page</li>
       </ul>
 
       <h2>Allowlist (initial)</h2>
