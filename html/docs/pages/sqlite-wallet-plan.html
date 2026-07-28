@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SQLite wallet dual-stack plan — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="diagrams.html">Diagrams</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="rebrand-audit.html">Rebrand audit</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="sqlite-wallet-plan.html">SQLite wallet plan</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>SQLite wallet dual-stack plan</h1>
+      <p class="lead">
+        Safe path off Berkeley DB for wallets without breaking existing
+        <code>wallet.dat</code> funds. Consensus is untouched.
+      </p>
+      <div class="meta">
+        <span>Started: 2026-07-28</span>
+        <span>Default backend today: <strong>BDB</strong></span>
+      </div>
+
+      <div class="callout ok">
+        <strong>Current code status</strong>
+        Production wallets still use Berkeley DB exclusively.
+        Format detection is landed: we log <code>format</code>, expose it on
+        <code>getwalletinfo</code>, and refuse SQLite files until a real backend exists.
+      </div>
+
+      <h2>Why dual-stack (not big-bang delete)</h2>
+      <ul>
+        <li>Users’ money lives in BDB <code>wallet.dat</code> files.</li>
+        <li>BDB versions differ across platforms; compile pain is real.</li>
+        <li>Bitcoin Core proved: SQLite for new wallets + keep BDB for legacy + migrate tooling.</li>
+        <li>Dogecoin is 1.14-class — we cannot drop in modern Bitcoin wallet code wholesale.</li>
+      </ul>
+
+      <h2>Code map (today)</h2>
+      <table>
+        <thead>
+          <tr><th>File</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>wallet/db.h</code> / <code>db.cpp</code></td><td>Berkeley env + <code>CDB</code> RAII</td></tr>
+          <tr><td><code>wallet/walletdb.h</code> / <code>walletdb.cpp</code></td><td><code>CWalletDB : public CDB</code> key/value records</td></tr>
+          <tr><td><code>wallet/wallet.cpp</code></td><td>Opens BDB via <code>bitdb</code>; all writes construct <code>CWalletDB(strWalletFile)</code></td></tr>
+          <tr><td><code>wallet/walletdb_format.*</code></td><td><strong>New:</strong> detect bdb/sqlite/unknown; support gates</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Implementation phases</h2>
+      <h3>Phase A — Detection (done)</h3>
+      <ul class="checklist">
+        <li class="done">Magic-byte probe (SQLite header vs other)</li>
+        <li class="done">Log format at verify</li>
+        <li class="done"><code>getwalletinfo.format</code> field</li>
+        <li class="done">Hard error if SQLite file presented to this build</li>
+      </ul>
+
+      <h3>Phase B — Abstract storage interface</h3>
+      <ul class="checklist">
+        <li class="todo">Introduce backend interface for Read/Write/Erase/Txn used by wallet records</li>
+        <li class="todo">Implement Berkeley backend wrapping current <code>CDB</code></li>
+        <li class="todo">Keep <code>CWalletDB</code> API surface stable for wallet.cpp callers</li>
+      </ul>
+
+      <h3>Phase C — SQLite backend (new wallets only)</h3>
+      <ul class="checklist">
+        <li class="todo">configure/depends: optional <code>libsqlite3</code></li>
+        <li class="todo">Schema for keys, txs, metadata (map existing BDB key types)</li>
+        <li class="todo">Create new wallets as SQLite when <code>-walletformat=sqlite</code> (or default later)</li>
+        <li class="todo">BDB remains default until migrate proven</li>
+      </ul>
+
+      <h3>Phase D — migratewallet</h3>
+      <ul class="checklist">
+        <li class="todo">Read-only BDB dump of keys + txs + metadata</li>
+        <li class="todo">Write new SQLite wallet; archive old file</li>
+        <li class="todo">RPC/CLI tool; extensive test wallets</li>
+        <li class="todo">Never delete old wallet until user confirms + backup check</li>
+      </ul>
+
+      <h3>Phase E — Deprecate BDB</h3>
+      <ul class="checklist">
+        <li class="todo">Read-only BDB years after majority migration</li>
+        <li class="todo">Eventually remove BDB compile dependency</li>
+      </ul>
+
+      <h2>Safety rules</h2>
+      <div class="callout danger">
+        <strong>Funds first</strong>
+        No automatic overwrite of <code>wallet.dat</code>. Migration always produces a new file
+        and leaves the original unless the user opts in after verification.
+      </div>
+      <ul>
+        <li>Local storage only — no consensus / P2P change.</li>
+        <li>Old and new nodes interop on the network regardless of wallet backend.</li>
+        <li>Test on regtest disposable wallets before mainnet paths.</li>
+      </ul>
+
+      <h2>Related</h2>
+      <p>
+        <a href="storage-stack.html">Storage stack</a> ·
+        <a href="roadmap.html">Roadmap</a>
+      </p>
+
+      <div class="footer">Update this page as each phase lands.</div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

@@ -90,11 +90,15 @@
         <li class="todo">Optional GigaWallet / DogeConnect alignment</li>
       </ul>
 
-      <h2>Phase 5 — Storage modernization <span class="badge badge-plan">Later</span></h2>
+      <h2>Phase 5 — Storage modernization <span class="badge badge-partial">Started</span></h2>
       <ul class="checklist">
-        <li class="todo">SQLite wallet dual-stack + migratewallet</li>
-        <li class="todo">Optional RocksDB chainstate</li>
-        <li class="todo">Evaluate libmdbx only with metrics</li>
+        <li class="done">Wallet format detection (bdb/sqlite) + refuse unsupported SQLite</li>
+        <li class="done"><code>getwalletinfo.format</code> field</li>
+        <li class="done">SQLite dual-stack plan doc</li>
+        <li class="todo">Abstract wallet DB backend interface</li>
+        <li class="todo">SQLite backend for new wallets</li>
+        <li class="todo">migratewallet (BDB → SQLite) with archives</li>
+        <li class="todo">Optional RocksDB / libmdbx chainstate</li>
       </ul>
 
       <h2>Working agreement</h2>

@@ -21,7 +21,9 @@
 #include "utilmoneystr.h"
 #include "wallet.h"
 #include "wallet/rpcutil.h"
+#include "wallet/walletdb_format.h"
 #include "walletdb.h"
+#include "fs.h"
 
 #include <stdint.h>
 
@@ -2528,6 +2530,7 @@ UniValue getwalletinfo(const JSONRPCRequest& request)
             "  \"unlocked_until\": ttt,        (numeric) the timestamp in seconds since epoch (midnight Jan 1 1970 GMT) that the wallet is unlocked for transfers, or 0 if the wallet is locked\n"
             "  \"paytxfee\": x.xxxx,           (numeric) the transaction fee configuration, set in " + CURRENCY_UNIT + "/kB\n"
             "  \"hdmasterkeyid\": \"<hash160>\" (string) the Hash160 of the HD master pubkey\n"
+            "  \"format\": \"bdb|sqlite|unknown\" (string) wallet database backend format (currently only bdb is loadable)\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getwalletinfo", "")
@@ -2550,6 +2553,11 @@ UniValue getwalletinfo(const JSONRPCRequest& request)
     CKeyID masterKeyID = pwalletMain->GetHDChain().masterKeyID;
     if (!masterKeyID.IsNull())
          obj.pushKV("hdmasterkeyid", masterKeyID.GetHex());
+    // Database backend: BDB today; sqlite reserved for dual-stack migration.
+    {
+        const fs::path walletPath = GetDataDir() / pwalletMain->strWalletFile;
+        obj.pushKV("format", WalletDatabaseFormatToString(DetectWalletDatabaseFormat(walletPath)));
+    }
     return obj;
 }
 

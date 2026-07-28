@@ -6,6 +6,7 @@
 
 #include "wallet/wallet.h"
 
+#include "wallet/walletdb_format.h"
 #include "base58.h"
 #include "checkpoints.h"
 #include "chain.h"
@@ -463,6 +464,21 @@ bool CWallet::Verify()
     fs::path walletPath(walletFile);
     if (walletFile != walletPath.stem().string() + walletPath.extension().string()) {
         return InitError(strprintf(_("Wallet %s resides outside data directory %s"), walletFile, GetDataDir().string()));
+    }
+
+    // Dual-stack groundwork: detect on-disk format before opening BDB.
+    // SQLite wallets are recognized but not loadable until migration lands.
+    {
+        const fs::path walletFullPath = GetDataDir() / walletFile;
+        const WalletDatabaseFormat fmt = DetectWalletDatabaseFormat(walletFullPath);
+        LogPrintf("Wallet database format: %s (%s)\n",
+                  WalletDatabaseFormatToString(fmt), walletFullPath.string());
+        if (!IsWalletDatabaseFormatSupported(fmt)) {
+            return InitError(strprintf(
+                _("Wallet file %s uses database format '%s', which is not supported by this build. "
+                  "Only Berkeley DB (bdb) wallets are supported. SQLite dual-stack support is under development."),
+                walletFile, WalletDatabaseFormatToString(fmt)));
+        }
     }
 
     if (!bitdb.Open(GetDataDir()))

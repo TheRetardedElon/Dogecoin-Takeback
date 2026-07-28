@@ -59,8 +59,8 @@
           </tr>
           <tr>
             <td>Wallet</td>
-            <td><span class="badge badge-todo">Berkeley DB</span></td>
-            <td><code>wallet/db.*</code>, <code>walletdb.*</code>, <code>db_cxx.h</code></td>
+            <td><span class="badge badge-todo">Berkeley DB</span> (default)</td>
+            <td><code>wallet/db.*</code>, <code>walletdb.*</code>; format probe in <code>walletdb_format.*</code></td>
           </tr>
           <tr>
             <td>Peers / bans</td>
@@ -69,6 +69,10 @@
           </tr>
         </tbody>
       </table>
+      <p>
+        Full dual-stack plan: <a href="sqlite-wallet-plan.html">SQLite wallet plan</a>
+        (Phase A detection landed 2026-07-28).
+      </p>
 
       <h2>Target options (from prior design work)</h2>
       <table>
