@@ -26,7 +26,10 @@
         <div class="nav-section">Workstreams</div>
         <a href="rebrand-audit.html">Rebrand audit</a>
         <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="ui-reference-core-pro.html">Core Pro UI reference</a>
         <a href="storage-stack.html">Storage stack</a>
+        <a href="sqlite-wallet-plan.html">SQLite wallet plan</a>
+        <a href="memestream-integration.html">MemeStream integration</a>
         <a href="build-and-run.html">Build &amp; run</a>
         <div class="nav-section">Repo</div>
         <a href="source-of-truth.html">Source of truth</a>
@@ -71,7 +74,7 @@
         <li class="partial">Allowlist scan: copyrights / historical URLs still may say Bitcoin (intentional)</li>
       </ul>
 
-      <h2>Phase 3 — UI solidification <span class="badge badge-done">Core done</span></h2>
+      <h2>Phase 3 — UI solidification <span class="badge badge-partial">Theme path done; Pro shell TBD</span></h2>
       <ul class="checklist">
         <li class="done">Delete dead <code>*_fixed.h</code> WIP headers</li>
         <li class="done">Single live theme path: <code>ThemeManager</code> (EnhancedThemeManager unlinked)</li>
@@ -79,23 +82,30 @@
         <li class="done">Restore <code>setWalletActionsEnabled</code> (was hard-disabled)</li>
         <li class="done">Unlink unused <code>ModernMainWindow</code> stack from Makefile (sources kept)</li>
         <li class="done"><code>dogecoin-qt</code> rebuild green</li>
-        <li class="todo">Screenshot gallery in docs (needs display session)</li>
-        <li class="todo">Network / peers polish (rebuild lost designs)</li>
+        <li class="done">Screenshot gallery + layout contract — <a href="ui-reference-core-pro.html">Core Pro UI reference</a></li>
+        <li class="todo">Rebuild Pro nav: Network, Doge Business, Meme Stream</li>
+        <li class="todo">Home Meme Stream rail + dedicated Meme Stream page</li>
+        <li class="todo">Doge Business: Dashboard / Invoices / POS (keys in wallet)</li>
+        <li class="todo">Network / peers polish</li>
       </ul>
 
-      <h2>Phase 4 — External features <span class="badge badge-plan">Later</span></h2>
+      <h2>Phase 4 — External features <span class="badge badge-partial">Spec landed</span></h2>
       <ul class="checklist">
-        <li class="todo">Meme Stream client integration (keys from GPE)</li>
-        <li class="todo">GPE / invoicing bridge (prefer outside consensus)</li>
+        <li class="done">MemeStream GPE handoff doc — <a href="memestream-integration.html">MemeStream integration</a></li>
+        <li class="done">UI identity rule: author = Core wallet address; Tip → that address</li>
+        <li class="todo">Qt: feed / publish / upload / Wow; Home rail + full page</li>
+        <li class="todo"><code>-memestreamkey=</code> + always send wallet on publish</li>
+        <li class="todo">On-chain tip to creator address (no GPE bridge)</li>
+        <li class="todo">Local merchant invoices/POS UI (distinct from GPE server POS RPC)</li>
         <li class="todo">Optional GigaWallet / DogeConnect alignment</li>
       </ul>
 
-      <h2>Phase 5 — Storage modernization <span class="badge badge-partial">Started</span></h2>
+      <h2>Phase 5 — Storage modernization <span class="badge badge-partial">Phase B done</span></h2>
       <ul class="checklist">
         <li class="done">Wallet format detection (bdb/sqlite) + refuse unsupported SQLite</li>
         <li class="done"><code>getwalletinfo.format</code> field</li>
         <li class="done">SQLite dual-stack plan doc</li>
-        <li class="todo">Abstract wallet DB backend interface</li>
+        <li class="done">Abstract <code>DatabaseBatch</code> / cursor + Berkeley adapter; <code>CWalletDB</code> composition</li>
         <li class="todo">SQLite backend for new wallets</li>
         <li class="todo">migratewallet (BDB → SQLite) with archives</li>
         <li class="todo">Optional RocksDB / libmdbx chainstate</li>

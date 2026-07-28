@@ -4,6 +4,8 @@
 
 #include "wallet/walletdb_format.h"
 #include "wallet/walletdb_backend.h"
+#include "wallet/db.h"
+#include "wallet/test/wallet_test_fixture.h"
 #include "test/test_dogecoin.h"
 #include "fs.h"
 
@@ -11,6 +13,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <memory>
 #include <string>
 
 BOOST_FIXTURE_TEST_SUITE(walletdb_format_tests, TestingSetup)
@@ -92,6 +95,65 @@ BOOST_AUTO_TEST_CASE(resolve_wallet_format_rules)
     BOOST_CHECK(ResolveWalletDatabaseFormat(WalletFormatPreference::AUTO,
                                             WalletDatabaseFormat::BERKELEY, effective, err));
     BOOST_CHECK(effective == WalletDatabaseFormat::BERKELEY);
+}
+
+BOOST_AUTO_TEST_CASE(create_batch_rejects_sqlite_format)
+{
+    std::string err;
+    std::unique_ptr<DatabaseBatch> batch = CreateWalletDatabaseBatch(
+        "unused.dat", "r+", true, WalletDatabaseFormat::SQLITE, err);
+    BOOST_CHECK(!batch);
+    BOOST_CHECK(!err.empty());
+}
+
+BOOST_AUTO_TEST_CASE(create_batch_from_preference_refuses_sqlite_pref)
+{
+    std::string err;
+    std::unique_ptr<DatabaseBatch> batch = CreateWalletDatabaseBatchFromPreference(
+        "unused.dat", "r+", true, WalletFormatPreference::SQLITE, err);
+    BOOST_CHECK(!batch);
+    BOOST_CHECK(!err.empty());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// Roundtrip needs a live mock BDB env (WalletTestingSetup), not plain TestingSetup.
+BOOST_FIXTURE_TEST_SUITE(walletdb_batch_tests, WalletTestingSetup)
+
+BOOST_AUTO_TEST_CASE(berkeley_batch_write_read_roundtrip)
+{
+    std::string err;
+    std::unique_ptr<DatabaseBatch> batch = CreateWalletDatabaseBatch(
+        "phase5b_batch_test.dat", "cr+", true, WalletDatabaseFormat::BERKELEY, err);
+    BOOST_REQUIRE_MESSAGE(batch, err);
+    BOOST_CHECK(batch->GetFormat() == WalletDatabaseFormat::BERKELEY);
+
+    const std::string key = "phase5b_test_key";
+    const std::string value = "phase5b_test_value";
+    BOOST_CHECK(batch->Write(key, value));
+    std::string readback;
+    BOOST_CHECK(batch->Read(key, readback));
+    BOOST_CHECK(readback == value);
+    BOOST_CHECK(batch->Exists(key));
+
+    std::unique_ptr<DatabaseCursor> cursor = batch->GetNewCursor();
+    BOOST_REQUIRE(cursor);
+    int nRecords = 0;
+    while (true) {
+        CDataStream ssKey(SER_DISK, CLIENT_VERSION);
+        CDataStream ssValue(SER_DISK, CLIENT_VERSION);
+        DatabaseCursorStatus status = cursor->Read(ssKey, ssValue);
+        if (status == DatabaseCursorStatus::DONE)
+            break;
+        BOOST_REQUIRE(status == DatabaseCursorStatus::MORE);
+        ++nRecords;
+        // Safety: mock DB should not be huge.
+        BOOST_REQUIRE(nRecords < 10000);
+    }
+    BOOST_CHECK(nRecords >= 1);
+
+    BOOST_CHECK(batch->Erase(key));
+    BOOST_CHECK(!batch->Exists(key));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -9,9 +9,11 @@
 #include "amount.h"
 #include "primitives/transaction.h"
 #include "wallet/db.h"
+#include "wallet/walletdb_backend.h"
 #include "key.h"
 
 #include <list>
+#include <memory>
 #include <stdint.h>
 #include <string>
 #include <utility>
@@ -112,13 +114,55 @@ public:
     }
 };
 
-/** Access to the wallet database */
-class CWalletDB : public CDB
+/**
+ * Access to the wallet database.
+ *
+ * Phase 5B: owns a DatabaseBatch (composition) instead of inheriting CDB.
+ * Call sites keep the same CWalletDB API; BDB remains the only live backend.
+ */
+class CWalletDB
 {
+private:
+    std::unique_ptr<DatabaseBatch> m_batch;
+
 public:
-    CWalletDB(const std::string& strFilename, const char* pszMode = "r+", bool fFlushOnClose = true) : CDB(strFilename, pszMode, fFlushOnClose)
+    explicit CWalletDB(const std::string& strFilename, const char* pszMode = "r+", bool fFlushOnClose = true);
+    ~CWalletDB() {}
+
+    template <typename K, typename T>
+    bool Read(const K& key, T& value)
     {
+        return m_batch->Read(key, value);
     }
+
+    template <typename K, typename T>
+    bool Write(const K& key, const T& value, bool fOverwrite = true)
+    {
+        return m_batch->Write(key, value, fOverwrite);
+    }
+
+    template <typename K>
+    bool Erase(const K& key)
+    {
+        return m_batch->Erase(key);
+    }
+
+    template <typename K>
+    bool Exists(const K& key)
+    {
+        return m_batch->Exists(key);
+    }
+
+    bool TxnBegin() { return m_batch->TxnBegin(); }
+    bool TxnCommit() { return m_batch->TxnCommit(); }
+    bool TxnAbort() { return m_batch->TxnAbort(); }
+    void Flush() { m_batch->Flush(); }
+    void Close() { m_batch->Close(); }
+
+    bool ReadVersion(int& nVersion) { return m_batch->ReadVersion(nVersion); }
+    bool WriteVersion(int nVersion) { return m_batch->WriteVersion(nVersion); }
+
+    WalletDatabaseFormat GetFormat() const { return m_batch->GetFormat(); }
 
     bool WriteName(const std::string& strAddress, const std::string& strName);
     bool EraseName(const std::string& strAddress);

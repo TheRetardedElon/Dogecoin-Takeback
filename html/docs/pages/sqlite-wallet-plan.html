@@ -50,6 +50,8 @@
         Production wallets still use Berkeley DB exclusively.
         Format detection is landed: we log <code>format</code>, expose it on
         <code>getwalletinfo</code>, and refuse SQLite files until a real backend exists.
+        Phase B batch abstraction is landed: <code>CWalletDB</code> owns a
+        <code>DatabaseBatch</code> (Berkeley adapter); SQLite can plug in later.
       </div>
 
       <h2>Why dual-stack (not big-bang delete)</h2>
@@ -66,10 +68,11 @@
           <tr><th>File</th><th>Role</th></tr>
         </thead>
         <tbody>
-          <tr><td><code>wallet/db.h</code> / <code>db.cpp</code></td><td>Berkeley env + <code>CDB</code> RAII</td></tr>
-          <tr><td><code>wallet/walletdb.h</code> / <code>walletdb.cpp</code></td><td><code>CWalletDB : public CDB</code> key/value records</td></tr>
-          <tr><td><code>wallet/wallet.cpp</code></td><td>Opens BDB via <code>bitdb</code>; all writes construct <code>CWalletDB(strWalletFile)</code></td></tr>
-          <tr><td><code>wallet/walletdb_format.*</code></td><td><strong>New:</strong> detect bdb/sqlite/unknown; support gates</td></tr>
+          <tr><td><code>wallet/db.h</code> / <code>db.cpp</code></td><td>Berkeley env + <code>CDB</code> RAII (still used by rewrite/recover)</td></tr>
+          <tr><td><code>wallet/walletdb.h</code> / <code>walletdb.cpp</code></td><td><code>CWalletDB</code> owns <code>unique_ptr&lt;DatabaseBatch&gt;</code>; same public API for wallet.cpp</td></tr>
+          <tr><td><code>wallet/walletdb_backend.*</code></td><td><code>DatabaseBatch</code> / <code>DatabaseCursor</code> + Berkeley adapter + factory</td></tr>
+          <tr><td><code>wallet/wallet.cpp</code></td><td>Unchanged call sites: construct <code>CWalletDB(strWalletFile)</code></td></tr>
+          <tr><td><code>wallet/walletdb_format.*</code></td><td>Detect bdb/sqlite/unknown; support gates</td></tr>
         </tbody>
       </table>
 
@@ -82,13 +85,14 @@
         <li class="done">Hard error if SQLite file presented to this build</li>
       </ul>
 
-      <h3>Phase B — Abstract storage interface (in progress)</h3>
+      <h3>Phase B — Abstract storage interface (done)</h3>
       <ul class="checklist">
         <li class="done"><code>walletdb_backend.*</code> preference resolve (<code>-walletformat</code>)</li>
         <li class="done">Unit tests for format detect + resolve rules</li>
-        <li class="done">Contract documented for future Berkeley/SQLite backends</li>
-        <li class="todo">Implement Berkeley backend wrapping current <code>CDB</code> behind interface</li>
-        <li class="todo">Keep <code>CWalletDB</code> API surface stable for wallet.cpp callers</li>
+        <li class="done"><code>DatabaseBatch</code> / <code>DatabaseCursor</code> interfaces</li>
+        <li class="done">Berkeley backend wrapping current <code>CDB</code> (stream I/O + cursor)</li>
+        <li class="done"><code>CWalletDB</code> composition; API surface stable for wallet.cpp</li>
+        <li class="done">Factory <code>CreateWalletDatabaseBatch*</code> + batch roundtrip unit test</li>
       </ul>
 
       <h3>Phase C — SQLite backend (new wallets only)</h3>

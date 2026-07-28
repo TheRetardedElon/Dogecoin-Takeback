@@ -14,8 +14,10 @@
 #include "util.h"
 #include "utiltime.h"
 #include "wallet/wallet.h"
+#include "wallet/walletdb_backend.h"
 
 #include <atomic>
+#include <stdexcept>
 
 #include <boost/version.hpp>
 #include <boost/foreach.hpp>
@@ -30,6 +32,18 @@ static std::atomic<unsigned int> nWalletDBUpdateCounter;
 //
 // CWalletDB
 //
+
+CWalletDB::CWalletDB(const std::string& strFilename, const char* pszMode, bool fFlushOnClose)
+{
+    std::string err;
+    // Phase 5B: always open Berkeley until SQLite batch exists. Preference
+    // resolution/refusal of SQLite files happens at wallet load/verify.
+    m_batch = CreateWalletDatabaseBatch(strFilename, pszMode, fFlushOnClose,
+                                        WalletDatabaseFormat::BERKELEY, err);
+    if (!m_batch) {
+        throw std::runtime_error(err.empty() ? "Failed to open wallet database" : err);
+    }
+}
 
 bool CWalletDB::WriteName(const string& strAddress, const string& strName)
 {
@@ -219,8 +233,8 @@ void CWalletDB::ListAccountCreditDebit(const string& strAccount, list<CAccountin
 {
     bool fAllAccounts = (strAccount == "*");
 
-    Dbc* pcursor = GetCursor();
-    if (!pcursor)
+    std::unique_ptr<DatabaseCursor> cursor = m_batch->GetNewCursor();
+    if (!cursor)
         throw runtime_error(std::string(__func__) + ": cannot create DB cursor");
     bool setRange = true;
     while (true)
@@ -230,13 +244,12 @@ void CWalletDB::ListAccountCreditDebit(const string& strAccount, list<CAccountin
         if (setRange)
             ssKey << std::make_pair(std::string("acentry"), std::make_pair((fAllAccounts ? string("") : strAccount), uint64_t(0)));
         CDataStream ssValue(SER_DISK, CLIENT_VERSION);
-        int ret = ReadAtCursor(pcursor, ssKey, ssValue, setRange);
+        DatabaseCursorStatus status = cursor->Read(ssKey, ssValue, setRange);
         setRange = false;
-        if (ret == DB_NOTFOUND)
+        if (status == DatabaseCursorStatus::DONE)
             break;
-        else if (ret != 0)
+        else if (status != DatabaseCursorStatus::MORE)
         {
-            pcursor->close();
             throw runtime_error(std::string(__func__) + ": error scanning DB");
         }
 
@@ -254,8 +267,6 @@ void CWalletDB::ListAccountCreditDebit(const string& strAccount, list<CAccountin
         ssKey >> acentry.nEntryNo;
         entries.push_back(acentry);
     }
-
-    pcursor->close();
 }
 
 class CWalletScanState {
@@ -569,8 +580,8 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
         }
 
         // Get cursor
-        Dbc* pcursor = GetCursor();
-        if (!pcursor)
+        std::unique_ptr<DatabaseCursor> cursor = m_batch->GetNewCursor();
+        if (!cursor)
         {
             LogPrintf("Error getting wallet database cursor\n");
             return DB_CORRUPT;
@@ -581,10 +592,10 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
             // Read next record
             CDataStream ssKey(SER_DISK, CLIENT_VERSION);
             CDataStream ssValue(SER_DISK, CLIENT_VERSION);
-            int ret = ReadAtCursor(pcursor, ssKey, ssValue);
-            if (ret == DB_NOTFOUND)
+            DatabaseCursorStatus status = cursor->Read(ssKey, ssValue);
+            if (status == DatabaseCursorStatus::DONE)
                 break;
-            else if (ret != 0)
+            else if (status != DatabaseCursorStatus::MORE)
             {
                 LogPrintf("Error reading next record from wallet database\n");
                 return DB_CORRUPT;
@@ -610,7 +621,6 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
             if (!strErr.empty())
                 LogPrintf("%s\n", strErr);
         }
-        pcursor->close();
     }
     catch (const boost::thread_interrupted&) {
         throw;
@@ -675,8 +685,8 @@ DBErrors CWalletDB::FindWalletTx(CWallet* pwallet, vector<uint256>& vTxHash, vec
         }
 
         // Get cursor
-        Dbc* pcursor = GetCursor();
-        if (!pcursor)
+        std::unique_ptr<DatabaseCursor> cursor = m_batch->GetNewCursor();
+        if (!cursor)
         {
             LogPrintf("Error getting wallet database cursor\n");
             return DB_CORRUPT;
@@ -687,10 +697,10 @@ DBErrors CWalletDB::FindWalletTx(CWallet* pwallet, vector<uint256>& vTxHash, vec
             // Read next record
             CDataStream ssKey(SER_DISK, CLIENT_VERSION);
             CDataStream ssValue(SER_DISK, CLIENT_VERSION);
-            int ret = ReadAtCursor(pcursor, ssKey, ssValue);
-            if (ret == DB_NOTFOUND)
+            DatabaseCursorStatus status = cursor->Read(ssKey, ssValue);
+            if (status == DatabaseCursorStatus::DONE)
                 break;
-            else if (ret != 0)
+            else if (status != DatabaseCursorStatus::MORE)
             {
                 LogPrintf("Error reading next record from wallet database\n");
                 return DB_CORRUPT;
@@ -709,7 +719,6 @@ DBErrors CWalletDB::FindWalletTx(CWallet* pwallet, vector<uint256>& vTxHash, vec
                 vWtx.push_back(wtx);
             }
         }
-        pcursor->close();
     }
     catch (const boost::thread_interrupted&) {
         throw;
