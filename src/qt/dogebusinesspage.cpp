@@ -11,6 +11,8 @@
 #include "guiutil.h"
 #include "optionsmodel.h"
 #include "platformstyle.h"
+#include "transactionrecord.h"
+#include "transactiontablemodel.h"
 #include "ui_interface.h"
 #include "walletmodel.h"
 
@@ -35,6 +37,8 @@
 #include <QAbstractItemView>
 #include <QFrame>
 #include <QSettings>
+#include <QModelIndex>
+#include <QAbstractItemModel>
 
 DogeBusinessPage::DogeBusinessPage(const PlatformStyle* _platformStyle, QWidget* parent)
     : QWidget(parent),
@@ -93,8 +97,13 @@ void DogeBusinessPage::setupUi()
     metrics->addWidget(metric(tr("Paid invoices"), &dashPaid));
     metrics->addWidget(metric(tr("Invoiced volume (open+paid)"), &dashVolume));
     dl->addLayout(metrics);
+    dashWatchStatus = new QLabel(tr("Auto-watch: scanning wallet for payments to open invoice addresses…"));
+    dashWatchStatus->setObjectName(QStringLiteral("mutedLabel"));
+    dashWatchStatus->setWordWrap(true);
+    dl->addWidget(dashWatchStatus);
     QLabel* help = new QLabel(tr("Create an invoice to allocate a labeled receive address and dogecoin: payment URI. "
-                                 "Mark paid when you see the payment in Transactions (auto-watch coming later)."));
+                                 "Open invoices auto-mark paid when this wallet receives ≥ the requested amount "
+                                 "(or any amount if the invoice amount is zero). You can still Mark paid manually."));
     help->setWordWrap(true);
     dl->addWidget(help);
     QHBoxLayout* dashBtns = new QHBoxLayout();
@@ -241,7 +250,90 @@ void DogeBusinessPage::setupUi()
 void DogeBusinessPage::setWalletModel(WalletModel* model)
 {
     walletModel = model;
+    wireWalletSignals();
     updateDashboard();
+    checkIncomingPayments();
+}
+
+void DogeBusinessPage::wireWalletSignals()
+{
+    if (!walletModel)
+        return;
+    // New balance / new txs → re-scan open invoices
+    connect(walletModel, SIGNAL(balanceChanged(CAmount,CAmount,CAmount,CAmount,CAmount,CAmount)),
+            this, SLOT(checkIncomingPayments()), Qt::UniqueConnection);
+    TransactionTableModel* ttm = walletModel->getTransactionTableModel();
+    if (ttm) {
+        connect(ttm, SIGNAL(rowsInserted(QModelIndex,int,int)),
+                this, SLOT(checkIncomingPayments()), Qt::UniqueConnection);
+        connect(ttm, SIGNAL(modelReset()),
+                this, SLOT(checkIncomingPayments()), Qt::UniqueConnection);
+        connect(ttm, SIGNAL(dataChanged(QModelIndex,QModelIndex)),
+                this, SLOT(checkIncomingPayments()), Qt::UniqueConnection);
+    }
+}
+
+void DogeBusinessPage::checkIncomingPayments()
+{
+    if (!walletModel)
+        return;
+    TransactionTableModel* ttm = walletModel->getTransactionTableModel();
+    if (!ttm)
+        return;
+
+    bool changed = false;
+    QStringList newlyPaid;
+
+    for (int i = 0; i < invoices.size(); ++i) {
+        Invoice& inv = invoices[i];
+        if (inv.status != QLatin1String("open"))
+            continue;
+        if (inv.address.isEmpty())
+            continue;
+
+        CAmount received = 0;
+        const int rows = ttm->rowCount(QModelIndex());
+        for (int row = 0; row < rows; ++row) {
+            QModelIndex idx = ttm->index(row, 0, QModelIndex());
+            const QString addr = ttm->data(idx, TransactionTableModel::AddressRole).toString();
+            if (addr != inv.address)
+                continue;
+            const int type = ttm->data(idx, TransactionTableModel::TypeRole).toInt();
+            if (type != TransactionRecord::RecvWithAddress && type != TransactionRecord::RecvFromOther)
+                continue;
+            const qint64 amt = ttm->data(idx, TransactionTableModel::AmountRole).toLongLong();
+            if (amt > 0)
+                received += static_cast<CAmount>(amt);
+        }
+
+        // amount==0 means “any payment”; otherwise require full invoice amount
+        const bool enough = (received > 0) && (inv.amount <= 0 || received >= inv.amount);
+        if (enough) {
+            inv.status = QStringLiteral("paid");
+            changed = true;
+            newlyPaid.append(inv.label.isEmpty() ? inv.address : inv.label);
+        }
+    }
+
+    if (dashWatchStatus) {
+        int openN = 0;
+        for (const Invoice& inv : invoices)
+            if (inv.status == QLatin1String("open"))
+                ++openN;
+        dashWatchStatus->setText(tr("Auto-watch: %1 open invoice(s); last scan matched wallet receives.")
+                                     .arg(openN));
+    }
+
+    if (!changed)
+        return;
+
+    rebuildInvoiceTable();
+    updateDashboard();
+    saveInvoices();
+
+    Q_EMIT message(tr("Doge Business"),
+                   tr("Payment detected — marked paid: %1").arg(newlyPaid.join(QStringLiteral(", "))),
+                   CClientUIInterface::MSG_INFORMATION);
 }
 
 void DogeBusinessPage::refresh()

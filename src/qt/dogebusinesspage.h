@@ -65,6 +65,8 @@ private Q_SLOTS:
     void onPosCharge();
     void onPosNewSale();
     void onSelectionChanged();
+    /** Scan wallet txs; mark open invoices paid when address is funded. */
+    void checkIncomingPayments();
 
 private:
     void setupUi();
@@ -72,6 +74,7 @@ private:
     void updateDashboard();
     void loadInvoices();
     void saveInvoices() const;
+    void wireWalletSignals();
     QString allocateReceiveAddress(const QString& label);
     QString dogecoinUri(const QString& address, CAmount amount, const QString& label) const;
     Invoice* selectedInvoice();
@@ -86,6 +89,7 @@ private:
     QLabel* dashOpen;
     QLabel* dashPaid;
     QLabel* dashVolume;
+    QLabel* dashWatchStatus;
     // Invoices
     QLineEdit* invLabel;
     QDoubleSpinBox* invAmount;
