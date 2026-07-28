@@ -1,9 +1,9 @@
-dnl Copyright (c) 2013-2017 The Bitcoin Core developers
+dnl Copyright (c) 2013-2017 The Dogecoin Core developers
 dnl Copyright (c) 2021 The Dogecoin Core developers
 dnl Distributed under the MIT software license, see the accompanying
 dnl file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-AC_DEFUN([BITCOIN_FIND_BDB53],[
+AC_DEFUN([DOGECOIN_FIND_BDB53],[
   AC_ARG_VAR([BDB_CFLAGS], [C compiler flags for BerkeleyDB, bypasses autodetection])
   AC_ARG_VAR([BDB_LIBS], [Linker flags for BerkeleyDB, bypasses autodetection])
 
@@ -58,14 +58,14 @@ AC_DEFUN([BITCOIN_FIND_BDB53],[
     AC_MSG_RESULT([no])
     AC_MSG_ERROR([libdb_cxx headers missing, Dogecoin Core requires this library for wallet functionality (--disable-wallet to disable wallet functionality)])
   elif test "x$bdb53path" = "xX"; then
-    BITCOIN_SUBDIR_TO_INCLUDE(BDB_CPPFLAGS,[${bdbpath}],db_cxx)
+    DOGECOIN_SUBDIR_TO_INCLUDE(BDB_CPPFLAGS,[${bdbpath}],db_cxx)
     AC_ARG_WITH([incompatible-bdb],[AS_HELP_STRING([--with-incompatible-bdb], [allow using a bdb version other than 5.3])],[
       AC_MSG_WARN([Found Berkeley DB other than 5.3; wallets opened by this build will not be portable!])
     ],[
       AC_MSG_ERROR([Found Berkeley DB other than 5.3, required for portable wallets (--with-incompatible-bdb to ignore or --disable-wallet to disable wallet functionality)])
     ])
   else
-    BITCOIN_SUBDIR_TO_INCLUDE(BDB_CPPFLAGS,[${bdb53path}],db_cxx)
+    DOGECOIN_SUBDIR_TO_INCLUDE(BDB_CPPFLAGS,[${bdb53path}],db_cxx)
     bdbpath="${bdb53path}"
   fi
 

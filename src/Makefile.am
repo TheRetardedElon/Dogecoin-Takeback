@@ -36,7 +36,7 @@ LIBSECP256K1=secp256k1/libsecp256k1.la
 if ENABLE_ZMQ
 LIBDOGECOIN_ZMQ=libdogecoin_zmq.a
 endif
-if BUILD_BITCOIN_LIBS
+if BUILD_DOGECOIN_LIBS
 LIBDOGECOINCONSENSUS=libdogecoinconsensus.la
 endif
 if ENABLE_WALLET
@@ -65,11 +65,11 @@ noinst_PROGRAMS =
 TESTS =
 BENCHMARKS =
 
-if BUILD_BITCOIND
+if BUILD_DOGECOIND
   bin_PROGRAMS += dogecoind
 endif
 
-if BUILD_BITCOIN_UTILS
+if BUILD_DOGECOIN_UTILS
   bin_PROGRAMS += dogecoin-cli dogecoin-tx
 endif
 
@@ -456,7 +456,7 @@ dogecoin_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 #
 
 # bitcoinconsensus library #
-if BUILD_BITCOIN_LIBS
+if BUILD_DOGECOIN_LIBS
 include_HEADERS = script/dogecoinconsensus.h
 libdogecoinconsensus_la_SOURCES = $(crypto_libdogecoin_crypto_a_SOURCES) $(libdogecoin_consensus_a_SOURCES)
 
@@ -466,7 +466,7 @@ endif
 
 libdogecoinconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
 libdogecoinconsensus_la_LIBADD = $(LIBSECP256K1)
-libdogecoinconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
+libdogecoinconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_DOGECOIN_INTERNAL
 libdogecoinconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
 endif
@@ -488,7 +488,7 @@ CLEANFILES += policy/*.gcda policy/*.gcno
 CLEANFILES += primitives/*.gcda primitives/*.gcno
 CLEANFILES += script/*.gcda script/*.gcno
 CLEANFILES += support/*.gcda support/*.gcno
-CLEANFILES += univalue/*.gcda univalue/*.gcno
+#CLEANFILES += univalue/*.gcda univalue/*.gcno
 CLEANFILES += wallet/*.gcda wallet/*.gcno
 CLEANFILES += wallet/test/*.gcda wallet/test/*.gcno
 CLEANFILES += zmq/*.gcda zmq/*.gcno
