@@ -245,6 +245,18 @@ void DogeBusinessPage::refresh()
     updateDashboard();
 }
 
+void DogeBusinessPage::showTab(int index)
+{
+    if (!tabs)
+        return;
+    if (index < 0)
+        index = 0;
+    if (index >= tabs->count())
+        index = tabs->count() - 1;
+    tabs->setCurrentIndex(index);
+    refresh();
+}
+
 void DogeBusinessPage::updateDashboard()
 {
     int open = 0, paid = 0;

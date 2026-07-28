@@ -147,9 +147,9 @@ void MemeStreamPage::refresh()
 
 void MemeStreamPage::updateAuthorLabel()
 {
-    QString addr = currentAuthorAddress();
+    QString addr = ensureAuthorAddress();
     if (addr.isEmpty())
-        authorLabel->setText(tr("Author (wallet address — used for Tip): (no receiving address yet)"));
+        authorLabel->setText(tr("Author (wallet address — used for Tip): (unlock wallet to create an address)"));
     else
         authorLabel->setText(tr("Author (wallet address — used for Tip):\n%1").arg(addr));
 }
@@ -172,6 +172,19 @@ QString MemeStreamPage::currentAuthorAddress() const
         }
     }
     return QString();
+}
+
+QString MemeStreamPage::ensureAuthorAddress()
+{
+    QString existing = currentAuthorAddress();
+    if (!existing.isEmpty())
+        return existing;
+    if (!walletModel)
+        return QString();
+    AddressTableModel* atm = walletModel->getAddressTableModel();
+    if (!atm)
+        return QString();
+    return atm->addRow(AddressTableModel::Receive, tr("Meme Stream author"), QString());
 }
 
 void MemeStreamPage::onRefreshClicked()
@@ -213,9 +226,9 @@ void MemeStreamPage::onChooseImage()
 
 void MemeStreamPage::onPublishClicked()
 {
-    QString wallet = currentAuthorAddress();
+    QString wallet = ensureAuthorAddress();
     if (wallet.isEmpty()) {
-        statusLabel->setText(tr("Need a receiving address in the wallet before publishing."));
+        statusLabel->setText(tr("Need a receiving address (unlock wallet if encrypted)."));
         return;
     }
     if (!client->hasPublishKey()) {

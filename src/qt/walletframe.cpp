@@ -145,11 +145,11 @@ void WalletFrame::gotoMemeStreamPage()
         i.value()->gotoMemeStreamPage();
 }
 
-void WalletFrame::gotoDogeBusinessPage()
+void WalletFrame::gotoDogeBusinessPage(int tab)
 {
     QMap<QString, WalletView*>::const_iterator i;
     for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
-        i.value()->gotoDogeBusinessPage();
+        i.value()->gotoDogeBusinessPage(tab);
 }
 
 void WalletFrame::gotoSignMessageTab(QString addr)

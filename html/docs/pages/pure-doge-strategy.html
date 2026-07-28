@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pure Dogecoin strategy — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="pure-doge-strategy.html">Pure DOGE strategy</a>
+        <a href="memestream-integration.html">MemeStream integration</a>
+        <a href="ui-reference-core-pro.html">Core Pro UI reference</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="sqlite-wallet-plan.html">SQLite wallet plan</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Pure Dogecoin strategy</h1>
+      <p class="lead">
+        How we take Dogecoin back: native DOGE through Dogecoin Core — not an
+        EVM “app layer,” not a second token, not a Trojan settlement brand.
+      </p>
+      <div class="meta">
+        <span>Locked: 2026-07-28</span>
+        <span>Stack: dogecoind + dogecoin-qt + optional GPE POS RPC</span>
+      </div>
+
+      <div class="callout ok">
+        <strong>North star</strong>
+        One coin. One L1 ledger. Keys in Core. Merchants and tips settle as
+        real DOGE. Client features (Meme Stream, Business/POS) are UX on top of
+        that — never a detour into another crypto runtime.
+      </div>
+
+      <h2>What we build</h2>
+      <ul>
+        <li><strong>Dogecoin Core Pro client</strong> — wallet, themes, Home, Business, Meme Stream</li>
+        <li><strong>Native payments</strong> — Send/Receive, invoices, POS keypad → Core addresses</li>
+        <li><strong>On-chain tips</strong> — author = wallet address; Tip opens Send (no bridge)</li>
+        <li><strong>GPE POS spine</strong> — server talks to local <code>dogecoind</code> for invoices (separate from MemeStream HTTP)</li>
+        <li><strong>Storage dual-stack later</strong> — BDB → SQLite for wallets; consensus untouched</li>
+      </ul>
+
+      <h2>What we refuse</h2>
+      <ul>
+        <li>EVM / zkVM “app layers” as the product definition of Dogecoin</li>
+        <li>Wrapped DOGE / second ledgers sold as “the real Dogecoin experience”</li>
+        <li>Diverting Core users into non-Core stacks to use their own money</li>
+        <li>L2 / Drivechain / soft-fork programs until Core client + merchants are winning</li>
+      </ul>
+
+      <h2>Why this takes Dogecoin back</h2>
+      <p>
+        Competing on “Solidity deploys and TVL” forces foreign architecture.
+        Competing on <strong>cash, POS, tips, and a trustworthy Core client</strong>
+        makes native DOGE the obvious path — and starves diversion narratives of oxygen.
+      </p>
+
+      <h2>Related</h2>
+      <p>
+        <a href="roadmap.html">Roadmap</a> ·
+        <a href="memestream-integration.html">MemeStream</a> ·
+        <a href="ui-reference-core-pro.html">UI reference</a>
+      </p>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

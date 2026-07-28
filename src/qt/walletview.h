@@ -93,8 +93,8 @@ public Q_SLOTS:
     void gotoSendCoinsPage(QString addr = "");
     /** Switch to Meme Stream page */
     void gotoMemeStreamPage();
-    /** Switch to Doge Business Center */
-    void gotoDogeBusinessPage();
+    /** Switch to Doge Business Center (optional tab: 0 dashboard, 1 invoices, 2 POS) */
+    void gotoDogeBusinessPage(int tab = 0);
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");

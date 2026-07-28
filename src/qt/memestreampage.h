@@ -60,6 +60,8 @@ private:
     void setupUi();
     void updateAuthorLabel();
     QString currentAuthorAddress() const;
+    /** Existing receive address, or allocate one labeled for Meme Stream. */
+    QString ensureAuthorAddress();
     void rebuildFeed(const QList<MemeStreamItem>& items);
     QWidget* buildItemCard(const MemeStreamItem& item);
 

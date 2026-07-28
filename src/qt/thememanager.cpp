@@ -636,6 +636,23 @@ QString ThemeManager::getProShellStylesheet() const
     s += QString("QWidget#modernContainer { background-color: %1; color: %2; }\n").arg(bg, text);
     s += QString("QWidget#homePage { background-color: %1; color: %2; }\n").arg(bg, text);
     s += QString(
+        "QFrame#homeQuickBar {\n"
+        "  background-color: %1;\n"
+        "  border-bottom: 1px solid %2;\n"
+        "}\n"
+        "QPushButton#homeQuickButton {\n"
+        "  background-color: %3;\n"
+        "  color: %4;\n"
+        "  border: 1px solid %2;\n"
+        "  border-radius: 8px;\n"
+        "  padding: 10px 14px;\n"
+        "  font-weight: 600;\n"
+        "}\n"
+        "QPushButton#homeQuickButton:hover {\n"
+        "  background-color: %5;\n"
+        "}\n"
+    ).arg(bg2, border, card, text, btn);
+    s += QString(
         "QWidget#modernNavigation {\n"
         "  background-color: %1;\n"
         "  border-right: 1px solid %2;\n"

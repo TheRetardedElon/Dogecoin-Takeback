@@ -74,30 +74,33 @@
         <li class="partial">Allowlist scan: copyrights / historical URLs still may say Bitcoin (intentional)</li>
       </ul>
 
-      <h2>Phase 3 — UI solidification <span class="badge badge-partial">Theme path done; Pro shell TBD</span></h2>
+      <h2>Phase 3 — UI solidification <span class="badge badge-partial">Pro shell live</span></h2>
       <ul class="checklist">
         <li class="done">Delete dead <code>*_fixed.h</code> WIP headers</li>
-        <li class="done">Single live theme path: <code>ThemeManager</code> (EnhancedThemeManager unlinked)</li>
+        <li class="done">Single live theme path: <code>ThemeManager</code> (covers shell + Options)</li>
         <li class="done">Fix status bar / modalOverlay init (was dead in unused function)</li>
         <li class="done">Restore <code>setWalletActionsEnabled</code> (was hard-disabled)</li>
         <li class="done">Unlink unused <code>ModernMainWindow</code> stack from Makefile (sources kept)</li>
         <li class="done"><code>dogecoin-qt</code> rebuild green</li>
         <li class="done">Screenshot gallery + layout contract — <a href="ui-reference-core-pro.html">Core Pro UI reference</a></li>
-        <li class="todo">Rebuild Pro nav: Network, Doge Business, Meme Stream</li>
-        <li class="todo">Home Meme Stream rail + dedicated Meme Stream page</li>
-        <li class="todo">Doge Business: Dashboard / Invoices / POS (keys in wallet)</li>
+        <li class="done">Pro nav: Network, Doge Business, Meme Stream</li>
+        <li class="done">Home Meme Stream rail + dedicated Meme Stream page + images</li>
+        <li class="done">Home Business quick tiles (Invoices / POS / Dashboard)</li>
+        <li class="done">Doge Business: Dashboard / Invoices / POS (keys in wallet)</li>
         <li class="todo">Network / peers polish</li>
       </ul>
 
-      <h2>Phase 4 — External features <span class="badge badge-partial">Spec landed</span></h2>
+      <h2>Phase 4 — External features <span class="badge badge-partial">In client</span></h2>
       <ul class="checklist">
+        <li class="done"><a href="pure-doge-strategy.html">Pure DOGE strategy</a> locked (no EVM app-layer path)</li>
         <li class="done">MemeStream GPE handoff doc — <a href="memestream-integration.html">MemeStream integration</a></li>
         <li class="done">UI identity rule: author = Core wallet address; Tip → that address</li>
-        <li class="todo">Qt: feed / publish / upload / Wow; Home rail + full page</li>
-        <li class="todo"><code>-memestreamkey=</code> + always send wallet on publish</li>
-        <li class="todo">On-chain tip to creator address (no GPE bridge)</li>
-        <li class="todo">Local merchant invoices/POS UI (distinct from GPE server POS RPC)</li>
-        <li class="todo">Optional GigaWallet / DogeConnect alignment</li>
+        <li class="done">Qt: feed / publish / upload / Like; Home rail + full page + media load</li>
+        <li class="done">Built-in obfuscated publish key + optional <code>-memestreamkey=</code></li>
+        <li class="done">On-chain tip to creator address (no GPE bridge)</li>
+        <li class="done">Local merchant invoices/POS UI (distinct from GPE server POS RPC)</li>
+        <li class="todo">Invoice auto-watch / persistence across restarts</li>
+        <li class="todo">Optional GigaWallet / DogeConnect alignment (outside Core if needed)</li>
       </ul>
 
       <h2>Phase 5 — Storage modernization <span class="badge badge-partial">Phase B done</span></h2>

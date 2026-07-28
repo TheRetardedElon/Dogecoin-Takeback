@@ -47,6 +47,8 @@ public:
 
     void setWalletModel(WalletModel* walletModel);
     void refresh();
+    /** 0 = Dashboard, 1 = Invoices, 2 = POS */
+    void showTab(int index);
 
 Q_SIGNALS:
     void message(const QString& title, const QString& msg, unsigned int style);

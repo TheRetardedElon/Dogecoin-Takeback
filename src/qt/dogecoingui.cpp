@@ -2024,9 +2024,9 @@ void DogecoinGUI::gotoMemeStreamPage()
     if (walletFrame) walletFrame->gotoMemeStreamPage();
 }
 
-void DogecoinGUI::gotoDogeBusinessPage()
+void DogecoinGUI::gotoDogeBusinessPage(int tab)
 {
-    if (walletFrame) walletFrame->gotoDogeBusinessPage();
+    if (walletFrame) walletFrame->gotoDogeBusinessPage(tab);
 }
 
 void DogecoinGUI::gotoSignMessageTab(QString addr)
