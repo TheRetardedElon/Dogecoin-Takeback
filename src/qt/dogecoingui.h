@@ -17,12 +17,11 @@
 #include <QMap>
 #include <QMenu>
 #include <QPoint>
+#include <QPushButton>
 #include <QSystemTrayIcon>
 
-// Modern UI includes
-#include "modernmainwindow.h"
+// Theme system (single live path: ThemeManager + ThemeSwitcher)
 #include "thememanager.h"
-#include "themes/theme_manager.h"
 
 class ClientModel;
 class NetworkStyle;
@@ -84,38 +83,26 @@ protected:
     void dropEvent(QDropEvent *event);
     bool eventFilter(QObject *object, QEvent *event);
     
-    // Modern UI methods
-    void applyModernThemes();
+    /** Apply chrome styles for the modern shell (sidebar container). */
     void applyTheme(const QString& themeName);
+    /** Cycle dark/cyberpunk/neon/light chrome themes. */
     void cycleTheme();
-    void applyMatrixTheme(const QString& themeName);
     
-    // Enhanced theme system
-    void setupEnhancedThemes();
-    void onThemeChanged(const QString& themeName);
-    void onMenuActionTriggered(const QString& actionName);
-    
-    // Borderless window and settings
-    void createCustomTitleBar();
     void showSettingsDialog();
     void createStatusBar();
 
 private:
+    /** Full-window stylesheet themes (matrix, retro, etc.) used by settings UI. */
+    void applyGlobalTheme(const QString& themeName);
+
     ClientModel *clientModel;
     WalletFrame *walletFrame;
     
-    // Modern UI
-    ModernMainWindow *modernUI;
+    /** Live modern shell: inline sidebar + wallet frame (not ModernMainWindow). */
     bool useModernUI;
     QMap<QString, QPushButton*> m_navButtons;
     QString m_currentTheme;
     int m_themeIndex;
-    
-    // Enhanced theme system
-    class EnhancedThemeManager* m_themeManager;
-    
-    // Borderless window
-    QWidget* m_customTitleBar;
 
     UnitDisplayStatusBarControl *unitDisplayControl;
     QLabel *labelWalletEncryptionIcon;

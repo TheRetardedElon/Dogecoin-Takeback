@@ -105,12 +105,46 @@
         </tbody>
       </table>
 
-      <h2>Known integration risks</h2>
+      <h2>Live architecture (Phase 3 solidify — 2026-07-28)</h2>
+      <table>
+        <thead>
+          <tr><th>Layer</th><th>Live component</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Shell</td>
+            <td><code>DogecoinGUI</code> inline sidebar + <code>WalletFrame</code></td>
+            <td>Not <code>ModernMainWindow</code> (still in tree, unused by main window)</td>
+          </tr>
+          <tr>
+            <td>Global theme</td>
+            <td><code>ThemeManager</code> (<code>thememanager.*</code>)</td>
+            <td>Applied to <code>qApp</code> at startup; Options via <code>ThemeSwitcher</code></td>
+          </tr>
+          <tr>
+            <td>Shell chrome</td>
+            <td><code>DogecoinGUI::applyTheme</code> / <code>cycleTheme</code></td>
+            <td>Styles <code>#modernContainer</code> / <code>#modernNavigation</code></td>
+          </tr>
+          <tr>
+            <td>Full-window skins</td>
+            <td><code>applyGlobalTheme</code></td>
+            <td>Settings dialog theme picker (matrix, retro, …)</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout ok">
+        <strong>Single theme path</strong>
+        <code>EnhancedThemeManager</code> (<code>themes/theme_manager.*</code>) is no longer linked into
+        <code>dogecoin-qt</code>. Sources remain for a future experimental UI branch only.
+        Dead <code>*_fixed.h</code> duplicates were deleted.
+      </div>
+
+      <h2>Known remaining risks</h2>
       <ul>
-        <li>Parallel <code>*_fixed.h</code> headers — decide single source of truth before large edits.</li>
-        <li>Some enhanced theme manager wiring is commented out in <code>dogecoingui.cpp</code>.</li>
-        <li>Two theme manager implementations (<code>qt/thememanager</code> vs <code>qt/themes/theme_manager</code>) — map which is live on startup.</li>
-        <li>MOC-generated files committed in tree — builds may regenerate; avoid hand-editing moc_*.</li>
+        <li><code>ModernMainWindow</code> / modern card stack still compile but are not the main shell — optional later wire-up or drop from Makefile.</li>
+        <li><code>customthemes.*</code> / <code>themebuilder.h</code> / <code>enhancedthemeswitcher.h</code> not in Makefile yet.</li>
+        <li>MOC-generated files may exist in tree — builds regenerate; avoid hand-editing moc_*.</li>
       </ul>
 
       <h2>Lost later ideas (rebuild candidates)</h2>

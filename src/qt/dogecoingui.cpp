@@ -96,8 +96,8 @@ DogecoinGUI::DogecoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle
     enableWallet(false),
     clientModel(0),
     walletFrame(0),
-    modernUI(0),
-    useModernUI(true), // Force modern UI
+    useModernUI(true),
+    m_navButtons(),
     m_currentTheme("dark"),
     m_themeIndex(0),
     unitDisplayControl(0),
@@ -167,7 +167,6 @@ DogecoinGUI::DogecoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle
     // setAttribute(Qt::WA_TranslucentBackground);
     
     // Create custom title bar for borderless window
-    // createCustomTitleBar();
 
     rpcConsole = new RPCConsole(_platformStyle, 0);
     helpMessageDialog = new HelpMessageDialog(this, false);
@@ -179,11 +178,6 @@ DogecoinGUI::DogecoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle
         QVBoxLayout* mainLayout = new QVBoxLayout(modernContainer);
         mainLayout->setContentsMargins(0, 0, 0, 0);
         mainLayout->setSpacing(0);
-        
-        // Add custom title bar (temporarily disabled)
-        // if (m_customTitleBar) {
-        //     mainLayout->addWidget(m_customTitleBar);
-        // }
         
         // Create horizontal layout for navigation and wallet
         QHBoxLayout* modernLayout = new QHBoxLayout();
@@ -265,18 +259,7 @@ DogecoinGUI::DogecoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle
         mainLayout->addLayout(modernLayout);
         
         setCentralWidget(modernContainer);
-        
-        // Temporarily disable theme manager to isolate the boost signals issue
-        // m_themeManager = new EnhancedThemeManager(this);
-        // connect(m_themeManager, &EnhancedThemeManager::themeChanged, this, &DogecoinGUI::onThemeChanged);
-        // connect(m_themeManager, &EnhancedThemeManager::menuActionTriggered, this, &DogecoinGUI::onMenuActionTriggered);
-        
-        // Apply initial theme after a short delay to ensure connections are established
-        // QTimer::singleShot(100, [this]() {
-        //     if (m_themeManager) {
-        //         m_themeManager->applyTheme("dark");
-        //     }
-        // });
+        // Shell chrome themed via ThemeManager + applyTheme below.
     }
     
     // Create menu bar and actions for all themes
@@ -326,6 +309,7 @@ DogecoinGUI::DogecoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle
     // Initialize theme system
     ThemeManager* themeManager = ThemeManager::instance();
     themeManager->applyTheme(qApp);
+    applyTheme(m_currentTheme);
 
     // Accept D&D of URIs
     setAcceptDrops(true);
@@ -455,94 +439,7 @@ void DogecoinGUI::cycleTheme()
     applyTheme(themes[m_themeIndex]);
 }
 
-void DogecoinGUI::setupEnhancedThemes()
-{
-    if (m_themeManager) {
-        m_themeManager->initializeThemes();
-    }
-}
-
-void DogecoinGUI::onThemeChanged(const QString& themeName)
-{
-    // Update any UI elements that need to respond to theme changes
-    m_currentTheme = themeName;
-    
-    // Update window title to show current theme
-    QString currentTitle = windowTitle();
-    if (currentTitle.contains(" - ")) {
-        currentTitle = currentTitle.split(" - ").first();
-    }
-    setWindowTitle(currentTitle + " - " + themeName);
-}
-
-void DogecoinGUI::onMenuActionTriggered(const QString& actionName)
-{
-    // Handle menu actions from the themed menu bar
-    if (actionName == "overview") {
-        gotoOverviewPage();
-    } else if (actionName == "send") {
-        gotoSendCoinsPage();
-    } else if (actionName == "receive") {
-        gotoReceiveCoinsPage();
-    } else if (actionName == "history") {
-        gotoHistoryPage();
-    } else if (actionName == "console") {
-        showDebugWindow();
-    } else if (actionName == "settings") {
-        showSettingsDialog();
-    }
-}
-
-void DogecoinGUI::createCustomTitleBar()
-{
-    // Create a custom title bar widget
-    QWidget* titleBar = new QWidget(this);
-    titleBar->setObjectName("customTitleBar");
-    titleBar->setFixedHeight(40);
-    
-    QHBoxLayout* titleLayout = new QHBoxLayout(titleBar);
-    titleLayout->setContentsMargins(15, 0, 10, 0);
-    
-    // Window title
-    QLabel* titleLabel = new QLabel(windowTitle());
-    titleLabel->setObjectName("windowTitle");
-    titleLabel->setStyleSheet("color: #ffffff; font-weight: 600; font-size: 14px;");
-    
-    titleLayout->addWidget(titleLabel);
-    titleLayout->addStretch();
-    
-    // Window controls
-    QPushButton* minimizeBtn = new QPushButton("─");
-    QPushButton* maximizeBtn = new QPushButton("□");
-    QPushButton* closeBtn = new QPushButton("×");
-    
-    minimizeBtn->setObjectName("titleBarButton");
-    maximizeBtn->setObjectName("titleBarButton");
-    closeBtn->setObjectName("titleBarButton");
-    
-    minimizeBtn->setFixedSize(30, 25);
-    maximizeBtn->setFixedSize(30, 25);
-    closeBtn->setFixedSize(30, 25);
-    
-    connect(minimizeBtn, &QPushButton::clicked, [this]() { showMinimized(); });
-    connect(maximizeBtn, &QPushButton::clicked, [this]() { 
-        if (isMaximized()) {
-            showNormal();
-        } else {
-            showMaximized();
-        }
-    });
-    connect(closeBtn, &QPushButton::clicked, [this]() { close(); });
-    
-    titleLayout->addWidget(minimizeBtn);
-    titleLayout->addWidget(maximizeBtn);
-    titleLayout->addWidget(closeBtn);
-    
-    // Store reference to title bar
-    m_customTitleBar = titleBar;
-}
-
-void DogecoinGUI::applyMatrixTheme(const QString& themeName)
+void DogecoinGUI::applyGlobalTheme(const QString& themeName)
 {
     if (themeName == "matrix") {
         QString matrixCSS = R"(
@@ -1459,11 +1356,7 @@ void DogecoinGUI::showSettingsDialog()
     QVBoxLayout* themeLayout = new QVBoxLayout(themeGroup);
     
     // Current theme display with enhanced styling
-    QString currentTheme = "dark"; // Default fallback theme
-    // Temporarily disable theme manager access to prevent crashes
-    // if (m_themeManager && !m_themeManager->getCurrentTheme().isEmpty()) {
-    //     currentTheme = m_themeManager->getCurrentTheme();
-    // }
+    QString currentTheme = m_currentTheme.isEmpty() ? QString("dark") : m_currentTheme;
     QLabel* currentThemeLabel = new QLabel("🚀 Active Theme: " + currentTheme);
     currentThemeLabel->setStyleSheet(R"(
         color: #00ff00;
@@ -1548,15 +1441,6 @@ void DogecoinGUI::showSettingsDialog()
         }
     )");
     
-    // Temporarily disable theme manager calls
-    // if (m_themeManager) {
-    //     QStringList themes = m_themeManager->getAvailableThemes();
-    //     themeDropdown->addItems(themes);
-    //     if (!currentTheme.isEmpty()) {
-    //         themeDropdown->setCurrentText(currentTheme);
-    //     }
-    // }
-    
     // Add all available themes including the new Matrix theme
     QStringList allThemes = QStringList() << "basic" << "dark" << "light" << "cyberpunk" << "neon" << "futuristic" << "retro" << "minimal" << "matrix";
     themeDropdown->addItems(allThemes);
@@ -1575,7 +1459,7 @@ void DogecoinGUI::showSettingsDialog()
     connect(cycleThemeBtn, &QPushButton::clicked, [currentThemeLabel, themeDropdown, &currentThemeIndex, availableThemes, this]() {
         currentThemeIndex = (currentThemeIndex + 1) % availableThemes.size();
         QString newTheme = availableThemes[currentThemeIndex];
-        applyMatrixTheme(newTheme);
+        applyGlobalTheme(newTheme);
         currentThemeLabel->setText("🚀 Active Theme: " + newTheme);
         themeDropdown->setCurrentText(newTheme);
     });
@@ -1583,7 +1467,7 @@ void DogecoinGUI::showSettingsDialog()
     connect(themeDropdown, QOverload<const QString&>::of(&QComboBox::currentTextChanged), 
             [currentThemeLabel, this](const QString& theme) {
         // Apply the selected theme
-        applyMatrixTheme(theme);
+        applyGlobalTheme(theme);
         currentThemeLabel->setText("🚀 Active Theme: " + theme);
     });
     
@@ -1697,78 +1581,6 @@ void DogecoinGUI::showSettingsDialog()
     
     settingsDialog->exec();
     settingsDialog->deleteLater();
-}
-
-void DogecoinGUI::applyModernThemes()
-{
-    // Apply initial dark theme
-    applyTheme("dark");
-
-    // Status bar notification icons
-    QFrame *frameBlocks = new QFrame();
-    frameBlocks->setContentsMargins(0,0,0,0);
-    frameBlocks->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-    QHBoxLayout *frameBlocksLayout = new QHBoxLayout(frameBlocks);
-    frameBlocksLayout->setContentsMargins(3,0,3,0);
-    frameBlocksLayout->setSpacing(3);
-    unitDisplayControl = new UnitDisplayStatusBarControl(platformStyle);
-    labelWalletEncryptionIcon = new QLabel();
-    labelWalletHDStatusIcon = new QLabel();
-    connectionsControl = new GUIUtil::ClickableLabel();
-    labelBlocksIcon = new GUIUtil::ClickableLabel();
-    if(enableWallet)
-    {
-        frameBlocksLayout->addStretch();
-        frameBlocksLayout->addWidget(unitDisplayControl);
-        frameBlocksLayout->addStretch();
-        frameBlocksLayout->addWidget(labelWalletEncryptionIcon);
-        frameBlocksLayout->addWidget(labelWalletHDStatusIcon);
-    }
-    frameBlocksLayout->addStretch();
-    frameBlocksLayout->addWidget(connectionsControl);
-    frameBlocksLayout->addStretch();
-    frameBlocksLayout->addWidget(labelBlocksIcon);
-    frameBlocksLayout->addStretch();
-
-    // Progress bar and label for blocks download
-    progressBarLabel = new QLabel();
-    progressBarLabel->setVisible(false);
-    progressBar = new GUIUtil::ProgressBar();
-    progressBar->setAlignment(Qt::AlignCenter);
-    progressBar->setVisible(false);
-
-    // Override style sheet for progress bar for styles that have a segmented progress bar,
-    // as they make the text unreadable (workaround for issue #1071)
-    // See https://qt-project.org/doc/qt-4.8/gallery.html
-    QString curStyle = QApplication::style()->metaObject()->className();
-    if(curStyle == "QWindowsStyle" || curStyle == "QWindowsXPStyle")
-    {
-        progressBar->setStyleSheet("QProgressBar { background-color: #e8e8e8; border: 1px solid grey; border-radius: 7px; padding: 1px; text-align: center; } QProgressBar::chunk { background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #FF8000, stop: 1 orange); border-radius: 7px; margin: 0px; }");
-    }
-
-    statusBar()->addWidget(progressBarLabel);
-    statusBar()->addWidget(progressBar);
-    statusBar()->addPermanentWidget(frameBlocks);
-
-    // Install event filter to be able to catch status tip events (QEvent::StatusTip)
-    this->installEventFilter(this);
-
-    // Initially wallet actions should be disabled
-    setWalletActionsEnabled(false);
-
-    // Subscribe to notifications from core
-    subscribeToCoreSignals();
-
-    connect(connectionsControl, SIGNAL(clicked(QPoint)), this, SLOT(toggleNetworkActive()));
-
-    modalOverlay = new ModalOverlay(this->centralWidget());
-#ifdef ENABLE_WALLET
-    if(enableWallet) {
-        connect(walletFrame, SIGNAL(requestedSyncWarningInfo()), this, SLOT(showModalOverlay()));
-        connect(labelBlocksIcon, SIGNAL(clicked(QPoint)), this, SLOT(showModalOverlay()));
-        connect(progressBar, SIGNAL(clicked(QPoint)), this, SLOT(showModalOverlay()));
-    }
-#endif
 }
 
 DogecoinGUI::~DogecoinGUI()
@@ -1993,9 +1805,6 @@ void DogecoinGUI::setClientModel(ClientModel *_clientModel)
     this->clientModel = _clientModel;
     
     // Pass to modern UI if enabled
-    if (useModernUI && modernUI) {
-        modernUI->setClientModel(_clientModel);
-    }
     
     if(_clientModel)
     {
@@ -2058,19 +1867,16 @@ void DogecoinGUI::setClientModel(ClientModel *_clientModel)
             walletFrame->setClientModel(nullptr);
         }
 #endif // ENABLE_WALLET
-        unitDisplayControl->setOptionsModel(nullptr);
+        if (unitDisplayControl) {
+            unitDisplayControl->setOptionsModel(nullptr);
+        }
     }
 }
 
 #ifdef ENABLE_WALLET
 bool DogecoinGUI::addWallet(const QString& name, WalletModel *walletModel)
 {
-    // Pass to modern UI if enabled
-    if (useModernUI && modernUI) {
-        modernUI->setWalletModel(walletModel);
-        setWalletActionsEnabled(true);
-        return true;
-    }
+    
     
     if(!walletFrame)
         return false;
@@ -2908,49 +2714,70 @@ void UnitDisplayStatusBarControl::onMenuSelection(QAction* action)
 
 void DogecoinGUI::createStatusBar()
 {
-    // Create status bar
-    statusBar()->showMessage(tr("Processed %n block(s)", "", 0), 0);
-    statusBar()->clearMessage();
-
-    // Create progress bar
-    progressBar = new QProgressBar();
-    progressBar->setVisible(false);
-    progressBar->setStyleSheet("QProgressBar { border: 2px solid grey; border-radius: 5px; text-align: center; } QProgressBar::chunk { background-color: #05B8CC; border-radius: 5px; }");
-    statusBar()->addPermanentWidget(progressBar);
-
-    // Create status bar controls
-    if (enableWallet) {
-        // Wallet status
-        labelWalletEncryptionIcon = new QLabel();
-        labelWalletHDStatusIcon = new QLabel();
-        connectionsControl = new GUIUtil::ClickableLabel();
-        labelBlocksIcon = new QLabel();
-
-        // Progress bar and text for status bar
-        progressBarLabel = new QLabel();
-        progressBarLabel->setVisible(false);
-        progressBar = new QProgressBar();
-        progressBar->setAlignment(Qt::AlignCenter);
-        progressBar->setVisible(false);
-
-        // Override style sheet for progress bar for styles that have a segmented progress bar,
-        // as they make the text unreadable (workaround for issue #1071)
-        // See https://doc.qt.io/qt-5/gallery.html
-        QString curStyle = QApplication::style()->metaObject()->className();
-        if(curStyle == "QWindowsStyle" || curStyle == "QWindowsXPStyle")
-        {
-            progressBar->setStyleSheet("QProgressBar { background-color: #e8e8e8; border: 1px solid grey; border-radius: 7px; padding: 1px; text-align: center; } QProgressBar::chunk { background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #05B8CC, stop: 1 #05B8CC); border-radius: 7px; margin: 0px; }");
-        }
-
-        statusBar()->addWidget(progressBarLabel);
-        statusBar()->addWidget(progressBar);
-        statusBar()->addPermanentWidget(labelBlocksIcon);
-        statusBar()->addPermanentWidget(connectionsControl);
-        statusBar()->addPermanentWidget(labelWalletEncryptionIcon);
-        statusBar()->addPermanentWidget(labelWalletHDStatusIcon);
+    // Status bar notification icons
+    QFrame *frameBlocks = new QFrame();
+    frameBlocks->setContentsMargins(0,0,0,0);
+    frameBlocks->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+    QHBoxLayout *frameBlocksLayout = new QHBoxLayout(frameBlocks);
+    frameBlocksLayout->setContentsMargins(3,0,3,0);
+    frameBlocksLayout->setSpacing(3);
+    unitDisplayControl = new UnitDisplayStatusBarControl(platformStyle);
+    labelWalletEncryptionIcon = new QLabel();
+    labelWalletHDStatusIcon = new QLabel();
+    connectionsControl = new GUIUtil::ClickableLabel();
+    labelBlocksIcon = new GUIUtil::ClickableLabel();
+    if(enableWallet)
+    {
+        frameBlocksLayout->addStretch();
+        frameBlocksLayout->addWidget(unitDisplayControl);
+        frameBlocksLayout->addStretch();
+        frameBlocksLayout->addWidget(labelWalletEncryptionIcon);
+        frameBlocksLayout->addWidget(labelWalletHDStatusIcon);
     }
+    frameBlocksLayout->addStretch();
+    frameBlocksLayout->addWidget(connectionsControl);
+    frameBlocksLayout->addStretch();
+    frameBlocksLayout->addWidget(labelBlocksIcon);
+    frameBlocksLayout->addStretch();
+
+    // Progress bar and label for blocks download
+    progressBarLabel = new QLabel();
+    progressBarLabel->setVisible(false);
+    progressBar = new GUIUtil::ProgressBar();
+    progressBar->setAlignment(Qt::AlignCenter);
+    progressBar->setVisible(false);
+
+    // Override style sheet for progress bar for styles that have a segmented progress bar,
+    // as they make the text unreadable (workaround for issue #1071)
+    // See https://qt-project.org/doc/qt-4.8/gallery.html
+    QString curStyle = QApplication::style()->metaObject()->className();
+    if(curStyle == "QWindowsStyle" || curStyle == "QWindowsXPStyle")
+    {
+        progressBar->setStyleSheet("QProgressBar { background-color: #e8e8e8; border: 1px solid grey; border-radius: 7px; padding: 1px; text-align: center; } QProgressBar::chunk { background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #FF8000, stop: 1 orange); border-radius: 7px; margin: 0px; }");
+    }
+
+    statusBar()->addWidget(progressBarLabel);
+    statusBar()->addWidget(progressBar);
+    statusBar()->addPermanentWidget(frameBlocks);
 
     // Install event filter to be able to catch status tip events (QEvent::StatusTip)
     this->installEventFilter(this);
+
+    // Initially wallet actions should be disabled
+    setWalletActionsEnabled(false);
+
+    // Subscribe to notifications from core
+    subscribeToCoreSignals();
+
+    connect(connectionsControl, SIGNAL(clicked(QPoint)), this, SLOT(toggleNetworkActive()));
+
+    modalOverlay = new ModalOverlay(this->centralWidget());
+#ifdef ENABLE_WALLET
+    if(enableWallet) {
+        connect(walletFrame, SIGNAL(requestedSyncWarningInfo()), this, SLOT(showModalOverlay()));
+        connect(labelBlocksIcon, SIGNAL(clicked(QPoint)), this, SLOT(showModalOverlay()));
+        connect(progressBar, SIGNAL(clicked(QPoint)), this, SLOT(showModalOverlay()));
+    }
+#endif
 }
 

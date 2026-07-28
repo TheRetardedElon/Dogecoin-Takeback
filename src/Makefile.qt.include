@@ -113,7 +113,6 @@ QT_MOC_CPP = \
   qt/moc_moderncard.cpp \
   qt/moc_modernoverviewpage.cpp \
   qt/moc_modernnavigation.cpp \
-  qt/themes/moc_theme_manager.cpp \
   qt/moc_modernmainwindow.cpp \
   qt/moc_editaddressdialog.cpp \
   qt/moc_guiutil.cpp \
@@ -300,7 +299,6 @@ DOGECOIN_QT_BASE_CPP = \
   qt/moderncard.cpp \
   qt/modernoverviewpage.cpp \
   qt/modernnavigation.cpp \
-  qt/themes/theme_manager.cpp \
   qt/modernmainwindow.cpp \
   qt/modaloverlay.cpp \
   qt/networkstyle.cpp \
