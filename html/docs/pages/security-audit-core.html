@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Core attack-surface audit — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="security-hardening.html">Security hardening</a>
+        <a href="security-audit-core.html">Core attack audit</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="sqlite-wallet-plan.html">SQLite wallet plan</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Core client attack-surface audit</h1>
+      <p class="lead">
+        Focused on <strong>Dogecoin Core itself</strong> (this 1.14.99 tree), not
+        GoPastEarth or external sites. Last updated 2026-07-28.
+      </p>
+
+      <div class="callout danger">
+        <strong>Patched in this tree (2026-07-28)</strong>
+        CVE-2024-52911-class use-after-free in <code>ConnectBlock</code>:
+        <code>PrecomputedTransactionData</code> is now declared <em>before</em>
+        <code>CCheckQueueControl</code> so workers cannot run against freed memory
+        on early validation returns. See <code>src/validation.cpp</code>.
+      </div>
+
+      <h2>1. Parallel script check UAF (fixed)</h2>
+      <table>
+        <thead>
+          <tr><th>Item</th><th>Detail</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Reference</td><td>Bitcoin Core <a href="https://bitcoincore.org/en/2026/05/05/disclose-cve-2024-52911/">CVE-2024-52911</a></td></tr>
+          <tr><td>Where</td><td><code>ConnectBlock()</code> in <code>validation.cpp</code></td></tr>
+          <tr><td>Bug</td><td><code>CCheckQueueControl</code> constructed before <code>txdata</code>; early return destroyed <code>txdata</code> while script workers still held pointers</td></tr>
+          <tr><td>Impact</td><td>Node crash; theoretical RCE (constrained inputs)</td></tr>
+          <tr><td>Status here</td><td><span class="badge badge-done">Fixed</span> — declaration order corrected</td></tr>
+        </tbody>
+      </table>
+
+      <h2>2. Remaining attack surfaces (not “proof of past compromise”)</h2>
+      <table>
+        <thead>
+          <tr><th>Surface</th><th>Risk if misused</th><th>Default in this tree</th><th>Status / action</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>JSON-RPC</strong></td>
+            <td>Full wallet spend if reachable + auth weak</td>
+            <td>Loopback only unless <code>-rpcallowip</code> set</td>
+            <td><span class="badge badge-partial">Config-dependent</span> — never open public RPC</td>
+          </tr>
+          <tr>
+            <td><strong>P2P untrusted messages</strong></td>
+            <td>DoS / memory bugs in parsers</td>
+            <td>Listens if <code>-listen=1</code> (default)</td>
+            <td><span class="badge badge-partial">Inherent to full nodes</span> — keep builds hardened; limit with <code>-listen=0</code> for wallet-only</td>
+          </tr>
+          <tr>
+            <td><strong>UPnP (miniupnpc)</strong></td>
+            <td>Historical RCE-class issues in miniupnpc; port mapping exposure</td>
+            <td>Default UPnP follows <code>USE_UPNP</code> when built with miniupnpc</td>
+            <td><span class="badge badge-todo">Prefer <code>-upnp=0</code></span></td>
+          </tr>
+          <tr>
+            <td><strong>dumpwallet / dumpprivkey</strong></td>
+            <td>Writes secrets to disk if RPC attacker present</td>
+            <td>Requires unlocked wallet + RPC auth</td>
+            <td><span class="badge badge-partial">By design</span> — not remote without RPC</td>
+          </tr>
+          <tr>
+            <td><strong>ZMQ notifications</strong></td>
+            <td>Info leak / load if bound publicly</td>
+            <td>Off unless configured</td>
+            <td>Bind localhost only if used</td>
+          </tr>
+          <tr>
+            <td><strong>Tor control</strong></td>
+            <td>Local tor cookie misuse</td>
+            <td>Optional</td>
+            <td>Leave disabled unless needed</td>
+          </tr>
+          <tr>
+            <td><strong>Wallet + P2P same process</strong></td>
+            <td>Any node RCE becomes fund theft</td>
+            <td>Default when wallet enabled</td>
+            <td><span class="badge badge-todo">Operational</span> — cold wallet / separate machine for funds</td>
+          </tr>
+          <tr>
+            <td><strong>Qt URI handlers</strong></td>
+            <td>Local IPC / payment URI abuse</td>
+            <td>dogecoin: scheme</td>
+            <td>Lower risk if no elevated RPC; avoid untrusted links while unlocked</td>
+          </tr>
+          <tr>
+            <td><strong>BDB wallet file</strong></td>
+            <td>Theft if file copied; env complexity</td>
+            <td>BDB only today</td>
+            <td>Encrypt wallet; filesystem ACLs; dual-stack later</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>3. What we checked in this audit pass</h2>
+      <ul class="checklist">
+        <li class="done">ConnectBlock script-check lifetime vs CVE-2024-52911 pattern</li>
+        <li class="done">RPC default bind behavior (<code>httpserver.cpp</code>)</li>
+        <li class="done">UPnP default / miniupnpc presence</li>
+        <li class="done">dumpwallet path uses backup dir helper (not arbitrary system root by default)</li>
+        <li class="done">Hardening flags in <code>configure.ac</code> (stack protector, FORTIFY, RELRO, PIE)</li>
+        <li class="partial">No full fuzz campaign of P2P deserializers (out of scope for one pass)</li>
+        <li class="partial">No formal audit of all 1.14-era memory issues beyond known BTC disclosures</li>
+      </ul>
+
+      <h2>4. Recommended runtime profile (dev + minimal exposure)</h2>
+      <pre><code># dogecoin.conf — safer defaults for a workstation
+rpcbind=127.0.0.1
+# do not set rpcallowip
+upnp=0
+# server=1 only if you need local CLI
+# Prefer cookie auth: omit rpcpassword
+
+# Optional wallet-only machine (no inbound P2P):
+# listen=0
+# connect=trusted.peer.or.none
+</code></pre>
+
+      <h2>5. Honest limits</h2>
+      <p>
+        Fixing CVE-2024-52911-class UAF removes one high-value remote crash/UAF path.
+        It does <strong>not</strong> prove no other 1.14-era bugs exist. A full answer to
+        “no other vectors” requires ongoing review, fuzzing, and tracking upstream
+        Dogecoin/Bitcoin security disclosures — not a single commit.
+      </p>
+
+      <div class="footer">
+        See also <a href="security-hardening.html">Security hardening</a>.
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

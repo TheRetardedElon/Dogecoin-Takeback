@@ -1920,8 +1920,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     CBlockUndo blockundo;
 
-    CCheckQueueControl<CScriptCheck> control(fScriptChecks && nScriptCheckThreads ? &scriptcheckqueue : NULL);
-
     std::vector<int> prevheights;
     CAmount nFees = 0;
     int nInputs = 0;
@@ -1930,8 +1928,18 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     std::vector<std::pair<uint256, CDiskTxPos> > vPos;
     vPos.reserve(block.vtx.size());
     blockundo.vtxundo.reserve(block.vtx.size() - 1);
+
+    // Security: PrecomputedTransactionData MUST outlive CCheckQueueControl.
+    // CScriptCheck functors hold pointers into txdata; CCheckQueueControl's
+    // destructor Wait()s worker threads. C++ destroys locals reverse-order of
+    // construction, so txdata must be declared *before* control. Otherwise an
+    // early return from ConnectBlock frees txdata while workers still run —
+    // use-after-free (Bitcoin Core CVE-2024-52911 class bug).
     std::vector<PrecomputedTransactionData> txdata;
     txdata.reserve(block.vtx.size()); // Required so that pointers to individual PrecomputedTransactionData don't get invalidated
+
+    CCheckQueueControl<CScriptCheck> control(fScriptChecks && nScriptCheckThreads ? &scriptcheckqueue : NULL);
+
     for (unsigned int i = 0; i < block.vtx.size(); i++)
     {
         const CTransaction &tx = *(block.vtx[i]);

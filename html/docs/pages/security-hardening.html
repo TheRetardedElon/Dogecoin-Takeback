@@ -204,8 +204,16 @@ rpcbind=127.0.0.1
         <li>Document security changes in this page when we add features that touch network surfaces.</li>
       </ul>
 
+      <div class="callout ok">
+        <strong>2026-07-28 code fix</strong>
+        CVE-2024-52911-class UAF in <code>ConnectBlock</code> patched (txdata lifetime
+        before <code>CCheckQueueControl</code>). Full surface table:
+        <a href="security-audit-core.html">Core attack audit</a>.
+      </div>
+
       <div class="footer">
         Related: <a href="architecture.html">Architecture</a> ·
+        <a href="security-audit-core.html">Core attack audit</a> ·
         <a href="sqlite-wallet-plan.html">SQLite wallet plan</a> ·
         <a href="build-and-run.html">Build &amp; run</a>
       </div>
