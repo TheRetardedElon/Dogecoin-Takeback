@@ -16,6 +16,8 @@ class QTableView;
 class QPushButton;
 class QTimer;
 class QCheckBox;
+class QMenu;
+class QPoint;
 QT_END_NAMESPACE
 
 /**
@@ -39,9 +41,15 @@ private Q_SLOTS:
     void updateStats();
     void onOpenConsole();
     void onNetworkActiveToggled(bool checked);
+    void showPeersContextMenu(const QPoint& point);
+    void showBanContextMenu(const QPoint& point);
+    void disconnectSelectedPeer();
+    void banSelectedPeer(int bantime);
+    void unbanSelectedPeer();
 
 private:
     void setupUi();
+    void setupContextMenus();
 
     const PlatformStyle* platformStyle;
     ClientModel* clientModel;
@@ -58,6 +66,9 @@ private:
     QCheckBox* networkActiveCheck;
     QTimer* pollTimer;
     bool updatingNetworkToggle;
+
+    QMenu* peersContextMenu;
+    QMenu* banContextMenu;
 };
 
 #endif // DOGECOIN_QT_NETWORKPAGE_H

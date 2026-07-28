@@ -11,6 +11,7 @@
 #include <QSettings>
 #include <QMessageBox>
 #include <QColorDialog>
+#include <QSignalBlocker>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGridLayout>
@@ -28,11 +29,26 @@ ThemeSwitcher::ThemeSwitcher(QWidget* parent)
     , m_themeManager(ThemeManager::instance())
     , m_updating(false)
 {
+    // Build UI with updates blocked so combo init / loadSettings cannot
+    // re-apply themes (and polish half-built OptionsDialog) during construction.
+    m_updating = true;
     setupUI();
     loadSettings();
-    
-    // Connect theme manager signals
-    connect(m_themeManager, &ThemeManager::themeChanged, this, &ThemeSwitcher::onThemeChanged);
+    m_updating = false;
+
+    // Sync combo when theme changes elsewhere — do not re-apply (would loop).
+    connect(m_themeManager, &ThemeManager::themeChanged, this, [this](ThemeManager::ThemeType) {
+        if (m_updating || !m_themeCombo)
+            return;
+        m_updating = true;
+        const QString name = m_themeManager->currentThemeName();
+        const int idx = m_themeCombo->findText(name);
+        if (idx >= 0)
+            m_themeCombo->setCurrentIndex(idx);
+        m_customGroup->setEnabled(false);
+        updatePreview();
+        m_updating = false;
+    });
     connect(m_themeManager, &ThemeManager::colorsChanged, this, &ThemeSwitcher::updatePreview);
 }
 
@@ -170,38 +186,50 @@ void ThemeSwitcher::setupUI()
 
 void ThemeSwitcher::loadSettings()
 {
+    // Never apply a full app theme while loading saved prefs into the form.
+    // setCurrentIndex / setChecked fire slots that used to call applyToApplication
+    // and hard-crash while OptionsDialog was still under construction.
+    const bool wasUpdating = m_updating;
+    m_updating = true;
+
     QSettings settings;
-    
-    // Load theme
-    QString themeName = settings.value("theme", "Light").toString();
-    int index = m_themeCombo->findText(themeName);
+
+    const QString themeName = settings.value("theme", "Light").toString();
+    const int index = m_themeCombo->findText(themeName);
     if (index >= 0) {
+        QSignalBlocker block(m_themeCombo);
         m_themeCombo->setCurrentIndex(index);
     }
-    
-    // Load font settings
-    bool useCustomFont = settings.value("useCustomFont", false).toBool();
-    m_useCustomFontCheck->setChecked(useCustomFont);
-    m_fontFamilyCombo->setEnabled(useCustomFont);
-    m_fontSizeSpin->setEnabled(useCustomFont);
-    
-    QString fontFamily = settings.value("fontFamily", "Segoe UI").toString();
-    int fontIndex = m_fontFamilyCombo->findText(fontFamily);
-    if (fontIndex >= 0) {
-        m_fontFamilyCombo->setCurrentIndex(fontIndex);
+
+    const bool useCustomFont = settings.value("useCustomFont", false).toBool();
+    {
+        QSignalBlocker b1(m_useCustomFontCheck);
+        QSignalBlocker b2(m_fontFamilyCombo);
+        QSignalBlocker b3(m_fontSizeSpin);
+        m_useCustomFontCheck->setChecked(useCustomFont);
+        m_fontFamilyCombo->setEnabled(useCustomFont);
+        m_fontSizeSpin->setEnabled(useCustomFont);
+
+        const QString fontFamily = settings.value("fontFamily", "Segoe UI").toString();
+        const int fontIndex = m_fontFamilyCombo->findText(fontFamily);
+        if (fontIndex >= 0)
+            m_fontFamilyCombo->setCurrentIndex(fontIndex);
+
+        m_fontSizeSpin->setValue(settings.value("fontSize", 9).toInt());
     }
-    
-    int fontSize = settings.value("fontSize", 9).toInt();
-    m_fontSizeSpin->setValue(fontSize);
-    
-    // Load custom colors
+
     m_customPrimaryBg = settings.value("customPrimaryBg", QColor(255, 255, 255)).value<QColor>();
     m_customSecondaryBg = settings.value("customSecondaryBg", QColor(248, 249, 250)).value<QColor>();
     m_customText = settings.value("customText", QColor(33, 37, 41)).value<QColor>();
     m_customAccent = settings.value("customAccent", QColor(0, 123, 255)).value<QColor>();
     m_customBorder = settings.value("customBorder", QColor(222, 226, 230)).value<QColor>();
-    
+
     updateColorButtons();
+    // Preview only — do not push theme to qApp here.
+    if (m_previewFrame)
+        m_themeManager->applyTheme(m_previewFrame);
+
+    m_updating = wasUpdating;
 }
 
 void ThemeSwitcher::saveSettings()
@@ -226,34 +254,36 @@ void ThemeSwitcher::saveSettings()
 
 void ThemeSwitcher::onThemeChanged()
 {
-    if (m_updating) return;
-    
-    QString themeName = m_themeCombo->currentText();
-    
+    if (m_updating)
+        return;
+
+    m_updating = true;
+
+    const QString themeName = m_themeCombo->currentText();
+
     if (themeName == "Light") {
         m_themeManager->switchToLight();
         m_customGroup->setEnabled(false);
     } else if (themeName == "Dark") {
         m_themeManager->switchToDark();
         m_customGroup->setEnabled(false);
-    // Auto theme was removed
-    } else if (themeName == "Dogecoin" || themeName == "Neon" || themeName == "Classic") {
-        // Built-in themes
-        if (themeName == "Dogecoin") {
-            m_themeManager->switchToTheme(ThemeManager::Dogecoin);
-        } else if (themeName == "Neon") {
-            m_themeManager->switchToTheme(ThemeManager::Neon);
-        } else if (themeName == "Classic") {
-            m_themeManager->switchToTheme(ThemeManager::Classic);
-        }
+    } else if (themeName == "Dogecoin") {
+        m_themeManager->switchToTheme(ThemeManager::Dogecoin);
+        m_customGroup->setEnabled(false);
+    } else if (themeName == "Neon") {
+        m_themeManager->switchToTheme(ThemeManager::Neon);
+        m_customGroup->setEnabled(false);
+    } else if (themeName == "Classic") {
+        m_themeManager->switchToTheme(ThemeManager::Classic);
         m_customGroup->setEnabled(false);
     } else {
         // CSS themes from themes folder or custom themes
         m_themeManager->loadCSSTheme(themeName);
         m_customGroup->setEnabled(false);
     }
-    
+
     updatePreview();
+    m_updating = false;
     Q_EMIT themeChanged();
 }
 

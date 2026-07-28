@@ -18,9 +18,13 @@ No server required (`file://` works). Styles and diagrams are local under `asset
 |------|---------|
 | `index.html` | Dashboard / status at a glance |
 | `pages/` | Workstream and architecture pages |
+| `pages/payment-layer.html` | Public: native DOGE merchants / Core Pro vs optional GPE (no infra secrets) |
+| `pages/pure-doge-strategy.html` | North-star strategy (no EVM product path) |
 | `assets/styles.css` | Shared theme |
 | `assets/nav.js` | Active nav highlight |
 | `assets/diagrams/` | Flow diagrams copied from `-FlowDiagramLatest/` |
+
+Private operator planning for GPE deployment is intentionally **not** part of this public docs site (no infra secrets here).
 
 ## When to update
 

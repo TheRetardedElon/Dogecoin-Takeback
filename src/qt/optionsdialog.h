@@ -20,8 +20,7 @@ namespace Ui {
 class OptionsDialog;
 }
 
-/** Proxy address widget validator, checks for a valid proxy address.
- */
+/** Proxy address widget validator, checks for a valid proxy address. */
 class ProxyAddressValidator : public QValidator
 {
     Q_OBJECT
@@ -43,33 +42,19 @@ public:
 
     void setModel(OptionsModel *model);
     void setMapper();
-    
-    // Additional methods needed for compilation
-    void enableApplyButton();
-    void disableApplyButton();
-    void enableSaveButtons();
-    void disableSaveButtons();
-    void setSaveButtonState(bool fState);
-    void updateDisplayUnit();
-    void doRestart();
-    void setWalletEnabled(bool fHaveWallet);
-    // void showRestartWarning(); // Removed to avoid ambiguity
 
 private Q_SLOTS:
-    /* set OK button state (enabled / disabled) */
     void setOkButtonState(bool fState);
     void on_resetButton_clicked();
     void on_okButton_clicked();
     void on_cancelButton_clicked();
-    void on_applyButton_clicked();
-    
+
     void on_hideTrayIcon_stateChanged(int fState);
 
     void togglePruneWarning(bool enabled);
     void showRestartWarning(bool fPersistent = false);
     void clearStatusLabel();
     void updateProxyValidationState();
-    /* query the networks, for which the default proxy is used */
     void updateDefaultProxyNets();
 
 Q_SIGNALS:

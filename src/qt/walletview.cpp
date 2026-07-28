@@ -31,9 +31,7 @@
 #include <QAction>
 #include <QActionGroup>
 #include <QFileDialog>
-#include <QFrame>
 #include <QHBoxLayout>
-#include <QLabel>
 #include <QProgressDialog>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -48,57 +46,14 @@ WalletView::WalletView(const PlatformStyle *_platformStyle, QWidget *parent):
     overviewPage = new OverviewPage(platformStyle);
     memeStreamRail = new MemeStreamRail(platformStyle, this);
 
-    // Home = quick merchant actions + overview + Meme Stream rail (pure DOGE Core Pro)
+    // Home = overview + Meme Stream rail (Business / Meme Stream live in the left nav)
     homePage = new QWidget(this);
     homePage->setObjectName(QStringLiteral("homePage"));
-    QVBoxLayout* homeOuter = new QVBoxLayout(homePage);
-    homeOuter->setContentsMargins(0, 0, 0, 0);
-    homeOuter->setSpacing(0);
-
-    QFrame* quickBar = new QFrame(homePage);
-    quickBar->setObjectName(QStringLiteral("homeQuickBar"));
-    QHBoxLayout* quickLay = new QHBoxLayout(quickBar);
-    quickLay->setContentsMargins(12, 10, 12, 10);
-    quickLay->setSpacing(10);
-    QLabel* quickTitle = new QLabel(tr("Doge Business Center"));
-    QFont qf = quickTitle->font();
-    qf.setBold(true);
-    quickTitle->setFont(qf);
-    quickLay->addWidget(quickTitle);
-    QPushButton* invBtn = new QPushButton(tr("Invoices"));
-    invBtn->setObjectName(QStringLiteral("homeQuickButton"));
-    invBtn->setToolTip(tr("Create & track DOGE invoices (keys stay in this wallet)"));
-    QPushButton* posBtn = new QPushButton(tr("POS Mode"));
-    posBtn->setObjectName(QStringLiteral("homeQuickButton"));
-    posBtn->setToolTip(tr("Kiosk pay-with-DOGE — native Dogecoin only"));
-    QPushButton* dashBtn = new QPushButton(tr("Merchant Dashboard"));
-    dashBtn->setObjectName(QStringLiteral("homeQuickButton"));
-    dashBtn->setToolTip(tr("Volume & open invoices"));
-    QPushButton* memeBtn = new QPushButton(tr("Meme Stream"));
-    memeBtn->setObjectName(QStringLiteral("homeQuickButton"));
-    memeBtn->setToolTip(tr("Feed & publish — tips are on-chain DOGE"));
-    quickLay->addWidget(invBtn);
-    quickLay->addWidget(posBtn);
-    quickLay->addWidget(dashBtn);
-    quickLay->addWidget(memeBtn);
-    quickLay->addStretch();
-    QLabel* pureLbl = new QLabel(tr("Native DOGE · no app-chain · keys in Core"));
-    pureLbl->setObjectName(QStringLiteral("mutedLabel"));
-    quickLay->addWidget(pureLbl);
-    homeOuter->addWidget(quickBar);
-
-    QWidget* homeBody = new QWidget(homePage);
-    QHBoxLayout* homeLayout = new QHBoxLayout(homeBody);
+    QHBoxLayout* homeLayout = new QHBoxLayout(homePage);
     homeLayout->setContentsMargins(0, 0, 0, 0);
     homeLayout->setSpacing(0);
     homeLayout->addWidget(overviewPage, 1);
     homeLayout->addWidget(memeStreamRail, 0);
-    homeOuter->addWidget(homeBody, 1);
-
-    connect(invBtn, &QPushButton::clicked, this, [this]() { gotoDogeBusinessPage(1); });
-    connect(posBtn, &QPushButton::clicked, this, [this]() { gotoDogeBusinessPage(2); });
-    connect(dashBtn, &QPushButton::clicked, this, [this]() { gotoDogeBusinessPage(0); });
-    connect(memeBtn, &QPushButton::clicked, this, &WalletView::gotoMemeStreamPage);
 
     transactionsPage = new QWidget(this);
     QVBoxLayout *vbox = new QVBoxLayout();

@@ -61,10 +61,12 @@ private Q_SLOTS:
     void onCancelInvoice();
     void onCopyUri();
     void onCopyAddress();
+    void onShowPaymentQr();
     void onPosDigit();
     void onPosClear();
     void onPosCharge();
     void onPosNewSale();
+    void onPosShowQr();
     void onSelectionChanged();
     /** Scan wallet txs; mark open invoices paid when address is funded. */
     void checkIncomingPayments();
@@ -77,6 +79,8 @@ private:
     void loadInvoices();
     void saveInvoices() const;
     void wireWalletSignals();
+    void showPaymentRequest(const QString& address, CAmount amount, const QString& label, const QString& message);
+    void updatePosQr();
     QString allocateReceiveAddress(const QString& label);
     QString dogecoinUri(const QString& address, CAmount amount, const QString& label) const;
     Invoice* selectedInvoice();
@@ -100,11 +104,13 @@ private:
     QPushButton* createInvBtn;
     QPushButton* copyUriBtn;
     QPushButton* copyAddrBtn;
+    QPushButton* showQrBtn;
     QPushButton* markPaidBtn;
     QPushButton* cancelInvBtn;
     // POS
     QLabel* posDisplay;
     QLabel* posAddress;
+    QLabel* posQrLabel;
     QString posBuffer;
     QString posCurrentAddress;
     CAmount posCurrentAmount;

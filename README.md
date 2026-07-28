@@ -1,89 +1,138 @@
-<h1 align="center">
-<img src="https://raw.githubusercontent.com/dogecoin/dogecoin/master/share/pixmaps/dogecoin256.svg" alt="Dogecoin" width="256"/>
-<br/><br/>
-Dogecoin Core [DOGE, Ð]  
-</h1>
+# Dogecoin Takeback — Core Pro
 
-**IMPORTANT: Starting August 2024, the `master` branch has become the primary
-integration branch and has become unstable. Please check out a tagged version
-before compiling production binaries.**
+**[TheRetardedElon/Dogecoin-Takeback](https://github.com/TheRetardedElon/Dogecoin-Takeback)**
 
-For internationalized documentation, see the index at [doc/intl](doc/intl/README.md).
+A Dogecoin Core–based full node and wallet client (**Dogecoin Core Pro**) focused on **native DOGE**: wallet, merchant tools, Meme Stream tips, and a modern shell — **not** an EVM “app layer,” wrapped DOGE, or a second ledger.
 
-Dogecoin is a community-driven cryptocurrency that was inspired by a Shiba Inu meme. The Dogecoin Core software allows anyone to operate a node in the Dogecoin blockchain networks and uses the Scrypt hashing method for Proof of Work. It is adapted from Bitcoin Core and other cryptocurrencies.
+Based on Dogecoin Core (Bitcoin Core lineage). Development continues here as a product-oriented client on top of real Dogecoin consensus.
 
-For information about the default fees used on the Dogecoin network, please
-refer to the [fee recommendation](doc/fee-recommendation.md).
+---
 
-## Usage 💻
+## What this is
 
-To start your journey with Dogecoin Core, see the [installation guide](INSTALL.md) and the [getting started](doc/getting-started.md) tutorial.
+| Piece | Description |
+|--------|-------------|
+| **dogecoind / dogecoin-cli / dogecoin-tx** | Full node, RPC, utilities |
+| **dogecoin-qt (Core Pro)** | GUI wallet with modern sidebar shell |
+| **Doge Business** | Local invoices, POS keypad, payment QR, auto-watch paid |
+| **Meme Stream** | Feed / publish / tip creators on-chain (author = wallet address) |
+| **Network page** | Peers, bans, disconnect/ban/unban, activity toggle |
+| **Themes** | ThemeManager + Options → Theme (and full Options tabs restored) |
 
-The JSON-RPC API provided by Dogecoin Core is self-documenting and can be browsed with `dogecoin-cli help`, while detailed information for each command can be viewed with `dogecoin-cli help <command>`.
+**Settlement rule:** money that matters is **native DOGE on Dogecoin**. Optional external business platforms (e.g. GPE) are out of scope for this README; this repo ships the Core client.
 
-### Such ports
+More product detail: open **`html/docs/index.html`** in a browser (local docs, no server required).
 
-Dogecoin Core by default uses port `22556` for peer-to-peer communication that
-is needed to synchronize the "mainnet" blockchain and stay informed of new
-transactions and blocks. Additionally, a JSONRPC port can be opened, which
-defaults to port `22555` for mainnet nodes. It is strongly recommended to not
-expose RPC ports to the public internet.
+- [Pure DOGE strategy](html/docs/pages/pure-doge-strategy.html)
+- [Payment layer](html/docs/pages/payment-layer.html)
+- [Core Pro UI reference](html/docs/pages/ui-reference-core-pro.html)
+- [Roadmap](html/docs/pages/roadmap.html)
+
+---
+
+## Build (Linux / WSL)
+
+Typical path used in this project (WSL2 Ubuntu):
+
+```bash
+# deps: build-essential, libtool, autotools, pkg-config, bsdmainutils,
+#       libssl-dev, libevent-dev, libboost-all-dev, libdb5.3++-dev,
+#       qtbase5-dev, qttools5-dev, libqrencode-dev, libminiupnpc-dev, ...
+
+./autogen.sh
+./configure --with-gui=qt5 --enable-c++17 --with-incompatible-bdb
+make -j$(nproc)
+# GUI:
+make -C src qt/dogecoin-qt -j$(nproc)
+```
+
+Binaries (when built):
+
+```text
+src/dogecoind
+src/dogecoin-cli
+src/dogecoin-tx
+src/qt/dogecoin-qt
+```
+
+See also [BUILD_GUIDE.md](BUILD_GUIDE.md), [html/docs/pages/build-and-run.html](html/docs/pages/build-and-run.html), and upstream-style docs under `doc/`.
+
+Smoke helper (optional):
+
+```bash
+./contrib/smoke-core-pro.sh
+```
+
+---
+
+## Run
+
+```bash
+# Full node + wallet GUI (mainnet)
+./src/qt/dogecoin-qt
+
+# Testnet
+./src/qt/dogecoin-qt -testnet
+
+# Daemon
+./src/dogecoind -daemon
+./src/dogecoin-cli getblockchaininfo
+```
+
+### Default ports
 
 | Function | mainnet | testnet | regtest |
-| :------- | ------: | ------: | ------: |
+|----------|--------:|--------:|--------:|
 | P2P      |   22556 |   44556 |   18444 |
 | RPC      |   22555 |   44555 |   18332 |
 
-## Ongoing development - Moon plan 🌒
+Do **not** expose RPC to the public internet.
 
-Dogecoin Core is an open source and community driven software. The development
-process is open and publicly visible; anyone can see, discuss and work on the
-software.
+---
 
-Main development resources:
+## Product principles
 
-* [GitHub Projects](https://github.com/dogecoin/dogecoin/projects) is used to
-  follow planned and in-progress work for upcoming releases.
-* [GitHub Discussions](https://github.com/dogecoin/dogecoin/discussions) is used
-  to discuss features, planned and unplanned, related to both the development of
-  the Dogecoin Core software, the underlying protocols and the DOGE asset.
+1. **One coin** — Dogecoin L1; no wrap token as the product path.  
+2. **Keys in Core** — local Business / POS allocate receive addresses from this wallet.  
+3. **Tips are on-chain** — Meme Stream tip uses the creator’s Dogecoin address.  
+4. **Payment layer ≠ EVM L2** — merchant UX and optional cloud tools settle real DOGE; this client is not a zk/EVM stack.  
+5. **Docs move with code** — living HTML under `html/docs/`.
 
-### Version strategy
-Version numbers are following ```major.minor.patch``` semantics.
+---
 
-### Branches
-There are 4 types of branches in this repository:
+## Repository layout (high level)
 
-- **master:** Unstable, contains the latest code under development.
-- **maintenance:** Stable, contains the latest version of previous releases,
-  which are still under active maintenance. Format: ```<version>-maint```
-- **development:** Unstable, contains new code for upcoming releases. Format: ```<version>-dev```
-- **archive:** Stable, immutable branches for old versions that no longer change
-  because they are no longer maintained.
+```text
+src/           Core node, wallet, consensus, RPC
+src/qt/        Core Pro GUI (Business, Meme Stream, Network, themes)
+html/docs/     Project documentation (open index.html)
+contrib/       Scripts and helpers
+doc/           Classic Core documentation
+depends/       Optional dependency builds
+```
 
-***Submit your pull requests against `master`***
+---
 
-*Maintenance branches are exclusively mutable by release. When a release is*
-*planned, a development branch will be created and commits from master will*
-*be cherry-picked into these by maintainers.*
+## Status
 
-## Contributing 🤝
+- **Branch:** `master` — active integration (expect ongoing UI/product work).  
+- Prefer tagged releases for production binaries when tags are published.  
+- Pre-release GUI: not for high-value mining or unattended merchant float without your own review.
 
-If you find a bug or experience issues with this software, please report it
-using the [issue system](https://github.com/dogecoin/dogecoin/issues/new?assignees=&labels=bug&template=bug_report.md&title=%5Bbug%5D+).
+Upstream Dogecoin resources (reference): [dogecoin/dogecoin](https://github.com/dogecoin/dogecoin).
 
-Please see [the contribution guide](CONTRIBUTING.md) to see how you can
-participate in the development of Dogecoin Core. There are often
-[topics seeking help](https://github.com/dogecoin/dogecoin/labels/help%20wanted)
-where your contributions will have high impact and get very appreciation. wow.
+---
 
-## Very Much Frequently Asked Questions ❓
+## Contributing
 
-Do you have a question regarding Dogecoin? An answer is perhaps already in the
-[FAQ](doc/FAQ.md) or the
-[Q&A section](https://github.com/dogecoin/dogecoin/discussions/categories/q-a)
-of the discussion board!
+Issues and PRs against this repo. Keep changes aligned with **pure DOGE** settlement (no EVM/wrap product paths in Core Pro).
 
-## License - Much license ⚖️
-Dogecoin Core is released under the terms of the MIT license. See
-[COPYING](COPYING) for more information.
+Please do not commit secrets, RPC passwords, wallet seeds, or private infrastructure notes.
+
+---
+
+## License
+
+Released under the **MIT** license. See [COPYING](COPYING).
+
+Dogecoin branding and heritage remain as in the Dogecoin Core lineage; many source files retain historical Bitcoin Core copyright headers where appropriate.

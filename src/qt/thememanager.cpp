@@ -294,12 +294,13 @@ ThemeManager::ThemeColors ThemeManager::getClassicThemeColors() const
 void ThemeManager::setTheme(ThemeType theme)
 {
     const bool changed = (m_currentTheme != theme);
+    if (!changed) {
+        return; // Avoid re-entrant polish while Options / ThemeSwitcher init
+    }
     m_currentTheme = theme;
     updateColors();
     applyToApplication();
-    if (changed) {
-        Q_EMIT themeChanged(theme);
-    }
+    Q_EMIT themeChanged(theme);
     Q_EMIT colorsChanged();
 }
 
@@ -388,17 +389,34 @@ void ThemeManager::applyToApplication()
 {
     if (!qApp)
         return;
+
+    // Re-entrancy guard: setStyleSheet / polish can re-enter via theme signals
+    // while OptionsDialog or ThemeSwitcher is still being constructed.
+    static bool s_applying = false;
+    if (s_applying)
+        return;
+    s_applying = true;
+
     qApp->setStyleSheet(getStylesheet());
-    // Force polish so Pro shell widgets pick up objectName selectors
+
+    // Only polish fully realized, already-shown windows. Unpolish/polish of a
+    // mid-construction QDialog (e.g. Options) hard-crashes the client.
     const QWidgetList tops = qApp->topLevelWidgets();
     for (int i = 0; i < tops.size(); ++i) {
         QWidget* w = tops.at(i);
-        if (!w || !w->style())
+        if (!w || !w->style() || !w->isVisible())
+            continue;
+        if (!w->testAttribute(Qt::WA_WState_Created))
+            continue;
+        // Skip modal dialogs that are still initializing (not yet shown).
+        if (w->windowModality() != Qt::NonModal && !w->isVisible())
             continue;
         w->style()->unpolish(w);
         w->style()->polish(w);
         w->update();
     }
+
+    s_applying = false;
 }
 
 void ThemeManager::loadCustomTheme(const QString& themeName, const ThemeColors& colors)

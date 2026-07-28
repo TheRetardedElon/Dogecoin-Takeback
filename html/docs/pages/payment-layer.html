@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Payment layer (native DOGE) — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="diagrams.html">Diagrams</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="pure-doge-strategy.html">Pure DOGE strategy</a>
+        <a href="payment-layer.html">Payment layer</a>
+        <a href="memestream-integration.html">MemeStream integration</a>
+        <a href="ui-reference-core-pro.html">Core Pro UI reference</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="sqlite-wallet-plan.html">SQLite wallet plan</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Payment layer — native DOGE for merchants</h1>
+      <p class="lead">
+        How Dogecoin Core Pro and optional business tooling fit together so people
+        can <strong>pay and get paid in real DOGE</strong> — without wrapped tokens,
+        EVM “Dogecoin L2s,” or a second currency.
+      </p>
+      <div class="meta">
+        <span>Audience: users, merchants, contributors</span>
+        <span>Locked: pure DOGE settlement</span>
+        <span>Related: <a href="pure-doge-strategy.html">Pure DOGE strategy</a></span>
+      </div>
+
+      <div class="callout ok">
+        <strong>One rule</strong>
+        When money moves, it is <strong>native DOGE on the Dogecoin network</strong>.
+        Business software may speed up tickets and inventory; it does not invent a
+        replacement coin.
+      </div>
+
+      <h2>What users get in Core Pro today</h2>
+      <p>
+        Dogecoin Core Pro is a full wallet and node client. Merchant-oriented tools
+        run <em>in the wallet you control</em>:
+      </p>
+      <ul>
+        <li><strong>Doge Business</strong> — local invoices, dashboard, POS keypad</li>
+        <li><strong>Payment QR / <code>dogecoin:</code> URI</strong> — customer pays with any DOGE wallet</li>
+        <li><strong>Auto-watch</strong> — open invoices can mark paid when this wallet receives to that address</li>
+        <li><strong>Meme Stream tips</strong> — tip goes on-chain to the creator’s address (not a bridge)</li>
+        <li><strong>Keys in Core</strong> — no external “app chain” custody required for local POS</li>
+      </ul>
+      <p>
+        See the <a href="ui-reference-core-pro.html">Core Pro UI reference</a> for screenshots and layout.
+      </p>
+
+      <h2>Optional cloud business tools (GPE)</h2>
+      <p>
+        <strong>GoPastEarth (GPE)</strong> is a separate multi-tenant business platform
+        (POS, inventory, invoices, multi-terminal workflows). It is <em>not</em> part of
+        Dogecoin consensus and is not required to use Core Pro.
+      </p>
+      <table>
+        <thead>
+          <tr><th></th><th>Core Pro (this client)</th><th>GPE (optional product)</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Role</strong></td>
+            <td>Wallet, node, local merchant tools, tips</td>
+            <td>Cloud commerce: staff, inventory, multi-store ops</td>
+          </tr>
+          <tr>
+            <td><strong>Keys</strong></td>
+            <td>In your Core wallet</td>
+            <td>Settlement still targets real DOGE; custody model depends on how a merchant deploys (self-custody preferred)</td>
+          </tr>
+          <tr>
+            <td><strong>Offline / simple shop</strong></td>
+            <td>Works alone</td>
+            <td>Not required</td>
+          </tr>
+          <tr>
+            <td><strong>Settlement asset</strong></td>
+            <td>Native DOGE</td>
+            <td>Native DOGE (same rule)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout info">
+        <strong>Product boundary</strong>
+        Core Pro documents what ships in this repository. GPE is described here only at
+        the <em>product and principles</em> level — not server layout, credentials, or
+        internal ops. Merchants should treat any cloud service with normal operational care
+        (separate systems, least privilege, backups).
+      </div>
+
+      <h2>What we mean by “payment layer” (not VC “L2”)</h2>
+      <p>
+        In crypto marketing, “Layer 2” often means an EVM rollup, a bridge, and sometimes
+        a wrapped asset. That is <strong>not</strong> this project’s direction.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Phrase</th><th>Meaning for us</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Payment / merchant layer</strong></td>
+            <td>Fast app for orders and invoices; final money on Dogecoin L1</td>
+          </tr>
+          <tr>
+            <td><strong>Like card rails, not like Ethereum L2</strong></td>
+            <td>Authorize and ring up off-chain; settle cash (DOGE) on the base ledger</td>
+          </tr>
+          <tr>
+            <td><strong>Merchant messaging</strong></td>
+            <td>“Pay with Dogecoin” — not “bridge to our L2 token”</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>What we will not do</h2>
+      <ul>
+        <li>Require <strong>wDOGE</strong> or any wrap to accept Dogecoin at the counter</li>
+        <li>Define the Dogecoin product as an <strong>EVM / Dogeth / shard</strong> experience</li>
+        <li>Force Core users onto a foreign VM to spend their own DOGE</li>
+        <li>Mark an invoice “paid” from a client claim alone — chain / wallet visibility is the truth</li>
+      </ul>
+
+      <h2>Simple mental model</h2>
+      <div class="diagram-frame">
+        <pre class="ascii-diagram" style="white-space:pre;overflow-x:auto;font-family:var(--mono);font-size:0.75rem;text-align:left;">
+  Customer wallet                    Merchant
+  (any DOGE client)                  Core Pro and/or GPE POS
+         │                                  │
+         │  scan dogecoin: URI / QR         │
+         │◄─────────────────────────────────┤
+         │                                  │
+         │  pay native DOGE on L1           │
+         ├─────────────────────────────────►│
+         │                                  │
+         │                         watch receive → mark paid
+         │                                  │
+         ▼                                  ▼
+              Dogecoin network (one ledger, real DOGE)
+        </pre>
+      </div>
+
+      <h2>How this fits the pure DOGE strategy</h2>
+      <p>
+        Competing on “Solidity and TVL” pulls the brand into foreign architecture.
+        Competing on <strong>cash, POS, tips, and a trustworthy Core client</strong>
+        keeps native DOGE as the obvious path. Details:
+        <a href="pure-doge-strategy.html">Pure DOGE strategy</a>.
+      </p>
+
+      <h2>For contributors</h2>
+      <ul>
+        <li>Local Business / POS / tips live under <code>src/qt/</code> (this tree).</li>
+        <li>Do not add wrap-token or EVM settlement paths to Core Pro.</li>
+        <li>External business platforms may integrate via standard payment URIs and
+            well-known Dogecoin wallet patterns (e.g. GigaWallet-style backends) —
+            always with native DOGE as the settlement asset.</li>
+        <li>Security hygiene for node operators:
+            <a href="security-hardening.html">Security hardening</a>.</li>
+      </ul>
+
+      <h2>Related</h2>
+      <p>
+        <a href="pure-doge-strategy.html">Pure DOGE strategy</a> ·
+        <a href="ui-reference-core-pro.html">Core Pro UI</a> ·
+        <a href="memestream-integration.html">MemeStream</a> ·
+        <a href="roadmap.html">Roadmap</a> ·
+        <a href="glossary.html">Glossary</a>
+      </p>
+
+      <div class="footer">
+        Public product principles only — no infrastructure secrets in this doc tree.
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

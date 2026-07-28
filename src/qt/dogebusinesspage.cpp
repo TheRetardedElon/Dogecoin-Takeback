@@ -11,12 +11,20 @@
 #include "guiutil.h"
 #include "optionsmodel.h"
 #include "platformstyle.h"
+#include "receiverequestdialog.h"
 #include "transactionrecord.h"
 #include "transactiontablemodel.h"
 #include "ui_interface.h"
 #include "walletmodel.h"
 
 #include "utiltime.h"
+
+#if defined(HAVE_CONFIG_H)
+#include "config/dogecoin-config.h"
+#endif
+#ifdef USE_QRCODE
+#include <qrencode.h>
+#endif
 
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -26,6 +34,8 @@
 #include <QGridLayout>
 #include <QApplication>
 #include <QClipboard>
+#include <QPainter>
+#include <QPixmap>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QTabWidget>
@@ -164,10 +174,13 @@ void DogeBusinessPage::setupUi()
     QHBoxLayout* invActs = new QHBoxLayout();
     copyUriBtn = new QPushButton(tr("Copy URI"));
     copyAddrBtn = new QPushButton(tr("Copy address"));
+    showQrBtn = new QPushButton(tr("Show QR"));
+    showQrBtn->setToolTip(tr("Open payment request with QR code for the selected invoice"));
     markPaidBtn = new QPushButton(tr("Mark paid"));
     cancelInvBtn = new QPushButton(tr("Cancel"));
     invActs->addWidget(copyUriBtn);
     invActs->addWidget(copyAddrBtn);
+    invActs->addWidget(showQrBtn);
     invActs->addWidget(markPaidBtn);
     invActs->addWidget(cancelInvBtn);
     invActs->addStretch();
@@ -178,9 +191,11 @@ void DogeBusinessPage::setupUi()
     connect(createInvBtn, SIGNAL(clicked()), this, SLOT(onCreateInvoice()));
     connect(copyUriBtn, SIGNAL(clicked()), this, SLOT(onCopyUri()));
     connect(copyAddrBtn, SIGNAL(clicked()), this, SLOT(onCopyAddress()));
+    connect(showQrBtn, SIGNAL(clicked()), this, SLOT(onShowPaymentQr()));
     connect(markPaidBtn, SIGNAL(clicked()), this, SLOT(onMarkPaid()));
     connect(cancelInvBtn, SIGNAL(clicked()), this, SLOT(onCancelInvoice()));
     connect(invTable, SIGNAL(itemSelectionChanged()), this, SLOT(onSelectionChanged()));
+    connect(invTable, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(onShowPaymentQr()));
 
     // --- POS ---
     QWidget* pos = new QWidget();
@@ -220,17 +235,25 @@ void DogeBusinessPage::setupUi()
     saleBox->setFrameShape(QFrame::StyledPanel);
     QVBoxLayout* sl = new QVBoxLayout(saleBox);
     sl->addWidget(new QLabel(tr("Payment request")));
-    sl->addWidget(new QLabel(tr("Enter amount and press Charge.")));
+    sl->addWidget(new QLabel(tr("Enter amount and press Charge — customer scans the QR.")));
     posAddress = new QLabel(tr("Address: —"));
     posAddress->setWordWrap(true);
     posAddress->setTextInteractionFlags(Qt::TextSelectableByMouse);
     sl->addWidget(posAddress);
+    posQrLabel = new QLabel();
+    posQrLabel->setObjectName(QStringLiteral("posQrLabel"));
+    posQrLabel->setAlignment(Qt::AlignCenter);
+    posQrLabel->setMinimumSize(200, 200);
+    posQrLabel->setText(tr("QR appears after Charge"));
+    sl->addWidget(posQrLabel, 0, Qt::AlignHCenter);
     QHBoxLayout* saleActs = new QHBoxLayout();
     QPushButton* copyPosAddr = new QPushButton(tr("Copy address"));
     QPushButton* copyPosUri = new QPushButton(tr("Copy URI"));
+    QPushButton* showPosQr = new QPushButton(tr("Open QR dialog"));
     QPushButton* newSale = new QPushButton(tr("New sale"));
     saleActs->addWidget(copyPosAddr);
     saleActs->addWidget(copyPosUri);
+    saleActs->addWidget(showPosQr);
     saleActs->addWidget(newSale);
     sl->addLayout(saleActs);
     sl->addStretch();
@@ -240,6 +263,7 @@ void DogeBusinessPage::setupUi()
     connect(clearBtn, SIGNAL(clicked()), this, SLOT(onPosClear()));
     connect(chargeBtn, SIGNAL(clicked()), this, SLOT(onPosCharge()));
     connect(newSale, SIGNAL(clicked()), this, SLOT(onPosNewSale()));
+    connect(showPosQr, SIGNAL(clicked()), this, SLOT(onPosShowQr()));
     connect(copyPosAddr, &QPushButton::clicked, [this]() {
         if (!posCurrentAddress.isEmpty())
             QApplication::clipboard()->setText(posCurrentAddress);
@@ -251,6 +275,7 @@ void DogeBusinessPage::setupUi()
 
     onSelectionChanged();
     updateDashboard();
+    updatePosQr();
 }
 
 void DogeBusinessPage::setWalletModel(WalletModel* model)
@@ -490,6 +515,7 @@ void DogeBusinessPage::onSelectionChanged()
     bool has = selectedInvoice() != 0;
     copyUriBtn->setEnabled(has);
     copyAddrBtn->setEnabled(has);
+    showQrBtn->setEnabled(has);
     markPaidBtn->setEnabled(has);
     cancelInvBtn->setEnabled(has);
 }
@@ -508,6 +534,97 @@ void DogeBusinessPage::onCopyAddress()
     if (!inv)
         return;
     QApplication::clipboard()->setText(inv->address);
+}
+
+void DogeBusinessPage::showPaymentRequest(const QString& address, CAmount amount, const QString& label, const QString& message)
+{
+    if (address.isEmpty())
+        return;
+    SendCoinsRecipient info;
+    info.address = address;
+    info.label = label;
+    info.amount = amount;
+    info.message = message;
+
+    ReceiveRequestDialog* dialog = new ReceiveRequestDialog(this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    if (walletModel && walletModel->getOptionsModel())
+        dialog->setModel(walletModel->getOptionsModel());
+    dialog->setInfo(info);
+    dialog->setWindowModality(Qt::WindowModal);
+    dialog->show();
+}
+
+void DogeBusinessPage::onShowPaymentQr()
+{
+    Invoice* inv = selectedInvoice();
+    if (!inv)
+        return;
+    showPaymentRequest(inv->address, inv->amount, inv->label, inv->note);
+}
+
+void DogeBusinessPage::updatePosQr()
+{
+    if (!posQrLabel)
+        return;
+
+    if (posCurrentAddress.isEmpty()) {
+        posQrLabel->setPixmap(QPixmap());
+        posQrLabel->setText(tr("QR appears after Charge"));
+        return;
+    }
+
+#ifdef USE_QRCODE
+    const QString uri = dogecoinUri(posCurrentAddress, posCurrentAmount, tr("POS sale"));
+    if (uri.length() > MAX_URI_LENGTH) {
+        posQrLabel->setPixmap(QPixmap());
+        posQrLabel->setText(tr("URI too long for QR"));
+        return;
+    }
+    QRcode* code = QRcode_encodeString(uri.toUtf8().constData(), 0, QR_ECLEVEL_L, QR_MODE_8, 1);
+    if (!code) {
+        posQrLabel->setPixmap(QPixmap());
+        posQrLabel->setText(tr("QR encode failed"));
+        return;
+    }
+    QImage qrImage(code->width + 8, code->width + 8, QImage::Format_RGB32);
+    qrImage.fill(0xffffff);
+    unsigned char* p = code->data;
+    for (int y = 0; y < code->width; ++y) {
+        for (int x = 0; x < code->width; ++x) {
+            qrImage.setPixel(x + 4, y + 4, ((*p & 1) ? 0x0 : 0xffffff));
+            ++p;
+        }
+    }
+    QRcode_free(code);
+
+    const int size = QR_IMAGE_SIZE;
+    QImage out(size, size + 18, QImage::Format_RGB32);
+    out.fill(0xffffff);
+    QPainter painter(&out);
+    painter.drawImage(0, 0, qrImage.scaled(size, size));
+    QFont font = GUIUtil::fixedPitchFont();
+    font.setPixelSize(11);
+    painter.setFont(font);
+    QRect padded = out.rect();
+    padded.setHeight(size + 14);
+    painter.drawText(padded, Qt::AlignBottom | Qt::AlignCenter, posCurrentAddress.left(12) + QStringLiteral("…"));
+    painter.end();
+    posQrLabel->setText(QString());
+    posQrLabel->setPixmap(QPixmap::fromImage(out));
+#else
+    posQrLabel->setPixmap(QPixmap());
+    posQrLabel->setText(tr("QR not available in this build"));
+#endif
+}
+
+void DogeBusinessPage::onPosShowQr()
+{
+    if (posCurrentAddress.isEmpty()) {
+        Q_EMIT message(tr("POS"), tr("Charge a sale first."), CClientUIInterface::MSG_ERROR);
+        return;
+    }
+    showPaymentRequest(posCurrentAddress, posCurrentAmount, tr("POS sale"), QString());
 }
 
 void DogeBusinessPage::onMarkPaid()
@@ -582,8 +699,9 @@ void DogeBusinessPage::onPosCharge()
     posAddress->setText(tr("Address: %1\nAmount: %2 DOGE")
                             .arg(posCurrentAddress)
                             .arg(posBuffer));
+    updatePosQr();
 
-    // Also track as open invoice
+    // Also track as open invoice (auto-watch marks paid when funded)
     Invoice inv;
     inv.id = QUuid::createUuid().toString();
     inv.label = tr("POS sale");
@@ -603,6 +721,7 @@ void DogeBusinessPage::onPosNewSale()
     posCurrentAddress.clear();
     posCurrentAmount = 0;
     posAddress->setText(tr("Address: —"));
+    updatePosQr();
 }
 
 void DogeBusinessPage::loadInvoices()

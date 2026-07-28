@@ -704,23 +704,23 @@
        </item>
       </layout>
      </widget>
-    </widget>
-    <widget class="QWidget" name="tabTheme">
-     <attribute name="title">
-      <string>&amp;Theme</string>
-     </attribute>
-     <layout class="QVBoxLayout" name="verticalLayout_Theme">
-      <item>
-       <widget class="ThemeSwitcher" name="themeSwitcher" native="true">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     <widget class="QWidget" name="tabTheme">
+      <attribute name="title">
+       <string>&amp;Theme</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_Theme">
+       <item>
+        <widget class="ThemeSwitcher" name="themeSwitcher" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>
@@ -872,6 +872,12 @@
    <class>QValueComboBox</class>
    <extends>QComboBox</extends>
    <header>qvaluecombobox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ThemeSwitcher</class>
+   <extends>QWidget</extends>
+   <header>themeswitcher.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>
