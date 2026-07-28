@@ -26,20 +26,21 @@
 #include <QDesktopWidget>
 #include <QPainter>
 #include <QRadialGradient>
+#include <QDebug>
 
 #include <boost/bind/bind.hpp>
 
 SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle *networkStyle) :
     QWidget(0, f), curAlignment(0)
 {
-    // set reference point, paddings
-    int paddingRight            = 50;
-    int paddingTop              = 50;
-    int titleVersionVSpace      = 17;
-    int titleCopyrightVSpace    = 40;
+    // set reference point, paddings for action bubble positioning
+    int bubblePaddingBottom    = 152;  // Distance from bottom for action bubble (move ALL text down 8px)
+    int bubblePaddingSides     = 50;  // Side padding for bubble text
+    int titleVersionVSpace     = 18;  // Space between title and version (moved down 4px)
+    int versionCopyrightVSpace = 16;  // Space between version and copyright (moved down 8px)
 
-    float fontFactor            = 1.0;
-    float devicePixelRatio      = 1.0;
+    float fontFactor           = 1.0;
+    float devicePixelRatio     = 1.0;
 #if QT_VERSION > 0x050100
     devicePixelRatio = ((QGuiApplication*)QCoreApplication::instance())->devicePixelRatio();
 #endif
@@ -47,14 +48,16 @@ SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle *networkStyle) 
     // define text to place
     QString titleText       = tr(PACKAGE_NAME);
     QString versionText     = QString("Version %1").arg(QString::fromStdString(FormatFullVersion()));
-    QString copyrightText   = QString::fromUtf8(CopyrightHolders(strprintf("\xc2\xA9 %u-%u ", 2009, COPYRIGHT_YEAR)).c_str());
+    QString copyrightYears  = QString::fromUtf8(strprintf("\xc2\xA9 %u-%u", 2009, COPYRIGHT_YEAR).c_str());
+    QString copyrightDevelopers = QString::fromUtf8("The Dogecoin Core developers");
     QString titleAddText    = networkStyle->getTitleAddText();
 
     QString font            = "Comic Sans MS";
 
-    // create a bitmap according to device pixelratio
-    QSize splashSize(480*devicePixelRatio,320*devicePixelRatio);
+    // create a bitmap according to device pixelratio - make it square for the icon
+    QSize splashSize(480*devicePixelRatio,480*devicePixelRatio);
     pixmap = QPixmap(splashSize);
+    pixmap.fill(Qt::transparent); // Start with transparent background
 
 #if QT_VERSION > 0x050100
     // change to HiDPI if it makes sense
@@ -62,64 +65,88 @@ SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle *networkStyle) 
 #endif
 
     QPainter pixPaint(&pixmap);
-    pixPaint.setPen(QColor(100,100,100));
 
-    // draw a slightly radial gradient
-    QRadialGradient gradient(QPoint(0,0), splashSize.width()/devicePixelRatio);
-    gradient.setColorAt(0, Qt::white);
-    gradient.setColorAt(1, QColor(247,247,247));
-    QRect rGradient(QPoint(0,0), splashSize);
-    pixPaint.fillRect(rGradient, gradient);
-
-    // draw the bitcoin icon, expected size of PNG: 1024x1024
-    QRect rectIcon(QPoint(-150,-122), QSize(430,430));
-
+    // Draw the dogecoin icon centered
+    QRect rectIcon(QPoint(0,0), QSize(splashSize.width()/devicePixelRatio, splashSize.height()/devicePixelRatio));
     const QSize requiredSize(1024,1024);
     QPixmap icon(networkStyle->getAppIcon().pixmap(requiredSize));
+    
+    // Debug: Check if icon loaded properly
+    if (icon.isNull()) {
+        qDebug() << "SplashScreen: Icon is null! Trying to load from resource directly...";
+        // Try loading directly from resource as fallback
+        icon = QPixmap(":/icons/dogecoin");
+        if (icon.isNull()) {
+            qDebug() << "SplashScreen: Direct resource load also failed!";
+        } else {
+            qDebug() << "SplashScreen: Direct resource load succeeded, size:" << icon.size();
+        }
+    } else {
+        qDebug() << "SplashScreen: Icon loaded successfully from NetworkStyle, size:" << icon.size();
+    }
+    
+    if (!icon.isNull()) {
+        pixPaint.drawPixmap(rectIcon, icon);
+    } else {
+        qDebug() << "SplashScreen: Cannot draw icon - it's null!";
+    }
 
-    pixPaint.drawPixmap(rectIcon, icon);
-
-    // check font size and drawing with
-    pixPaint.setFont(QFont(font, 33*fontFactor));
+    // Position text in the action bubble area (bottom center) - the bubble is already in the PNG
+    int bubbleTextY = splashSize.height()/devicePixelRatio - bubblePaddingBottom;
+    
+    // Set pen color for text (the bubble background is already in the PNG)
+    pixPaint.setPen(QColor(255,255,255)); // White text for good contrast
+    
+    // Draw title in action bubble (slightly larger)
+    QFont titleFont(font, 20*fontFactor);
+    titleFont.setBold(true);
+    pixPaint.setFont(titleFont);
     QFontMetrics fm = pixPaint.fontMetrics();
     int titleTextWidth = fm.width(titleText);
-    if (titleTextWidth > 176) {
-        fontFactor = fontFactor * 176 / titleTextWidth;
-    }
+    
+    // Center the title text
+    int titleX = (splashSize.width()/devicePixelRatio - titleTextWidth) / 2;
+    pixPaint.drawText(titleX, bubbleTextY, titleText);
 
-    pixPaint.setFont(QFont(font, 33*fontFactor));
+    // Draw version text below title (bold, slightly larger)
+    QFont versionFont(font, 10*fontFactor);
+    versionFont.setBold(true);
+    pixPaint.setFont(versionFont);
     fm = pixPaint.fontMetrics();
-    titleTextWidth  = fm.width(titleText);
-    pixPaint.drawText(pixmap.width()/devicePixelRatio-titleTextWidth-paddingRight,paddingTop,titleText);
+    int versionTextWidth = fm.width(versionText);
+    
+    // Center the version text
+    int versionX = (splashSize.width()/devicePixelRatio - versionTextWidth) / 2;
+    pixPaint.drawText(versionX, bubbleTextY + titleVersionVSpace, versionText);
 
-    pixPaint.setFont(QFont(font, 15*fontFactor));
-
-    // if the version string is to long, reduce size
+    // Draw copyright years below version (bold, slightly larger)
+    QFont copyrightFont(font, 8*fontFactor);
+    copyrightFont.setBold(true);
+    pixPaint.setFont(copyrightFont);
+    
+    // Draw copyright years (centered)
     fm = pixPaint.fontMetrics();
-    int versionTextWidth  = fm.width(versionText);
-    if(versionTextWidth > titleTextWidth+paddingRight-10) {
-        pixPaint.setFont(QFont(font, 10*fontFactor));
-        titleVersionVSpace -= 5;
-    }
-    pixPaint.drawText(pixmap.width()/devicePixelRatio-titleTextWidth-paddingRight+2,paddingTop+titleVersionVSpace,versionText);
+    int copyrightYearsWidth = fm.width(copyrightYears);
+    int copyrightYearsX = (splashSize.width()/devicePixelRatio - copyrightYearsWidth) / 2;
+    int copyrightYearsY = bubbleTextY + titleVersionVSpace + versionCopyrightVSpace;
+    pixPaint.drawText(copyrightYearsX, copyrightYearsY, copyrightYears);
 
-    // draw copyright stuff
-    {
-        pixPaint.setFont(QFont(font, 10*fontFactor));
-        const int x = pixmap.width()/devicePixelRatio-titleTextWidth-paddingRight;
-        const int y = paddingTop+titleCopyrightVSpace;
-        QRect copyrightRect(x, y, pixmap.width() - x - paddingRight, pixmap.height() - y);
-        pixPaint.drawText(copyrightRect, Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap, copyrightText);
-    }
+    // Draw copyright developers below years
+    fm = pixPaint.fontMetrics();
+    int copyrightDevelopersWidth = fm.width(copyrightDevelopers);
+    int copyrightDevelopersX = (splashSize.width()/devicePixelRatio - copyrightDevelopersWidth) / 2;
+    int copyrightDevelopersY = copyrightYearsY + versionCopyrightVSpace;
+    pixPaint.drawText(copyrightDevelopersX, copyrightDevelopersY, copyrightDevelopers);
 
-    // draw additional text if special network
+    // Draw additional text if special network (small, in top area)
     if(!titleAddText.isEmpty()) {
-        QFont boldFont = QFont(font, 10*fontFactor);
+        QFont boldFont = QFont(font, 12*fontFactor);
         boldFont.setWeight(QFont::Bold);
         pixPaint.setFont(boldFont);
+        pixPaint.setPen(QColor(100,100,100)); // Gray for network text
         fm = pixPaint.fontMetrics();
-        int titleAddTextWidth  = fm.width(titleAddText);
-        pixPaint.drawText(pixmap.width()/devicePixelRatio-titleAddTextWidth-10,15,titleAddText);
+        int titleAddTextWidth = fm.width(titleAddText);
+        pixPaint.drawText((splashSize.width()/devicePixelRatio - titleAddTextWidth) / 2, 30, titleAddText);
     }
 
     pixPaint.end();
@@ -127,6 +154,10 @@ SplashScreen::SplashScreen(Qt::WindowFlags f, const NetworkStyle *networkStyle) 
     // Set window title
     setWindowTitle(titleText + " " + titleAddText);
 
+    // Make window transparent and frameless for floating effect
+    setAttribute(Qt::WA_TranslucentBackground);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+    
     // Resize window and move to center of desktop, disallow resizing
     QRect r(QPoint(), QSize(pixmap.size().width()/devicePixelRatio,pixmap.size().height()/devicePixelRatio));
     resize(r.size());
@@ -219,9 +250,15 @@ void SplashScreen::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
     painter.drawPixmap(0, 0, pixmap);
-    QRect r = rect().adjusted(5, 5, -5, -5);
-    painter.setPen(curColor);
-    painter.drawText(r, curAlignment, curMessage);
+    
+    // Draw status message higher up and in white
+    if (!curMessage.isEmpty()) {
+        QRect r = rect().adjusted(5, 5, -5, -5);
+        // Move the text up by reducing the bottom margin
+        r.setBottom(r.bottom() - 62); // Move up an additional 12 pixels (total 62)
+        painter.setPen(QColor(255, 255, 255)); // White color
+        painter.drawText(r, curAlignment, curMessage);
+    }
 }
 
 void SplashScreen::closeEvent(QCloseEvent *event)

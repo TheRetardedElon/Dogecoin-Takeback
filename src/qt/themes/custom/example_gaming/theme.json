@@ -1,0 +1,21 @@
+{
+  "name": "Gaming Theme",
+  "description": "Bright, bold gaming-inspired theme with neon colors and futuristic styling",
+  "author": "Dogecoin Community",
+  "version": "1.0",
+  "type": "custom",
+  "preview": "",
+  "tags": ["gaming", "neon", "bright", "futuristic", "bold"],
+  "compatibility": "1.14.99+",
+  "customProperties": {
+    "primaryColor": "#ff0080",
+    "backgroundColor": "#1a1a2e",
+    "textColor": "#00ff41",
+    "borderColor": "#00ff41",
+    "accentColor": "#ff0080",
+    "fontFamily": "Courier New, monospace",
+    "fontSize": "12px",
+    "style": "gaming",
+    "inspiration": "Cyberpunk gaming aesthetics"
+  }
+}

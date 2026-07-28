@@ -13,6 +13,7 @@
 #include <QFont>
 #include <QApplication>
 #include <QStyle>
+#include <QStringList>
 
 class ThemeManager : public QObject
 {
@@ -25,7 +26,6 @@ public:
         Dogecoin, // Dogecoin-themed colors
         Neon,     // High-contrast neon theme
         Classic,  // Classic Bitcoin-style theme
-        Auto,     // Follows system theme
         Custom
     };
 
@@ -106,6 +106,12 @@ public:
     void applyTheme(QWidget* widget);
     QString getStylesheet() const;
     void loadCSSTheme(const QString& themeName);
+    
+    // Custom theme discovery and management
+    QStringList discoverCustomThemes();
+    QStringList getAvailableThemes();
+    bool isCustomTheme(const QString& themeName);
+    void refreshThemes();
 
 Q_SIGNALS:
     void themeChanged(ThemeType newTheme);

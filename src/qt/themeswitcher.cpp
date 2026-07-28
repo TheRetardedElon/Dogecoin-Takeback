@@ -52,7 +52,7 @@ void ThemeSwitcher::setupUI()
     themeRow->addWidget(new QLabel(tr("Theme:")));
     
     m_themeCombo = new QComboBox();
-    m_themeCombo->addItems(m_themeManager->availableThemes());
+    m_themeCombo->addItems(m_themeManager->getAvailableThemes());
     connect(m_themeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), 
             this, &ThemeSwitcher::onThemeChanged);
     themeRow->addWidget(m_themeCombo);
@@ -236,9 +236,7 @@ void ThemeSwitcher::onThemeChanged()
     } else if (themeName == "Dark") {
         m_themeManager->switchToDark();
         m_customGroup->setEnabled(false);
-    } else if (themeName == "Auto") {
-        m_themeManager->switchToAuto();
-        m_customGroup->setEnabled(false);
+    // Auto theme was removed
     } else if (themeName == "Dogecoin" || themeName == "Neon" || themeName == "Classic") {
         // Built-in themes
         if (themeName == "Dogecoin") {

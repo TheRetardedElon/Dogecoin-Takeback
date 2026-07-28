@@ -1,0 +1,332 @@
+/* Gaming Theme Example - Bright and Bold */
+/* Created by Dogecoin Community */
+
+/* Main window styling */
+QMainWindow {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1a1a2e, stop:1 #16213e);
+    color: #00ff41;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+/* Base widget styling */
+QWidget {
+    background-color: #16213e;
+    color: #00ff41;
+    border: 2px solid #00ff41;
+    font-family: 'Courier New', monospace;
+}
+
+/* Gaming-style buttons */
+QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff0080, stop:1 #ff4080);
+    color: #ffffff;
+    border: 2px solid #00ff41;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+QPushButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff4080, stop:1 #ff0080);
+    border-color: #ffffff;
+    box-shadow: 0 0 10px #00ff41;
+}
+
+QPushButton:pressed {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #cc0066, stop:1 #ff0080);
+    border-color: #00ff41;
+}
+
+QPushButton:disabled {
+    background-color: #333366;
+    color: #666666;
+    border-color: #666666;
+}
+
+/* Input fields */
+QLineEdit, QTextEdit, QSpinBox, QDoubleSpinBox {
+    background-color: #0a0a2e;
+    color: #00ff41;
+    border: 2px solid #00ff41;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+QLineEdit:focus, QTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
+    border-color: #ff0080;
+    background-color: #1a1a2e;
+    box-shadow: 0 0 5px #ff0080;
+}
+
+/* Dropdowns */
+QComboBox {
+    background-color: #0a0a2e;
+    color: #00ff41;
+    border: 2px solid #00ff41;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 20px;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #00ff41;
+    margin-right: 5px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #0a0a2e;
+    border: 2px solid #00ff41;
+    selection-background-color: #ff0080;
+    selection-color: #ffffff;
+}
+
+/* Checkboxes and radio buttons */
+QCheckBox, QRadioButton {
+    color: #00ff41;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+QCheckBox::indicator, QRadioButton::indicator {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #00ff41;
+    border-radius: 3px;
+    background-color: #0a0a2e;
+}
+
+QCheckBox::indicator:checked, QRadioButton::indicator:checked {
+    background-color: #ff0080;
+    border-color: #ff0080;
+}
+
+/* Scrollbars */
+QScrollBar:vertical {
+    background-color: #1a1a2e;
+    width: 14px;
+    border: 1px solid #00ff41;
+}
+
+QScrollBar::handle:vertical {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff0080, stop:1 #00ff41);
+    border-radius: 6px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #ff4080, stop:1 #00ff80);
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background-color: #1a1a2e;
+    height: 14px;
+    border: 1px solid #00ff41;
+}
+
+QScrollBar::handle:horizontal {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff0080, stop:1 #00ff41);
+    border-radius: 6px;
+    min-width: 20px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff4080, stop:1 #00ff80);
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* Menu styling */
+QMenuBar {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1a1a2e, stop:1 #16213e);
+    color: #00ff41;
+    border-bottom: 2px solid #00ff41;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    padding: 8px 12px;
+}
+
+QMenuBar::item:selected {
+    background-color: #ff0080;
+    color: #ffffff;
+}
+
+QMenu {
+    background-color: #0a0a2e;
+    color: #00ff41;
+    border: 2px solid #00ff41;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+QMenu::item {
+    padding: 8px 20px;
+}
+
+QMenu::item:selected {
+    background-color: #ff0080;
+    color: #ffffff;
+}
+
+/* Status bar */
+QStatusBar {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1a1a2e, stop:1 #16213e);
+    color: #00ff41;
+    border-top: 2px solid #00ff41;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+}
+
+/* Progress bars */
+QProgressBar {
+    background-color: #0a0a2e;
+    border: 2px solid #00ff41;
+    border-radius: 4px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: #00ff41;
+}
+
+QProgressBar::chunk {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff0080, stop:1 #00ff41);
+    border-radius: 2px;
+}
+
+/* Tabs */
+QTabWidget::pane {
+    border: 2px solid #00ff41;
+    background-color: #16213e;
+}
+
+QTabBar::tab {
+    background-color: #0a0a2e;
+    color: #00ff41;
+    border: 2px solid #00ff41;
+    padding: 8px 16px;
+    margin-right: 2px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+QTabBar::tab:selected {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff0080, stop:1 #00ff41);
+    color: #ffffff;
+    border-bottom: 2px solid #ffffff;
+}
+
+QTabBar::tab:hover {
+    background-color: #ff0080;
+    color: #ffffff;
+}
+
+/* Cards and frames */
+QFrame {
+    background-color: #16213e;
+    border: 2px solid #00ff41;
+    border-radius: 8px;
+}
+
+/* Group boxes */
+QGroupBox {
+    background-color: #16213e;
+    color: #00ff41;
+    border: 2px solid #00ff41;
+    border-radius: 8px;
+    margin-top: 10px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 8px;
+    background-color: #16213e;
+}
+
+/* Tooltips */
+QToolTip {
+    background-color: #0a0a2e;
+    color: #00ff41;
+    border: 2px solid #ff0080;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+}
+
+/* Sliders */
+QSlider::groove:horizontal {
+    background-color: #0a0a2e;
+    height: 6px;
+    border-radius: 3px;
+    border: 1px solid #00ff41;
+}
+
+QSlider::handle:horizontal {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff0080, stop:1 #00ff41);
+    border: 2px solid #ffffff;
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    margin: -7px 0;
+}
+
+QSlider::handle:horizontal:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff4080, stop:1 #00ff80);
+}
+
+/* Special elements for Dogecoin */
+QWidget#modernContainer {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1a1a2e, stop:1 #16213e);
+    color: #00ff41;
+}
+
+QWidget#modernNavigation {
+    background-color: #0a0a2e;
+    border-right: 2px solid #00ff41;
+}
+
+QPushButton#navButton {
+    background-color: transparent;
+    color: #00ff41;
+    border: none;
+    text-align: left;
+    padding: 12px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+QPushButton#navButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff0080, stop:1 #00ff41);
+    color: #ffffff;
+}
+
+QPushButton#navButton:checked {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff4080, stop:1 #00ff80);
+    color: #ffffff;
+}

@@ -308,7 +308,6 @@ QString ThemeManager::currentThemeName() const
         case Dogecoin: return "Dogecoin";
         case Neon: return "Neon";
         case Classic: return "Classic";
-        case Auto: return "Auto";
         case Custom: return "Custom";
         default: return "Unknown";
     }
@@ -363,7 +362,7 @@ void ThemeManager::switchToDark()
 
 void ThemeManager::switchToAuto()
 {
-    setTheme(Auto);
+    setTheme(Light); // Fallback to Light theme since Auto was removed
 }
 
 void ThemeManager::switchToTheme(ThemeType theme)
@@ -494,10 +493,6 @@ void ThemeManager::updateColors()
         case Classic:
             m_currentColors = m_builtInThemes[Classic];
             break;
-        case Auto:
-            // TODO: Implement system theme detection
-            m_currentColors = m_builtInThemes[Light]; // Fallback to light
-            break;
         case Custom:
             // Custom colors should already be set
             break;
@@ -529,18 +524,34 @@ void ThemeManager::loadCSSTheme(const QString& themeName)
     // Multiple fallback paths for finding CSS file
     QStringList possiblePaths;
     
-    // 1. Relative to application directory
+    // Handle template themes (remove "template_" prefix)
+    QString actualThemeName = themeName;
+    QString themeDir = themeName;
+    if (themeName.startsWith("template_")) {
+        actualThemeName = themeName.mid(9); // Remove "template_" prefix
+        themeDir = actualThemeName;
+    }
+    
     QString appDir = QCoreApplication::applicationDirPath();
-    possiblePaths << appDir + "/../src/qt/themes/" + themeName + "/" + themeName + ".css";
     
-    // 2. Relative to current working directory
-    possiblePaths << QString("src/qt/themes/%1/%1.css").arg(themeName);
+    // 1. Custom themes directory
+    possiblePaths << appDir + "/themes/custom/" + themeDir + "/" + actualThemeName + ".css";
     
-    // 3. Relative to executable location (for development)
-    possiblePaths << appDir + "/../../src/qt/themes/" + themeName + "/" + themeName + ".css";
+    // 2. Template themes directory  
+    possiblePaths << appDir + "/themes/templates/" + themeDir + "/" + actualThemeName + ".css";
     
-    // 4. Absolute path fallback
-    possiblePaths << QString("/mnt/d/dogecoin-master/src/qt/themes/%1/%1.css").arg(themeName);
+    // 3. Development paths (relative to source)
+    possiblePaths << QString("src/qt/themes/custom/%1/%2.css").arg(themeDir).arg(actualThemeName);
+    possiblePaths << QString("src/qt/themes/templates/%1/%2.css").arg(themeDir).arg(actualThemeName);
+    
+    // 4. Existing CSS themes (Matrix, Cyberpunk, etc.)
+    possiblePaths << QString("src/qt/themes/%1/%1.css").arg(actualThemeName);
+    possiblePaths << appDir + "/themes/" + actualThemeName + "/" + actualThemeName + ".css";
+    
+    // 5. Absolute path fallbacks for development
+    possiblePaths << QString("/mnt/d/dogecoin-master/src/qt/themes/custom/%1/%2.css").arg(themeDir).arg(actualThemeName);
+    possiblePaths << QString("/mnt/d/dogecoin-master/src/qt/themes/templates/%1/%2.css").arg(themeDir).arg(actualThemeName);
+    possiblePaths << QString("/mnt/d/dogecoin-master/src/qt/themes/%1/%1.css").arg(actualThemeName);
     
     QString cssPath;
     QFile cssFile;
@@ -548,14 +559,17 @@ void ThemeManager::loadCSSTheme(const QString& themeName)
     // Try each path until we find the CSS file
     for (const QString& path : possiblePaths) {
         cssFile.setFileName(path);
+        qDebug() << "Checking CSS path:" << path;
         if (cssFile.exists()) {
             cssPath = path;
+            qDebug() << "Found CSS file at:" << path;
             break;
         }
     }
     
     if (cssPath.isEmpty()) {
         qDebug() << "Failed to find CSS theme:" << themeName << "in any of the checked paths";
+        qDebug() << "Checked paths:" << possiblePaths;
         return;
     }
     
@@ -571,7 +585,7 @@ void ThemeManager::loadCSSTheme(const QString& themeName)
         m_currentTheme = Custom;
         // Q_EMIT themeChanged(Custom); // Commented out to prevent boost::signals2::no_slots_error
         
-        qDebug() << "Loaded CSS theme:" << themeName << "from" << cssPath;
+        qDebug() << "Successfully loaded CSS theme:" << themeName << "from" << cssPath;
     } else {
         qDebug() << "Failed to open CSS theme file:" << cssPath;
     }
@@ -717,4 +731,70 @@ QString ThemeManager::getStylesheet() const
      .arg(m_currentColors.primaryText.name());
      
     return style;
+}
+
+QStringList ThemeManager::discoverCustomThemes()
+{
+    QStringList themes;
+    
+    // Check custom themes directory
+    QString customThemesDir = QCoreApplication::applicationDirPath() + "/themes/custom";
+    QDir dir(customThemesDir);
+    
+    if (dir.exists()) {
+        QStringList folders = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+        for (const QString& folder : folders) {
+            QString cssPath = dir.absoluteFilePath(folder + "/" + folder + ".css");
+            if (QFile::exists(cssPath)) {
+                themes << folder;
+            }
+        }
+    }
+    
+    // Check templates directory
+    QString templatesDir = QCoreApplication::applicationDirPath() + "/themes/templates";
+    QDir templatesDirObj(templatesDir);
+    
+    if (templatesDirObj.exists()) {
+        QStringList templateFolders = templatesDirObj.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+        for (const QString& folder : templateFolders) {
+            QString cssPath = templatesDirObj.absoluteFilePath(folder + "/" + folder + ".css");
+            if (QFile::exists(cssPath)) {
+                themes << "template_" + folder;
+            }
+        }
+    }
+    
+    return themes;
+}
+
+QStringList ThemeManager::getAvailableThemes()
+{
+    QStringList themes;
+    
+    // Add built-in themes
+    themes << "Light" << "Dark" << "Dogecoin" << "Neon" << "Classic";
+    
+    // Add existing CSS themes
+    themes << "Matrix" << "Cyberpunk" << "Futuristic" << "Minimal" << "Retro" << "Woodgrain";
+    
+    // Add discovered custom themes
+    themes << discoverCustomThemes();
+    
+    return themes;
+}
+
+bool ThemeManager::isCustomTheme(const QString& themeName)
+{
+    QStringList customThemes = discoverCustomThemes();
+    return customThemes.contains(themeName) || themeName.startsWith("template_");
+}
+
+void ThemeManager::refreshThemes()
+{
+    // Force rediscovery of themes
+    // This could be called when new themes are added
+    qDebug() << "Refreshing theme list...";
+    QStringList availableThemes = getAvailableThemes();
+    qDebug() << "Available themes:" << availableThemes;
 }
