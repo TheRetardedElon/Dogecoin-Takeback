@@ -82,8 +82,8 @@
           <tr>
             <td><strong>UPnP (miniupnpc)</strong></td>
             <td>Historical RCE-class issues in miniupnpc; port mapping exposure</td>
-            <td>Default UPnP follows <code>USE_UPNP</code> when built with miniupnpc</td>
-            <td><span class="badge badge-todo">Prefer <code>-upnp=0</code></span></td>
+            <td><code>DEFAULT_UPNP = false</code>; opt in with <code>-upnp=1</code> only</td>
+            <td><span class="badge badge-done">Default off</span></td>
           </tr>
           <tr>
             <td><strong>dumpwallet / dumpprivkey</strong></td>
