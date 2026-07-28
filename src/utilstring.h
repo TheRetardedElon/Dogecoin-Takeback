@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_UTIL_STRING_H
-#define BITCOIN_UTIL_STRING_H
+#ifndef DOGECOIN_UTIL_STRING_H
+#define DOGECOIN_UTIL_STRING_H
 
 #include "attributes.h"
 
@@ -19,4 +19,4 @@ NODISCARD inline bool ValidAsCString(const std::string& str) noexcept
     return str.size() == strlen(str.c_str());
 }
 
-#endif // BITCOIN_UTIL_STRING_H
+#endif // DOGECOIN_UTIL_STRING_H

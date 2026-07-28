@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_TXREQUEST_H
-#define BITCOIN_TXREQUEST_H
+#ifndef DOGECOIN_TXREQUEST_H
+#define DOGECOIN_TXREQUEST_H
 
 #include "net.h" // For NodeId
 #include "uint256.h"
@@ -199,4 +199,4 @@ public:
     void PostGetRequestableSanityCheck(int64_t now) const;
 };
 
-#endif // BITCOIN_TXREQUEST_H
+#endif // DOGECOIN_TXREQUEST_H

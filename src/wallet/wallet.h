@@ -4,8 +4,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_WALLET_WALLET_H
-#define BITCOIN_WALLET_WALLET_H
+#ifndef DOGECOIN_WALLET_WALLET_H
+#define DOGECOIN_WALLET_WALLET_H
 
 #include "amount.h"
 #include "auxpow.h"
@@ -1053,4 +1053,4 @@ bool CWallet::DummySignTx(CMutableTransaction &txNew, const ContainerType &coins
     }
     return true;
 }
-#endif // BITCOIN_WALLET_WALLET_H
+#endif // DOGECOIN_WALLET_WALLET_H

@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_QT_TRANSACTIONTABLEMODEL_H
-#define BITCOIN_QT_TRANSACTIONTABLEMODEL_H
+#ifndef DOGECOIN_QT_TRANSACTIONTABLEMODEL_H
+#define DOGECOIN_QT_TRANSACTIONTABLEMODEL_H
 
 #include "dogecoinunits.h"
 
@@ -117,4 +117,4 @@ public Q_SLOTS:
     friend class TransactionTablePriv;
 };
 
-#endif // BITCOIN_QT_TRANSACTIONTABLEMODEL_H
+#endif // DOGECOIN_QT_TRANSACTIONTABLEMODEL_H

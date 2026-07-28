@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_QT_MODERNAVIGATION_H
-#define BITCOIN_QT_MODERNAVIGATION_H
+#ifndef DOGECOIN_QT_MODERNAVIGATION_H
+#define DOGECOIN_QT_MODERNAVIGATION_H
 
 #include <QWidget>
 #include <QVBoxLayout>
@@ -62,4 +62,4 @@ private:
     QPropertyAnimation* m_buttonAnimation;
 };
 
-#endif // BITCOIN_QT_MODERNAVIGATION_H
+#endif // DOGECOIN_QT_MODERNAVIGATION_H

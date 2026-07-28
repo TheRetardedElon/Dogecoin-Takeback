@@ -19,4 +19,4 @@
 #define EXPERIMENTAL_FEATURE static_assert(EXPERIMENTAL_FEATURES_ALLOWED == 1, \
      "Experimental features need to be explicitly enabled during configuration.");
 
-#endif //BITCOIN_SUPPORT_EXPERIMENTAL_H
+#endif //DOGECOIN_SUPPORT_EXPERIMENTAL_H

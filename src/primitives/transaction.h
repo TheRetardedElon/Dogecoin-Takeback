@@ -4,8 +4,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_PRIMITIVES_TRANSACTION_H
-#define BITCOIN_PRIMITIVES_TRANSACTION_H
+#ifndef DOGECOIN_PRIMITIVES_TRANSACTION_H
+#define DOGECOIN_PRIMITIVES_TRANSACTION_H
 
 #include "amount.h"
 #include "script/script.h"
@@ -434,4 +434,4 @@ template <typename Tx> static inline CTransactionRef MakeTransactionRef(Tx&& txI
 /** Compute the weight of a transaction, as defined by BIP 141 */
 int64_t GetTransactionWeight(const CTransaction &tx);
 
-#endif // BITCOIN_PRIMITIVES_TRANSACTION_H
+#endif // DOGECOIN_PRIMITIVES_TRANSACTION_H

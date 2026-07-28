@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_WALLET_DB_H
-#define BITCOIN_WALLET_DB_H
+#ifndef DOGECOIN_WALLET_DB_H
+#define DOGECOIN_WALLET_DB_H
 
 #include "clientversion.h"
 #include "fs.h"
@@ -305,4 +305,4 @@ public:
     bool static Rewrite(const std::string& strFile, const char* pszSkip = NULL);
 };
 
-#endif // BITCOIN_WALLET_DB_H
+#endif // DOGECOIN_WALLET_DB_H

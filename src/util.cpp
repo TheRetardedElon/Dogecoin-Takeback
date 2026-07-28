@@ -107,7 +107,7 @@ using namespace std;
 const int64_t nStartupTime = GetTime();
 
 const char * const DOGECOIN_CONF_FILENAME = "dogecoin.conf";
-const char * const BITCOIN_PID_FILENAME = "dogecoind.pid";
+const char * const DOGECOIN_PID_FILENAME = "dogecoind.pid";
 
 CCriticalSection cs_args;
 map<string, string> mapArgs;
@@ -623,7 +623,7 @@ void ReadConfigFile(const std::string& confPath)
 #ifndef WIN32
 fs::path GetPidFile()
 {
-    fs::path pathPidFile(GetArg("-pid", BITCOIN_PID_FILENAME));
+    fs::path pathPidFile(GetArg("-pid", DOGECOIN_PID_FILENAME));
     if (!pathPidFile.is_absolute()) pathPidFile = GetDataDir() / pathPidFile;
     return pathPidFile;
 }

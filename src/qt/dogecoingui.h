@@ -311,4 +311,4 @@ private Q_SLOTS:
     void onMenuSelection(QAction* action);
 };
 
-#endif // BITCOIN_QT_BITCOINGUI_H
+#endif // DOGECOIN_QT_BITCOINGUI_H

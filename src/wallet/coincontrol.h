@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_WALLET_COINCONTROL_H
-#define BITCOIN_WALLET_COINCONTROL_H
+#ifndef DOGECOIN_WALLET_COINCONTROL_H
+#define DOGECOIN_WALLET_COINCONTROL_H
 
 #include "primitives/transaction.h"
 #include "dogecoin-fees.h"
@@ -78,4 +78,4 @@ private:
     std::set<COutPoint> setSelected;
 };
 
-#endif // BITCOIN_WALLET_COINCONTROL_H
+#endif // DOGECOIN_WALLET_COINCONTROL_H

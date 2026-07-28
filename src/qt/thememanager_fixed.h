@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_QT_THEMEMANAGER_H
-#define BITCOIN_QT_THEMEMANAGER_H
+#ifndef DOGECOIN_QT_THEMEMANAGER_H
+#define DOGECOIN_QT_THEMEMANAGER_H
 
 #include <QObject>
 #include <QColor>
@@ -125,4 +125,4 @@ private:
     QMap<ThemeType, ThemeColors> m_builtInThemes;
 };
 
-#endif // BITCOIN_QT_THEMEMANAGER_H
+#endif // DOGECOIN_QT_THEMEMANAGER_H

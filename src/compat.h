@@ -4,8 +4,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_COMPAT_H
-#define BITCOIN_COMPAT_H
+#ifndef DOGECOIN_COMPAT_H
+#define DOGECOIN_COMPAT_H
 
 #if defined(HAVE_CONFIG_H)
 #include "config/dogecoin-config.h"
@@ -109,4 +109,4 @@ bool static inline IsSelectableSocket(SOCKET s) {
  #define MAIN_FUNCTION int main(int argc, char* argv[])
  #endif
 
-#endif // BITCOIN_COMPAT_H
+#endif // DOGECOIN_COMPAT_H

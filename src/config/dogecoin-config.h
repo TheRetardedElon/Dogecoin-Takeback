@@ -1,9 +1,9 @@
-/* src/config/dogecoin-config.h.  Generated from bitcoin-config.h.in by configure.  */
+/* src/config/dogecoin-config.h.  Generated from dogecoin-config.h.in by configure.  */
 /* src/config/dogecoin-config.h.in.  Generated from configure.ac by autoheader.  */
 
-#ifndef BITCOIN_CONFIG_H
+#ifndef DOGECOIN_CONFIG_H
 
-#define BITCOIN_CONFIG_H
+#define DOGECOIN_CONFIG_H
 
 /* Define if building universal (internal helper macro) */
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
@@ -45,7 +45,7 @@
 #define ENABLE_WALLET 1
 
 /* Define to 1 to enable ZMQ functions */
-#define ENABLE_ZMQ 0
+#define ENABLE_ZMQ 1
 
 /* Days until the next release is definitely released */
 #define EXPECTED_DAYS_TO_NEXT_RELEASE 270
@@ -81,103 +81,103 @@
 #define HAVE_CONSENSUS_LIB 1
 
 /* define if the compiler supports basic C++11 syntax */
-#define HAVE_CXX11 1
+/* #undef HAVE_CXX11 */
 
 /* define if the compiler supports basic C++14 syntax */
 /* #undef HAVE_CXX14 */
 
 /* define if the compiler supports basic C++17 syntax */
-/* #undef HAVE_CXX17 */
+#define HAVE_CXX17 1
 
-/* Define to 1 if you have the declaration of `be16toh', and to 0 if you
+/* Define to 1 if you have the declaration of 'be16toh', and to 0 if you
    don't. */
 #define HAVE_DECL_BE16TOH 1
 
-/* Define to 1 if you have the declaration of `be32toh', and to 0 if you
+/* Define to 1 if you have the declaration of 'be32toh', and to 0 if you
    don't. */
 #define HAVE_DECL_BE32TOH 1
 
-/* Define to 1 if you have the declaration of `be64toh', and to 0 if you
+/* Define to 1 if you have the declaration of 'be64toh', and to 0 if you
    don't. */
 #define HAVE_DECL_BE64TOH 1
 
-/* Define to 1 if you have the declaration of `bswap_16', and to 0 if you
+/* Define to 1 if you have the declaration of 'bswap_16', and to 0 if you
    don't. */
 #define HAVE_DECL_BSWAP_16 1
 
-/* Define to 1 if you have the declaration of `bswap_32', and to 0 if you
+/* Define to 1 if you have the declaration of 'bswap_32', and to 0 if you
    don't. */
 #define HAVE_DECL_BSWAP_32 1
 
-/* Define to 1 if you have the declaration of `bswap_64', and to 0 if you
+/* Define to 1 if you have the declaration of 'bswap_64', and to 0 if you
    don't. */
 #define HAVE_DECL_BSWAP_64 1
 
-/* Define to 1 if you have the declaration of `daemon', and to 0 if you don't.
+/* Define to 1 if you have the declaration of 'daemon', and to 0 if you don't.
    */
 #define HAVE_DECL_DAEMON 1
 
-/* Define to 1 if you have the declaration of `EVP_MD_CTX_new', and to 0 if
+/* Define to 1 if you have the declaration of 'EVP_MD_CTX_new', and to 0 if
    you don't. */
 #define HAVE_DECL_EVP_MD_CTX_NEW 1
 
-/* Define to 1 if you have the declaration of `htobe16', and to 0 if you
+/* Define to 1 if you have the declaration of 'htobe16', and to 0 if you
    don't. */
 #define HAVE_DECL_HTOBE16 1
 
-/* Define to 1 if you have the declaration of `htobe32', and to 0 if you
+/* Define to 1 if you have the declaration of 'htobe32', and to 0 if you
    don't. */
 #define HAVE_DECL_HTOBE32 1
 
-/* Define to 1 if you have the declaration of `htobe64', and to 0 if you
+/* Define to 1 if you have the declaration of 'htobe64', and to 0 if you
    don't. */
 #define HAVE_DECL_HTOBE64 1
 
-/* Define to 1 if you have the declaration of `htole16', and to 0 if you
+/* Define to 1 if you have the declaration of 'htole16', and to 0 if you
    don't. */
 #define HAVE_DECL_HTOLE16 1
 
-/* Define to 1 if you have the declaration of `htole32', and to 0 if you
+/* Define to 1 if you have the declaration of 'htole32', and to 0 if you
    don't. */
 #define HAVE_DECL_HTOLE32 1
 
-/* Define to 1 if you have the declaration of `htole64', and to 0 if you
+/* Define to 1 if you have the declaration of 'htole64', and to 0 if you
    don't. */
 #define HAVE_DECL_HTOLE64 1
 
-/* Define to 1 if you have the declaration of `le16toh', and to 0 if you
+/* Define to 1 if you have the declaration of 'le16toh', and to 0 if you
    don't. */
 #define HAVE_DECL_LE16TOH 1
 
-/* Define to 1 if you have the declaration of `le32toh', and to 0 if you
+/* Define to 1 if you have the declaration of 'le32toh', and to 0 if you
    don't. */
 #define HAVE_DECL_LE32TOH 1
 
-/* Define to 1 if you have the declaration of `le64toh', and to 0 if you
+/* Define to 1 if you have the declaration of 'le64toh', and to 0 if you
    don't. */
 #define HAVE_DECL_LE64TOH 1
 
-/* Define to 1 if you have the declaration of `strerror_r', and to 0 if you
+/* Define to 1 if you have the declaration of 'strerror_r', and to 0 if you
    don't. */
 #define HAVE_DECL_STRERROR_R 1
 
-/* Define to 1 if you have the declaration of `strnlen', and to 0 if you
+/* Define to 1 if you have the declaration of 'strnlen', and to 0 if you
    don't. */
 #define HAVE_DECL_STRNLEN 1
 
-/* Define to 1 if you have the declaration of `vsha512su0q_u64', and to 0 if
+/* Define to 1 if you have the declaration of 'vsha512su0q_u64', and to 0 if
    you don't. */
 /* #undef HAVE_DECL_VSHA512SU0Q_U64 */
 
-/* Define to 1 if you have the declaration of `__builtin_clz', and to 0 if you
+/* Define to 1 if you have the declaration of '__builtin_clz', and to 0 if you
    don't. */
 #define HAVE_DECL___BUILTIN_CLZ 1
 
-/* Define to 1 if you have the declaration of `__builtin_clzl', and to 0 if
+/* Define to 1 if you have the declaration of '__builtin_clzl', and to 0 if
    you don't. */
 #define HAVE_DECL___BUILTIN_CLZL 1
 
-/* Define to 1 if you have the declaration of `__builtin_clzll', and to 0 if
+/* Define to 1 if you have the declaration of '__builtin_clzll', and to 0 if
    you don't. */
 #define HAVE_DECL___BUILTIN_CLZLL 1
 
@@ -206,70 +206,70 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
 
-/* Define to 1 if you have the `advapi32' library (-ladvapi32). */
+/* Define to 1 if you have the 'advapi32' library (-ladvapi32). */
 /* #undef HAVE_LIBADVAPI32 */
 
-/* Define to 1 if you have the `comctl32' library (-lcomctl32). */
+/* Define to 1 if you have the 'comctl32' library (-lcomctl32). */
 /* #undef HAVE_LIBCOMCTL32 */
 
-/* Define to 1 if you have the `comdlg32' library (-lcomdlg32). */
+/* Define to 1 if you have the 'comdlg32' library (-lcomdlg32). */
 /* #undef HAVE_LIBCOMDLG32 */
 
-/* Define to 1 if you have the `crypt32' library (-lcrypt32). */
+/* Define to 1 if you have the 'crypt32' library (-lcrypt32). */
 /* #undef HAVE_LIBCRYPT32 */
 
-/* Define to 1 if you have the `gdi32' library (-lgdi32). */
+/* Define to 1 if you have the 'gdi32' library (-lgdi32). */
 /* #undef HAVE_LIBGDI32 */
 
-/* Define to 1 if you have the `imm32' library (-limm32). */
+/* Define to 1 if you have the 'imm32' library (-limm32). */
 /* #undef HAVE_LIBIMM32 */
 
-/* Define to 1 if you have the `iphlpapi' library (-liphlpapi). */
+/* Define to 1 if you have the 'iphlpapi' library (-liphlpapi). */
 /* #undef HAVE_LIBIPHLPAPI */
 
-/* Define to 1 if you have the `kernel32' library (-lkernel32). */
+/* Define to 1 if you have the 'kernel32' library (-lkernel32). */
 /* #undef HAVE_LIBKERNEL32 */
 
-/* Define to 1 if you have the `mingwthrd' library (-lmingwthrd). */
+/* Define to 1 if you have the 'mingwthrd' library (-lmingwthrd). */
 /* #undef HAVE_LIBMINGWTHRD */
 
-/* Define to 1 if you have the `mswsock' library (-lmswsock). */
+/* Define to 1 if you have the 'mswsock' library (-lmswsock). */
 /* #undef HAVE_LIBMSWSOCK */
 
-/* Define to 1 if you have the `ole32' library (-lole32). */
+/* Define to 1 if you have the 'ole32' library (-lole32). */
 /* #undef HAVE_LIBOLE32 */
 
-/* Define to 1 if you have the `oleaut32' library (-loleaut32). */
+/* Define to 1 if you have the 'oleaut32' library (-loleaut32). */
 /* #undef HAVE_LIBOLEAUT32 */
 
-/* Define to 1 if you have the `rpcrt4' library (-lrpcrt4). */
+/* Define to 1 if you have the 'rpcrt4' library (-lrpcrt4). */
 /* #undef HAVE_LIBRPCRT4 */
 
-/* Define to 1 if you have the `shell32' library (-lshell32). */
+/* Define to 1 if you have the 'shell32' library (-lshell32). */
 /* #undef HAVE_LIBSHELL32 */
 
-/* Define to 1 if you have the `shlwapi' library (-lshlwapi). */
+/* Define to 1 if you have the 'shlwapi' library (-lshlwapi). */
 /* #undef HAVE_LIBSHLWAPI */
 
-/* Define to 1 if you have the `ssp' library (-lssp). */
+/* Define to 1 if you have the 'ssp' library (-lssp). */
 /* #undef HAVE_LIBSSP */
 
-/* Define to 1 if you have the `user32' library (-luser32). */
+/* Define to 1 if you have the 'user32' library (-luser32). */
 /* #undef HAVE_LIBUSER32 */
 
-/* Define to 1 if you have the `uuid' library (-luuid). */
+/* Define to 1 if you have the 'uuid' library (-luuid). */
 /* #undef HAVE_LIBUUID */
 
-/* Define to 1 if you have the `winmm' library (-lwinmm). */
+/* Define to 1 if you have the 'winmm' library (-lwinmm). */
 /* #undef HAVE_LIBWINMM */
 
-/* Define to 1 if you have the `winspool' library (-lwinspool). */
+/* Define to 1 if you have the 'winspool' library (-lwinspool). */
 /* #undef HAVE_LIBWINSPOOL */
 
-/* Define to 1 if you have the `ws2_32' library (-lws2_32). */
+/* Define to 1 if you have the 'ws2_32' library (-lws2_32). */
 /* #undef HAVE_LIBWS2_32 */
 
-/* Define to 1 if you have the `z ' library (-lz ). */
+/* Define to 1 if you have the 'z ' library (-lz ). */
 /* #undef HAVE_LIBZ_ */
 
 /* Define this symbol if you have mallopt with M_ARENA_MAX */
@@ -305,7 +305,7 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #define HAVE_STDLIB_H 1
 
-/* Define if you have `strerror_r'. */
+/* Define if you have 'strerror_r'. */
 #define HAVE_STRERROR_R 1
 
 /* Define to 1 if you have the <strings.h> header file. */
@@ -378,7 +378,7 @@
 /* Define this symbol if qt plugins are static */
 /* #undef QT_STATICPLUGIN */
 
-/* Define to 1 if all of the C90 standard headers exist (not just the ones
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #define STDC_HEADERS 1
@@ -423,7 +423,13 @@
 /* Number of bits in a file offset, on hosts where this is settable. */
 /* #undef _FILE_OFFSET_BITS */
 
-/* Define for large files, on AIX-style hosts. */
+/* Define to 1 on platforms where this makes off_t a 64-bit type. */
 /* #undef _LARGE_FILES */
 
-#endif //BITCOIN_CONFIG_H
+/* Number of bits in time_t, on hosts where this is settable. */
+/* #undef _TIME_BITS */
+
+/* Define to 1 on platforms where this makes time_t a 64-bit type. */
+/* #undef __MINGW_USE_VC2005_COMPAT */
+
+#endif //DOGECOIN_CONFIG_H

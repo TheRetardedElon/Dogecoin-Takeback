@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_DOGECOIN_FEES_H
-#define BITCOIN_DOGECOIN_FEES_H
+#ifndef DOGECOIN_DOGECOIN_FEES_H
+#define DOGECOIN_DOGECOIN_FEES_H
 
 #include "amount.h"
 #include "chain.h"
@@ -28,4 +28,4 @@ const std::string GetDogecoinPriorityLabel(int priority);
 CAmount GetDogecoinMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowFree);
 CAmount GetDogecoinDustFee(const std::vector<CTxOut> &vout, const CAmount dustLimit);
 
-#endif // BITCOIN_DOGECOIN_FEES_H
+#endif // DOGECOIN_DOGECOIN_FEES_H

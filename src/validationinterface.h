@@ -4,8 +4,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_VALIDATIONINTERFACE_H
-#define BITCOIN_VALIDATIONINTERFACE_H
+#ifndef DOGECOIN_VALIDATIONINTERFACE_H
+#define DOGECOIN_VALIDATIONINTERFACE_H
 
 #include <boost/signals2/signal.hpp>
 #include <memory>
@@ -80,4 +80,4 @@ struct CMainSignals {
 
 CMainSignals& GetMainSignals();
 
-#endif // BITCOIN_VALIDATIONINTERFACE_H
+#endif // DOGECOIN_VALIDATIONINTERFACE_H

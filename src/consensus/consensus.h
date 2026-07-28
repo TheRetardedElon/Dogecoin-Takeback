@@ -4,8 +4,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_CONSENSUS_CONSENSUS_H
-#define BITCOIN_CONSENSUS_CONSENSUS_H
+#ifndef DOGECOIN_CONSENSUS_CONSENSUS_H
+#define DOGECOIN_CONSENSUS_CONSENSUS_H
 
 #include <stdint.h>
 
@@ -27,4 +27,4 @@ enum {
     LOCKTIME_MEDIAN_TIME_PAST = (1 << 1),
 };
 
-#endif // BITCOIN_CONSENSUS_CONSENSUS_H
+#endif // DOGECOIN_CONSENSUS_CONSENSUS_H

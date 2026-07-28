@@ -128,4 +128,4 @@ private:
 };
 typedef DogecoinUnits::Unit DogecoinUnit;
 
-#endif // BITCOIN_QT_BITCOINUNITS_H
+#endif // DOGECOIN_QT_BITCOINUNITS_H

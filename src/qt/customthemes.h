@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_QT_CUSTOMTHEMES_H
-#define BITCOIN_QT_CUSTOMTHEMES_H
+#ifndef DOGECOIN_QT_CUSTOMTHEMES_H
+#define DOGECOIN_QT_CUSTOMTHEMES_H
 
 #include <QObject>
 #include <QString>
@@ -82,4 +82,4 @@ private:
     QMap<QString, ThemeMetadata> m_themeCache;
 };
 
-#endif // BITCOIN_QT_CUSTOMTHEMES_H
+#endif // DOGECOIN_QT_CUSTOMTHEMES_H

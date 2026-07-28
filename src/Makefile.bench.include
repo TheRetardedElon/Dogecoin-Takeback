@@ -57,9 +57,9 @@ endif
 bench_bench_dogecoin_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS)
 bench_bench_dogecoin_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
-CLEAN_BITCOIN_BENCH = bench/*.gcda bench/*.gcno $(GENERATED_TEST_FILES)
+CLEAN_DOGECOIN_BENCH = bench/*.gcda bench/*.gcno $(GENERATED_TEST_FILES)
 
-CLEANFILES += $(CLEAN_BITCOIN_BENCH)
+CLEANFILES += $(CLEAN_DOGECOIN_BENCH)
 
 bench/checkblock.cpp: bench/data/block413567.raw.h
 
@@ -69,7 +69,7 @@ bench: $(BENCH_BINARY) FORCE
 	$(BENCH_BINARY)
 
 dogecoin_bench_clean : FORCE
-	rm -f $(CLEAN_BITCOIN_BENCH) $(bench_bench_dogecoin_OBJECTS) $(BENCH_BINARY)
+	rm -f $(CLEAN_DOGECOIN_BENCH) $(bench_bench_dogecoin_OBJECTS) $(BENCH_BINARY)
 
 %.raw.h: %.raw
 	@$(MKDIR_P) $(@D)

@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_QT_MODERNCARD_H
-#define BITCOIN_QT_MODERNCARD_H
+#ifndef DOGECOIN_QT_MODERNCARD_H
+#define DOGECOIN_QT_MODERNCARD_H
 
 #include <QFrame>
 #include <QVBoxLayout>
@@ -84,4 +84,4 @@ private:
     QPropertyAnimation* m_hoverAnimation;
 };
 
-#endif // BITCOIN_QT_MODERNCARD_H
+#endif // DOGECOIN_QT_MODERNCARD_H

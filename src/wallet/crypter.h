@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_WALLET_CRYPTER_H
-#define BITCOIN_WALLET_CRYPTER_H
+#ifndef DOGECOIN_WALLET_CRYPTER_H
+#define DOGECOIN_WALLET_CRYPTER_H
 
 #include "keystore.h"
 #include "serialize.h"
@@ -195,4 +195,4 @@ public:
     boost::signals2::signal<void (CCryptoKeyStore* wallet)> NotifyStatusChanged;
 };
 
-#endif // BITCOIN_WALLET_CRYPTER_H
+#endif // DOGECOIN_WALLET_CRYPTER_H

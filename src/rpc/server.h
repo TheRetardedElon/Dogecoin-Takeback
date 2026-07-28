@@ -4,8 +4,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_RPCSERVER_H
-#define BITCOIN_RPCSERVER_H
+#ifndef DOGECOIN_RPCSERVER_H
+#define DOGECOIN_RPCSERVER_H
 
 #include "amount.h"
 #include "arith_uint256.h"
@@ -215,4 +215,4 @@ int RPCSerializationFlags();
 
 extern bool fUseNamecoinApi;
 
-#endif // BITCOIN_RPCSERVER_H
+#endif // DOGECOIN_RPCSERVER_H

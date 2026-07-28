@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_QT_GUICONSTANTS_H
-#define BITCOIN_QT_GUICONSTANTS_H
+#ifndef DOGECOIN_QT_GUICONSTANTS_H
+#define DOGECOIN_QT_GUICONSTANTS_H
 
 #include "validation.h"
 
@@ -70,4 +70,4 @@ constexpr inline int64_t PruneGBtoMiB(int gb) { return gb * GB_BYTES / 1024 / 10
 // Default prune target displayed in GUI.
 static constexpr int DEFAULT_PRUNE_TARGET_GB{PruneBytestoGB(MIN_DISK_SPACE_FOR_BLOCK_FILES)};
 
-#endif // BITCOIN_QT_GUICONSTANTS_H
+#endif // DOGECOIN_QT_GUICONSTANTS_H

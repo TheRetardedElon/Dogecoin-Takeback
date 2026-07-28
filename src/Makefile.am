@@ -75,7 +75,7 @@ endif
 
 .PHONY: FORCE check-symbols check-security
 # bitcoin core #
-BITCOIN_CORE_H = \
+DOGECOIN_CORE_H = \
   addrdb.h \
   addrman.h \
   attributes.h \
@@ -229,7 +229,7 @@ libdogecoin_server_a_SOURCES = \
   validation.cpp \
   validationinterface.cpp \
   versionbits.cpp \
-  $(BITCOIN_CORE_H)
+  $(DOGECOIN_CORE_H)
 
 if ENABLE_ZMQ
 libdogecoin_zmq_a_CPPFLAGS = $(DOGECOIN_INCLUDES) $(ZMQ_CFLAGS)
@@ -254,7 +254,7 @@ libdogecoin_wallet_a_SOURCES = \
   wallet/wallet.cpp \
   wallet/walletdb.cpp \
   policy/rbf.cpp \
-  $(BITCOIN_CORE_H)
+  $(DOGECOIN_CORE_H)
 
 # crypto primitives library
 crypto_libdogecoin_crypto_a_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_CONFIG_INCLUDES)
@@ -347,7 +347,7 @@ libdogecoin_common_a_SOURCES = \
   script/sign.cpp \
   script/standard.cpp \
   warnings.cpp \
-  $(BITCOIN_CORE_H)
+  $(DOGECOIN_CORE_H)
 
 # util: shared between all executables.
 # This library *must* be included to make sure that the glibc
@@ -371,7 +371,7 @@ libdogecoin_util_a_SOURCES = \
   utilmoneystr.cpp \
   utilstrencodings.cpp \
   utiltime.cpp \
-  $(BITCOIN_CORE_H)
+  $(DOGECOIN_CORE_H)
 
 if GLIBC_BACK_COMPAT
 
@@ -385,7 +385,7 @@ libdogecoin_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES)
 libdogecoin_cli_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libdogecoin_cli_a_SOURCES = \
   rpc/client.cpp \
-  $(BITCOIN_CORE_H)
+  $(DOGECOIN_CORE_H)
 
 nodist_libdogecoin_util_a_SOURCES = $(srcdir)/obj/build.h
 #

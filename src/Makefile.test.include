@@ -76,7 +76,7 @@ RAW_TEST_FILES =
 GENERATED_TEST_FILES = $(JSON_TEST_FILES:.json=.json.h) $(RAW_TEST_FILES:.raw=.raw.h)
 
 # test_dogecoin binary #
-BITCOIN_TESTS =\
+DOGECOIN_TESTS =\
   test/arith_uint256_tests.cpp \
   test/scriptnum10.h \
   test/addrman_tests.cpp \
@@ -143,7 +143,7 @@ BITCOIN_TESTS =\
   test/util_tests.cpp
 
 if ENABLE_WALLET
-BITCOIN_TESTS += \
+DOGECOIN_TESTS += \
   wallet/test/wallet_test_fixture.cpp \
   wallet/test/wallet_test_fixture.h \
   wallet/test/accounting_tests.cpp \
@@ -151,7 +151,7 @@ BITCOIN_TESTS += \
   wallet/test/crypto_tests.cpp
 endif
 
-test_test_dogecoin_SOURCES = $(BITCOIN_TESTS) $(JSON_TEST_FILES) $(RAW_TEST_FILES)
+test_test_dogecoin_SOURCES = $(DOGECOIN_TESTS) $(JSON_TEST_FILES) $(RAW_TEST_FILES)
 test_test_dogecoin_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES) -I$(builddir)/test/ $(TESTDEFS) $(EVENT_CFLAGS)
 test_test_dogecoin_LDADD = $(LIBDOGECOIN_SERVER) $(LIBDOGECOIN_CLI) $(LIBDOGECOIN_COMMON) $(LIBDOGECOIN_UTIL) $(LIBDOGECOIN_CONSENSUS) $(LIBDOGECOIN_CRYPTO) $(LIBUNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
   $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1) $(EVENT_LIBS)
@@ -188,11 +188,11 @@ test_test_dogecoin_fuzzy_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 
 nodist_test_test_dogecoin_SOURCES = $(GENERATED_TEST_FILES)
 
-$(BITCOIN_TESTS): $(GENERATED_TEST_FILES)
+$(DOGECOIN_TESTS): $(GENERATED_TEST_FILES)
 
-CLEAN_BITCOIN_TEST = test/*.gcda test/*.gcno $(GENERATED_TEST_FILES)
+CLEAN_DOGECOIN_TEST = test/*.gcda test/*.gcno $(GENERATED_TEST_FILES)
 
-CLEANFILES += $(CLEAN_BITCOIN_TEST)
+CLEANFILES += $(CLEAN_DOGECOIN_TEST)
 
 # This file is problematic for out-of-tree builds if it exists.
 DISTCLEANFILES += test/buildenv.pyc
@@ -203,7 +203,7 @@ dogecoin_test_check: $(TEST_BINARY) FORCE
 	$(MAKE) check-TESTS TESTS=$^
 
 dogecoin_test_clean : FORCE
-	rm -f $(CLEAN_BITCOIN_TEST) $(test_test_dogecoin_OBJECTS) $(TEST_BINARY)
+	rm -f $(CLEAN_DOGECOIN_TEST) $(test_test_dogecoin_OBJECTS) $(TEST_BINARY)
 
 check-local:
 	@echo "Running test/bitcoin-util-test.py..."

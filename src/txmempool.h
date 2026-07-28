@@ -4,8 +4,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_TXMEMPOOL_H
-#define BITCOIN_TXMEMPOOL_H
+#ifndef DOGECOIN_TXMEMPOOL_H
+#define DOGECOIN_TXMEMPOOL_H
 
 #include <memory>
 #include <set>
@@ -745,6 +745,6 @@ struct TxCoinAgePriorityCompare
     }
 };
 
-#endif // BITCOIN_TXMEMPOOL_H
+#endif // DOGECOIN_TXMEMPOOL_H
 
 

@@ -4,8 +4,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_PRIMITIVES_BLOCK_H
-#define BITCOIN_PRIMITIVES_BLOCK_H
+#ifndef DOGECOIN_PRIMITIVES_BLOCK_H
+#define DOGECOIN_PRIMITIVES_BLOCK_H
 
 #include "auxpow.h"
 #include "primitives/transaction.h"
@@ -160,4 +160,4 @@ struct CBlockLocator
 /** Compute the consensus-critical block weight (see BIP 141). */
 int64_t GetBlockWeight(const CBlock& tx);
 
-#endif // BITCOIN_PRIMITIVES_BLOCK_H
+#endif // DOGECOIN_PRIMITIVES_BLOCK_H

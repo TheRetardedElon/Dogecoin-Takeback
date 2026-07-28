@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_RPCMINING_H
-#define BITCOIN_RPCMINING_H
+#ifndef DOGECOIN_RPCMINING_H
+#define DOGECOIN_RPCMINING_H
 
 #include "arith_uint256.h"
 #include "primitives/block.h"
@@ -33,4 +33,4 @@ protected:
 
 UniValue BIP22ValidationResult(const CValidationState& state);
 
-#endif //BITCOIN_RPCMINING_H
+#endif //DOGECOIN_RPCMINING_H

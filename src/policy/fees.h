@@ -3,8 +3,8 @@
 // Copyright (c) 2023 The Dogecoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#ifndef BITCOIN_POLICYESTIMATOR_H
-#define BITCOIN_POLICYESTIMATOR_H
+#ifndef DOGECOIN_POLICYESTIMATOR_H
+#define DOGECOIN_POLICYESTIMATOR_H
 
 #include "amount.h"
 #include "uint256.h"
@@ -321,4 +321,4 @@ private:
     std::set<double> feeset;
     FastRandomContext insecure_rand;
 };
-#endif /*BITCOIN_POLICYESTIMATOR_H */
+#endif /*DOGECOIN_POLICYESTIMATOR_H */

@@ -509,7 +509,7 @@ WId DogecoinApplication::getMainWinId() const
     return window->winId();
 }
 
-#ifndef BITCOIN_QT_TEST
+#ifndef DOGECOIN_QT_TEST
 MAIN_FUNCTION
 {
     SetupEnvironment();
@@ -666,4 +666,4 @@ MAIN_FUNCTION
     }
     return app.getReturnValue();
 }
-#endif // BITCOIN_QT_TEST
+#endif // DOGECOIN_QT_TEST
