@@ -13,6 +13,7 @@
 #include "guiutil.h"
 #include "importkeysdialog.h"
 #include "memestreampage.h"
+#include "memestreamrail.h"
 #include "optionsmodel.h"
 #include "overviewpage.h"
 #include "platformstyle.h"
@@ -42,6 +43,16 @@ WalletView::WalletView(const PlatformStyle *_platformStyle, QWidget *parent):
 {
     // Create tabs
     overviewPage = new OverviewPage(platformStyle);
+    memeStreamRail = new MemeStreamRail(platformStyle, this);
+
+    // Home = overview balances/activity + compact Meme Stream rail (Core Pro layout)
+    homePage = new QWidget(this);
+    homePage->setObjectName(QStringLiteral("homePage"));
+    QHBoxLayout* homeLayout = new QHBoxLayout(homePage);
+    homeLayout->setContentsMargins(0, 0, 0, 0);
+    homeLayout->setSpacing(0);
+    homeLayout->addWidget(overviewPage, 1);
+    homeLayout->addWidget(memeStreamRail, 0);
 
     transactionsPage = new QWidget(this);
     QVBoxLayout *vbox = new QVBoxLayout();
@@ -66,7 +77,7 @@ WalletView::WalletView(const PlatformStyle *_platformStyle, QWidget *parent):
     usedSendingAddressesPage = new AddressBookPage(platformStyle, AddressBookPage::ForEditing, AddressBookPage::SendingTab, this);
     usedReceivingAddressesPage = new AddressBookPage(platformStyle, AddressBookPage::ForEditing, AddressBookPage::ReceivingTab, this);
 
-    addWidget(overviewPage);
+    addWidget(homePage);
     addWidget(transactionsPage);
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
@@ -75,9 +86,11 @@ WalletView::WalletView(const PlatformStyle *_platformStyle, QWidget *parent):
 
     importKeysDialog = new ImportKeysDialog(platformStyle);
 
-    // Tip from Meme Stream → Send page pre-filled with creator address
+    // Tip from Meme Stream (full page or Home rail) → Send pre-filled with creator address
     connect(memeStreamPage, SIGNAL(tipRequested(QString)), this, SLOT(gotoSendCoinsPage(QString)));
     connect(memeStreamPage, SIGNAL(message(QString,QString,uint)), this, SIGNAL(message(QString,QString,uint)));
+    connect(memeStreamRail, SIGNAL(tipRequested(QString)), this, SLOT(gotoSendCoinsPage(QString)));
+    connect(memeStreamRail, SIGNAL(openFullPage()), this, SLOT(gotoMemeStreamPage()));
     connect(dogeBusinessPage, SIGNAL(message(QString,QString,uint)), this, SIGNAL(message(QString,QString,uint)));
     connect(dogeBusinessPage, SIGNAL(gotoReceiveRequested()), this, SLOT(gotoReceiveCoinsPage()));
 
@@ -140,6 +153,7 @@ void WalletView::setWalletModel(WalletModel *_walletModel)
     receiveCoinsPage->setModel(_walletModel);
     sendCoinsPage->setModel(_walletModel);
     memeStreamPage->setWalletModel(_walletModel);
+    memeStreamRail->setWalletModel(_walletModel);
     dogeBusinessPage->setWalletModel(_walletModel);
     usedReceivingAddressesPage->setModel(_walletModel->getAddressTableModel());
     usedSendingAddressesPage->setModel(_walletModel->getAddressTableModel());
@@ -190,7 +204,9 @@ void WalletView::processNewTransaction(const QModelIndex& parent, int start, int
 
 void WalletView::gotoOverviewPage()
 {
-    setCurrentWidget(overviewPage);
+    setCurrentWidget(homePage);
+    if (memeStreamRail)
+        memeStreamRail->refresh();
 }
 
 void WalletView::gotoHistoryPage()

@@ -22,6 +22,7 @@ class WalletModel;
 class AddressBookPage;
 class ImportKeysDialog;
 class MemeStreamPage;
+class MemeStreamRail;
 class DogeBusinessPage;
 
 QT_BEGIN_NAMESPACE
@@ -63,6 +64,8 @@ private:
     WalletModel *walletModel;
 
     OverviewPage *overviewPage;
+    QWidget *homePage; //!< Overview + Meme Stream right rail
+    MemeStreamRail *memeStreamRail;
     QWidget *transactionsPage;
     ReceiveCoinsDialog *receiveCoinsPage;
     SendCoinsDialog *sendCoinsPage;
