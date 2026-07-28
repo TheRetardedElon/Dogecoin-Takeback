@@ -174,6 +174,7 @@ DOGECOIN_CORE_H = \
   wallet/rpcwallet.h \
   wallet/wallet.h \
   wallet/walletdb.h \
+  wallet/walletdb_backend.h \
   wallet/walletdb_format.h \
   warnings.h \
   zmq/zmqabstractnotifier.h \
@@ -254,6 +255,7 @@ libdogecoin_wallet_a_SOURCES = \
   wallet/rpcwallet.cpp \
   wallet/wallet.cpp \
   wallet/walletdb.cpp \
+  wallet/walletdb_backend.cpp \
   wallet/walletdb_format.cpp \
   policy/rbf.cpp \
   $(DOGECOIN_CORE_H)

@@ -7,6 +7,7 @@
 #include "wallet/wallet.h"
 
 #include "wallet/walletdb_format.h"
+#include "wallet/walletdb_backend.h"
 #include "base58.h"
 #include "checkpoints.h"
 #include "chain.h"
@@ -466,19 +467,26 @@ bool CWallet::Verify()
         return InitError(strprintf(_("Wallet %s resides outside data directory %s"), walletFile, GetDataDir().string()));
     }
 
-    // Dual-stack groundwork: detect on-disk format before opening BDB.
-    // SQLite wallets are recognized but not loadable until migration lands.
+    // Dual-stack groundwork: detect on-disk format and honor -walletformat.
+    // SQLite is recognized/refused; only Berkeley is loadable today.
     {
         const fs::path walletFullPath = GetDataDir() / walletFile;
-        const WalletDatabaseFormat fmt = DetectWalletDatabaseFormat(walletFullPath);
-        LogPrintf("Wallet database format: %s (%s)\n",
-                  WalletDatabaseFormatToString(fmt), walletFullPath.string());
-        if (!IsWalletDatabaseFormatSupported(fmt)) {
-            return InitError(strprintf(
-                _("Wallet file %s uses database format '%s', which is not supported by this build. "
-                  "Only Berkeley DB (bdb) wallets are supported. SQLite dual-stack support is under development."),
-                walletFile, WalletDatabaseFormatToString(fmt)));
+        const WalletDatabaseFormat detected = DetectWalletDatabaseFormat(walletFullPath);
+        WalletFormatPreference pref = WalletFormatPreference::AUTO;
+        std::string formatErr;
+        if (!ParseWalletFormatPreference(GetArg("-walletformat", "auto"), pref, formatErr)) {
+            return InitError(strprintf(_("Invalid -walletformat: %s"), formatErr));
         }
+        WalletDatabaseFormat effective = WalletDatabaseFormat::UNKNOWN;
+        if (!ResolveWalletDatabaseFormat(pref, detected, effective, formatErr)) {
+            return InitError(strprintf(_("Wallet database format error for %s: %s"),
+                                       walletFile, formatErr));
+        }
+        LogPrintf("Wallet database format: detected=%s effective=%s preference=%s (%s)\n",
+                  WalletDatabaseFormatToString(detected),
+                  WalletDatabaseFormatToString(effective),
+                  WalletFormatPreferenceToString(pref),
+                  walletFullPath.string());
     }
 
     if (!bitdb.Open(GetDataDir()))
@@ -3681,6 +3689,7 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
     strUsage += HelpMessageOpt("-walletrbf", strprintf(_("Send transactions with full-RBF opt-in enabled (default: %u)"), DEFAULT_WALLET_RBF));
     strUsage += HelpMessageOpt("-upgradewallet", _("Upgrade wallet to latest format on startup"));
     strUsage += HelpMessageOpt("-wallet=<file>", _("Specify wallet file (within data directory)") + " " + strprintf(_("(default: %s)"), DEFAULT_WALLET_DAT));
+    strUsage += HelpMessageOpt("-walletformat=<format>", _("Wallet database backend: auto, bdb, or sqlite (default: auto; only bdb is implemented)"));
     strUsage += HelpMessageOpt("-walletbroadcast", _("Make the wallet broadcast transactions") + " " + strprintf(_("(default: %u)"), DEFAULT_WALLETBROADCAST));
     strUsage += HelpMessageOpt("-walletnotify=<cmd>", _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID, %i with block height, with a value of 0 if tx is no longer in chaintip)"));
     strUsage += HelpMessageOpt("-zapwallettxes=<mode>", _("Delete all wallet transactions and only recover those parts of the blockchain through -rescan on startup") +

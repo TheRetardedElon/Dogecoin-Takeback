@@ -82,10 +82,12 @@
         <li class="done">Hard error if SQLite file presented to this build</li>
       </ul>
 
-      <h3>Phase B — Abstract storage interface</h3>
+      <h3>Phase B — Abstract storage interface (in progress)</h3>
       <ul class="checklist">
-        <li class="todo">Introduce backend interface for Read/Write/Erase/Txn used by wallet records</li>
-        <li class="todo">Implement Berkeley backend wrapping current <code>CDB</code></li>
+        <li class="done"><code>walletdb_backend.*</code> preference resolve (<code>-walletformat</code>)</li>
+        <li class="done">Unit tests for format detect + resolve rules</li>
+        <li class="done">Contract documented for future Berkeley/SQLite backends</li>
+        <li class="todo">Implement Berkeley backend wrapping current <code>CDB</code> behind interface</li>
         <li class="todo">Keep <code>CWalletDB</code> API surface stable for wallet.cpp callers</li>
       </ul>
 

@@ -13,17 +13,6 @@ namespace {
 // See https://www.sqlite.org/fileformat.html
 const char SQLITE_HEADER[] = "SQLite format 3";
 
-bool ReadFileHeader(const fs::path& path, unsigned char* out, size_t n)
-{
-    FILE* f = fsbridge::fopen(path, "rb");
-    if (!f) {
-        return false;
-    }
-    const size_t got = fread(out, 1, n, f);
-    fclose(f);
-    return got == n;
-}
-
 } // namespace
 
 WalletDatabaseFormat DetectWalletDatabaseFormat(const fs::path& wallet_path)
@@ -38,11 +27,18 @@ WalletDatabaseFormat DetectWalletDatabaseFormat(const fs::path& wallet_path)
     }
 
     unsigned char header[16] = {0};
-    if (!ReadFileHeader(wallet_path, header, sizeof(header))) {
+    FILE* f = fsbridge::fopen(wallet_path, "rb");
+    if (!f) {
+        return WalletDatabaseFormat::UNKNOWN;
+    }
+    const size_t got = fread(header, 1, sizeof(header), f);
+    fclose(f);
+    if (got == 0) {
         return WalletDatabaseFormat::UNKNOWN;
     }
 
-    if (memcmp(header, SQLITE_HEADER, 15) == 0) {
+    // Full SQLite header requires 16 bytes starting with "SQLite format 3\0".
+    if (got >= 16 && memcmp(header, SQLITE_HEADER, 15) == 0 && header[15] == '\0') {
         return WalletDatabaseFormat::SQLITE;
     }
 
