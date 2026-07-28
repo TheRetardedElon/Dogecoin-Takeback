@@ -25,6 +25,7 @@
 #include "thememanager.h"
 #include "modernoverviewpage.h"
 
+#include <QStyle>
 #include <QMenu>
 #include <QMenuBar>
 #include <QToolBar>
@@ -337,10 +338,20 @@ DogecoinGUI::DogecoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle
     // Dogecoin: Set new application font
     QApplication::setFont(newFont);
 
-    // Initialize theme system
+    // Single theme path: ThemeManager owns app + Pro shell styles.
+    // Clear any local container stylesheet so global rules cascade.
     ThemeManager* themeManager = ThemeManager::instance();
-    themeManager->applyTheme(qApp);
-    applyTheme(m_currentTheme);
+    connect(themeManager, &ThemeManager::colorsChanged, this, [this]() {
+        QWidget* container = findChild<QWidget*>("modernContainer");
+        if (container)
+            container->setStyleSheet(QString());
+        style()->unpolish(this);
+        style()->polish(this);
+        update();
+    });
+    // Default Pro chrome: Dark (matches previous shell default)
+    themeManager->switchToDark();
+    m_currentTheme = "Dark";
 
     // Accept D&D of URIs
     setAcceptDrops(true);
@@ -348,125 +359,36 @@ DogecoinGUI::DogecoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle
 
 void DogecoinGUI::applyTheme(const QString& themeName)
 {
-    QString style;
-    
-    if (themeName == "dark") {
-        style = R"(
-            QWidget#modernContainer {
-                background-color: #1a1a1a;
-                color: #ffffff;
-            }
-            QWidget#modernNavigation {
-                background-color: #2d2d2d;
-                border-right: 1px solid #404040;
-            }
-            QPushButton {
-                background-color: transparent;
-                border: none;
-                padding: 15px 20px;
-                text-align: left;
-                color: #cccccc;
-                font-size: 14px;
-                font-weight: 500;
-            }
-            QPushButton:hover {
-                background-color: #3d3d3d;
-                color: #ffffff;
-            }
-            QPushButton:pressed {
-                background-color: #4d4d4d;
-            }
-        )";
-    } else if (themeName == "cyberpunk") {
-        style = R"(
-            QWidget#modernContainer {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #0a0a0a, stop:1 #1a1a1a);
-                color: #00ff00;
-            }
-            QWidget#modernNavigation {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0d1117, stop:1 #161b22);
-                border-right: 2px solid #00ff00;
-            }
-            QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #00ff00, stop:1 #00cc00);
-                border: 1px solid #00ff00;
-                border-radius: 6px;
-                padding: 12px 20px;
-                color: #000000;
-                font-weight: 600;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #00ff00, stop:1 #00ff00);
-                box-shadow: 0 0 10px #00ff00;
-            }
-        )";
-    } else if (themeName == "neon") {
-        style = R"(
-            QWidget#modernContainer {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #0a0a0a, stop:1 #1a0a2e);
-                color: #ff0080;
-            }
-            QWidget#modernNavigation {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #16213e, stop:1 #0f3460);
-                border-right: 2px solid #ff0080;
-            }
-            QPushButton {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff0080, stop:1 #e60073);
-                border: 1px solid #ff0080;
-                border-radius: 8px;
-                padding: 12px 20px;
-                color: #ffffff;
-                font-weight: 600;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ff0080, stop:1 #ff0080);
-                box-shadow: 0 0 15px #ff0080;
-            }
-        )";
-    } else if (themeName == "light") {
-        style = R"(
-            QWidget#modernContainer {
-                background-color: #ffffff;
-                color: #333333;
-            }
-            QWidget#modernNavigation {
-                background-color: #f5f5f5;
-                border-right: 1px solid #e0e0e0;
-            }
-            QPushButton {
-                background-color: transparent;
-                border: none;
-                padding: 15px 20px;
-                text-align: left;
-                color: #666666;
-                font-size: 14px;
-                font-weight: 500;
-            }
-            QPushButton:hover {
-                background-color: #e8e8e8;
-                color: #333333;
-            }
-            QPushButton:pressed {
-                background-color: #d0d0d0;
-            }
-        )";
+    // Map legacy chrome names → ThemeManager / CSS themes
+    ThemeManager* tm = ThemeManager::instance();
+    const QString t = themeName.toLower();
+    if (t == "light") {
+        tm->switchToLight();
+    } else if (t == "dark") {
+        tm->switchToDark();
+    } else if (t == "dogecoin") {
+        tm->switchToTheme(ThemeManager::Dogecoin);
+    } else if (t == "neon") {
+        tm->switchToTheme(ThemeManager::Neon);
+    } else if (t == "classic" || t == "basic") {
+        tm->switchToTheme(ThemeManager::Classic);
+    } else {
+        // matrix, cyberpunk, retro, etc. — CSS packs under src/qt/themes/
+        tm->loadCSSTheme(themeName);
     }
-    
-    // Apply the theme
+
+    // Ensure container does not override the global sheet
     QWidget* container = findChild<QWidget*>("modernContainer");
-    if (container) {
-        container->setStyleSheet(style);
-    }
-    
+    if (container)
+        container->setStyleSheet(QString());
+
     m_currentTheme = themeName;
 }
 
 void DogecoinGUI::cycleTheme()
 {
-    QString themes[] = {"dark", "cyberpunk", "neon", "light"};
-    m_themeIndex = (m_themeIndex + 1) % 4;
+    QString themes[] = {"dark", "light", "dogecoin", "neon", "matrix", "cyberpunk"};
+    m_themeIndex = (m_themeIndex + 1) % 6;
     applyTheme(themes[m_themeIndex]);
 }
 

@@ -104,7 +104,11 @@ public:
     // Style application
     void applyTheme(QApplication* app);
     void applyTheme(QWidget* widget);
+    /** Rebuild and push the full stylesheet to qApp (Pro shell + widgets). */
+    void applyToApplication();
     QString getStylesheet() const;
+    /** Scoped rules for modern nav, Home rail, Meme Stream, Business. */
+    QString getProShellStylesheet() const;
     void loadCSSTheme(const QString& themeName);
     
     // Custom theme discovery and management

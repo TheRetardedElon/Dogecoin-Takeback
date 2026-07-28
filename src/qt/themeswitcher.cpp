@@ -345,7 +345,8 @@ void ThemeSwitcher::onFontFamilyChanged()
 
 void ThemeSwitcher::onPreviewTheme()
 {
-    // Apply theme to preview area
+    // Apply the currently selected theme to the whole app (not only the preview box)
+    onThemeChanged();
     m_themeManager->applyTheme(m_previewFrame);
     updatePreview();
 }

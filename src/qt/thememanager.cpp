@@ -10,6 +10,7 @@
 #include <QStyleFactory>
 #include <QPalette>
 #include <QWidget>
+#include <QStyle>
 #include <QDebug>
 #include <QDir>
 #include <QFile>
@@ -292,12 +293,14 @@ ThemeManager::ThemeColors ThemeManager::getClassicThemeColors() const
 
 void ThemeManager::setTheme(ThemeType theme)
 {
-    if (m_currentTheme != theme) {
-        m_currentTheme = theme;
-        updateColors();
+    const bool changed = (m_currentTheme != theme);
+    m_currentTheme = theme;
+    updateColors();
+    applyToApplication();
+    if (changed) {
         Q_EMIT themeChanged(theme);
-        Q_EMIT colorsChanged();
     }
+    Q_EMIT colorsChanged();
 }
 
 QString ThemeManager::currentThemeName() const
@@ -368,23 +371,33 @@ void ThemeManager::switchToAuto()
 void ThemeManager::switchToTheme(ThemeType theme)
 {
     setTheme(theme);
-    updateColors();
-    
-    // Apply the theme globally to the entire application
-    if (qApp) {
-        qApp->setStyleSheet(getStylesheet());
-    }
-    
-    // Don't emit signal to prevent infinite recursion with ThemeSwitcher
-    // Q_EMIT themeChanged(theme);
 }
 
 void ThemeManager::switchToCustom(const QString& themeName)
 {
     if (m_customThemes.contains(themeName)) {
-        setTheme(Custom);
+        m_currentTheme = Custom;
         m_currentColors = m_customThemes[themeName];
+        applyToApplication();
+        Q_EMIT themeChanged(Custom);
         Q_EMIT colorsChanged();
+    }
+}
+
+void ThemeManager::applyToApplication()
+{
+    if (!qApp)
+        return;
+    qApp->setStyleSheet(getStylesheet());
+    // Force polish so Pro shell widgets pick up objectName selectors
+    const QWidgetList tops = qApp->topLevelWidgets();
+    for (int i = 0; i < tops.size(); ++i) {
+        QWidget* w = tops.at(i);
+        if (!w || !w->style())
+            continue;
+        w->style()->unpolish(w);
+        w->style()->polish(w);
+        w->update();
     }
 }
 
@@ -508,8 +521,7 @@ void ThemeManager::applyTheme(QApplication* app)
         app->setFont(m_customFont);
     }
     
-    // Apply stylesheet
-    app->setStyleSheet(getStylesheet());
+    applyToApplication();
 }
 
 void ThemeManager::applyTheme(QWidget* widget)
@@ -578,12 +590,22 @@ void ThemeManager::loadCSSTheme(const QString& themeName)
         QString cssContent = stream.readAll();
         cssFile.close();
         
-        // Apply CSS theme globally to the application
-        qApp->setStyleSheet(cssContent);
+        // Prefer a matching built-in palette for Pro shell objectNames
+        // (CSS packs rarely define #modernNavigation / #memeStreamRail).
+        const QString lower = themeName.toLower();
+        if (lower.contains(QStringLiteral("light")) || lower.contains(QStringLiteral("minimal")))
+            m_currentColors = getLightThemeColors();
+        else if (lower.contains(QStringLiteral("doge")) || lower.contains(QStringLiteral("wood")) || lower.contains(QStringLiteral("retro")))
+            m_currentColors = getDogecoinThemeColors();
+        else if (lower.contains(QStringLiteral("neon")))
+            m_currentColors = getNeonThemeColors();
+        else
+            m_currentColors = getDarkThemeColors();
+
+        qApp->setStyleSheet(cssContent + QLatin1Char('\n') + getProShellStylesheet());
         
-        // Set theme type to Custom (don't emit signal to prevent crash during initialization)
         m_currentTheme = Custom;
-        // Q_EMIT themeChanged(Custom); // Commented out to prevent boost::signals2::no_slots_error
+        Q_EMIT colorsChanged();
         
         qDebug() << "Successfully loaded CSS theme:" << themeName << "from" << cssPath;
     } else {
@@ -591,8 +613,138 @@ void ThemeManager::loadCSSTheme(const QString& themeName)
     }
 }
 
+QString ThemeManager::getProShellStylesheet() const
+{
+    const ThemeColors& c = m_currentColors;
+    const QString bg = c.primaryBackground.name();
+    const QString bg2 = c.secondaryBackground.name();
+    const QString bg3 = c.tertiaryBackground.name();
+    const QString text = c.primaryText.name();
+    const QString text2 = c.secondaryText.name();
+    const QString border = c.primaryBorder.name();
+    const QString card = c.cardBackground.name();
+    const QString cardBorder = c.cardBorder.name();
+    const QString accent = c.primaryAccent.name();
+    const QString btn = c.buttonBackground.name();
+    const QString btnText = c.buttonText.name();
+    const QString btnHover = c.buttonHover.name();
+    const QString inputBg = c.inputBackground.name();
+    const QString inputBorder = c.inputBorder.name();
+
+    QString s;
+    s += "/* === Core Pro shell (nav / home / meme / business) === */\n";
+    s += QString("QWidget#modernContainer { background-color: %1; color: %2; }\n").arg(bg, text);
+    s += QString("QWidget#homePage { background-color: %1; color: %2; }\n").arg(bg, text);
+    s += QString(
+        "QWidget#modernNavigation {\n"
+        "  background-color: %1;\n"
+        "  border-right: 1px solid %2;\n"
+        "  color: %3;\n"
+        "}\n"
+        "QWidget#modernNavigation QLabel {\n"
+        "  color: %3;\n"
+        "  background: transparent;\n"
+        "  padding: 4px 12px;\n"
+        "}\n"
+        "QWidget#modernNavigation QPushButton {\n"
+        "  background-color: transparent;\n"
+        "  border: none;\n"
+        "  border-radius: 0px;\n"
+        "  padding: 12px 16px;\n"
+        "  text-align: left;\n"
+        "  color: %4;\n"
+        "  font-size: 14px;\n"
+        "  font-weight: 500;\n"
+        "  min-height: 18px;\n"
+        "}\n"
+        "QWidget#modernNavigation QPushButton:hover {\n"
+        "  background-color: %5;\n"
+        "  color: %3;\n"
+        "}\n"
+        "QWidget#modernNavigation QPushButton:pressed {\n"
+        "  background-color: %6;\n"
+        "}\n"
+    ).arg(bg2, border, text, text2, bg3, accent);
+
+    s += QString(
+        "QWidget#memeStreamRail {\n"
+        "  background-color: %1;\n"
+        "  border-left: 1px solid %2;\n"
+        "  color: %3;\n"
+        "}\n"
+        "QWidget#memeStreamRail QLabel { color: %3; background: transparent; }\n"
+        "QLabel#mutedLabel { color: %4; background: transparent; }\n"
+        "QFrame#memeRailCard, QFrame#memeCard, QFrame#memePublishFrame {\n"
+        "  background-color: %5;\n"
+        "  border: 1px solid %6;\n"
+        "  border-radius: 8px;\n"
+        "}\n"
+        "QPushButton#memeTipButton, QPushButton#memePrimaryButton, QPushButton#memeOpenFullButton {\n"
+        "  background-color: %7;\n"
+        "  color: %8;\n"
+        "  border: none;\n"
+        "  border-radius: 6px;\n"
+        "  padding: 8px 12px;\n"
+        "  font-weight: 600;\n"
+        "}\n"
+        "QPushButton#memeTipButton:hover, QPushButton#memePrimaryButton:hover, QPushButton#memeOpenFullButton:hover {\n"
+        "  background-color: %9;\n"
+        "}\n"
+        "QPushButton#memeTipButton:disabled, QPushButton#memePrimaryButton:disabled {\n"
+        "  background-color: %10;\n"
+        "  color: %4;\n"
+        "}\n"
+    ).arg(bg2, border, text, text2, card, cardBorder, btn, btnText, btnHover, bg3);
+
+    s += QString(
+        "QLineEdit, QPlainTextEdit, QTextEdit, QSpinBox, QDoubleSpinBox {\n"
+        "  background-color: %1;\n"
+        "  color: %2;\n"
+        "  border: 1px solid %3;\n"
+        "  border-radius: 4px;\n"
+        "  padding: 6px 8px;\n"
+        "  selection-background-color: %4;\n"
+        "}\n"
+        "QTabWidget::pane {\n"
+        "  border: 1px solid %3;\n"
+        "  background-color: %5;\n"
+        "}\n"
+        "QTabBar::tab {\n"
+        "  background-color: %1;\n"
+        "  color: %6;\n"
+        "  padding: 8px 14px;\n"
+        "  border: 1px solid %3;\n"
+        "  border-bottom: none;\n"
+        "  border-top-left-radius: 6px;\n"
+        "  border-top-right-radius: 6px;\n"
+        "}\n"
+        "QTabBar::tab:selected {\n"
+        "  background-color: %5;\n"
+        "  color: %2;\n"
+        "  font-weight: 600;\n"
+        "}\n"
+        "QTableWidget {\n"
+        "  background-color: %5;\n"
+        "  color: %2;\n"
+        "  gridline-color: %3;\n"
+        "  border: 1px solid %3;\n"
+        "}\n"
+        "QHeaderView::section {\n"
+        "  background-color: %1;\n"
+        "  color: %2;\n"
+        "  padding: 6px;\n"
+        "  border: 1px solid %3;\n"
+        "}\n"
+        "QScrollArea { background-color: transparent; border: none; }\n"
+        "QScrollArea > QWidget > QWidget { background-color: transparent; }\n"
+    ).arg(inputBg, text, inputBorder, accent, card, text2);
+
+    return s;
+}
+
 QString ThemeManager::getStylesheet() const
 {
+    const ThemeColors& c = m_currentColors;
     QString style = QString(
         "/* Modern Dogecoin Theme Stylesheet */\n"
         "QWidget {\n"
@@ -601,21 +753,18 @@ QString ThemeManager::getStylesheet() const
         "    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;\n"
         "}\n"
         "\n"
-        "/* Main Window */\n"
         "QMainWindow {\n"
         "    background-color: %1;\n"
         "    border: none;\n"
         "}\n"
         "\n"
-        "/* Cards and Panels */\n"
-        "QFrame[frameShape=\"4\"] {\n"  // StyledPanel
+        "QFrame[frameShape=\"4\"] {\n"
         "    background-color: %3;\n"
         "    border: 1px solid %4;\n"
         "    border-radius: 8px;\n"
         "    padding: 12px;\n"
         "}\n"
         "\n"
-        "/* Buttons */\n"
         "QPushButton {\n"
         "    background-color: %5;\n"
         "    color: %6;\n"
@@ -639,13 +788,13 @@ QString ThemeManager::getStylesheet() const
         "    color: %10;\n"
         "}\n"
         "\n"
-        "/* Input Fields */\n"
         "QLineEdit, QTextEdit, QPlainTextEdit {\n"
         "    background-color: %11;\n"
         "    border: 1px solid %12;\n"
         "    border-radius: 4px;\n"
         "    padding: 6px 8px;\n"
         "    selection-background-color: %13;\n"
+        "    color: %2;\n"
         "}\n"
         "\n"
         "QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {\n"
@@ -653,23 +802,22 @@ QString ThemeManager::getStylesheet() const
         "    border-width: 2px;\n"
         "}\n"
         "\n"
-        "/* Labels */\n"
         "QLabel {\n"
         "    color: %2;\n"
         "    background: transparent;\n"
         "}\n"
         "\n"
-        "/* Status Bar */\n"
         "QStatusBar {\n"
         "    background-color: %14;\n"
         "    border-top: 1px solid %4;\n"
+        "    color: %2;\n"
         "    padding: 4px;\n"
         "}\n"
         "\n"
-        "/* Menu Bar */\n"
         "QMenuBar {\n"
         "    background-color: %1;\n"
         "    border-bottom: 1px solid %4;\n"
+        "    color: %2;\n"
         "    padding: 4px;\n"
         "}\n"
         "\n"
@@ -683,7 +831,16 @@ QString ThemeManager::getStylesheet() const
         "    background-color: %15;\n"
         "}\n"
         "\n"
-        "/* Scroll Bars */\n"
+        "QMenu {\n"
+        "    background-color: %3;\n"
+        "    color: %2;\n"
+        "    border: 1px solid %4;\n"
+        "}\n"
+        "\n"
+        "QMenu::item:selected {\n"
+        "    background-color: %15;\n"
+        "}\n"
+        "\n"
         "QScrollBar:vertical {\n"
         "    background-color: %14;\n"
         "    width: 12px;\n"
@@ -700,36 +857,64 @@ QString ThemeManager::getStylesheet() const
         "    background-color: %17;\n"
         "}\n"
         "\n"
-        "/* Progress Bar */\n"
         "QProgressBar {\n"
         "    background-color: %14;\n"
         "    border: 1px solid %4;\n"
         "    border-radius: 4px;\n"
         "    text-align: center;\n"
+        "    color: %2;\n"
         "}\n"
         "\n"
         "QProgressBar::chunk {\n"
         "    background-color: %5;\n"
         "    border-radius: 3px;\n"
         "}\n"
-    ).arg(m_currentColors.primaryBackground.name())
-     .arg(m_currentColors.primaryText.name())
-     .arg(m_currentColors.cardBackground.name())
-     .arg(m_currentColors.primaryBorder.name())
-     .arg(m_currentColors.buttonBackground.name())
-     .arg(m_currentColors.buttonText.name())
-     .arg(m_currentColors.buttonHover.name())
-     .arg(m_currentColors.buttonPressed.name())
-     .arg(m_currentColors.tertiaryBackground.name())
-     .arg(m_currentColors.tertiaryText.name())
-     .arg(m_currentColors.inputBackground.name())
-     .arg(m_currentColors.inputBorder.name())
-     .arg(m_currentColors.inputFocus.name())
-     .arg(m_currentColors.secondaryBackground.name())
-     .arg(m_currentColors.primaryAccent.name())
-     .arg(m_currentColors.secondaryText.name())
-     .arg(m_currentColors.primaryText.name());
-     
+        "\n"
+        "QDialog {\n"
+        "    background-color: %1;\n"
+        "    color: %2;\n"
+        "}\n"
+        "\n"
+        "QGroupBox {\n"
+        "    color: %2;\n"
+        "    border: 1px solid %4;\n"
+        "    border-radius: 6px;\n"
+        "    margin-top: 10px;\n"
+        "    padding-top: 8px;\n"
+        "}\n"
+        "\n"
+        "QComboBox {\n"
+        "    background-color: %11;\n"
+        "    color: %2;\n"
+        "    border: 1px solid %12;\n"
+        "    border-radius: 4px;\n"
+        "    padding: 4px 8px;\n"
+        "}\n"
+        "\n"
+        "QComboBox QAbstractItemView {\n"
+        "    background-color: %3;\n"
+        "    color: %2;\n"
+        "    selection-background-color: %15;\n"
+        "}\n"
+    ).arg(c.primaryBackground.name())
+     .arg(c.primaryText.name())
+     .arg(c.cardBackground.name())
+     .arg(c.primaryBorder.name())
+     .arg(c.buttonBackground.name())
+     .arg(c.buttonText.name())
+     .arg(c.buttonHover.name())
+     .arg(c.buttonPressed.name())
+     .arg(c.tertiaryBackground.name())
+     .arg(c.tertiaryText.name())
+     .arg(c.inputBackground.name())
+     .arg(c.inputBorder.name())
+     .arg(c.inputFocus.name())
+     .arg(c.secondaryBackground.name())
+     .arg(c.primaryAccent.name())
+     .arg(c.secondaryText.name())
+     .arg(c.primaryText.name());
+
+    style += getProShellStylesheet();
     return style;
 }
 

@@ -53,13 +53,14 @@ void MemeStreamRail::setupUi()
     head->addWidget(title);
     head->addStretch();
     refreshBtn = new QPushButton(tr("↻"));
+    refreshBtn->setObjectName(QStringLiteral("memePrimaryButton"));
     refreshBtn->setFixedWidth(32);
     refreshBtn->setToolTip(tr("Refresh feed"));
     head->addWidget(refreshBtn);
     root->addLayout(head);
 
     headerStatus = new QLabel(tr("Loading…"));
-    headerStatus->setStyleSheet(QStringLiteral("color: gray; font-size: 11px;"));
+    headerStatus->setObjectName(QStringLiteral("mutedLabel"));
     headerStatus->setWordWrap(true);
     root->addWidget(headerStatus);
 
@@ -75,6 +76,7 @@ void MemeStreamRail::setupUi()
     root->addWidget(scroll, 1);
 
     openFullBtn = new QPushButton(tr("Open full feed"));
+    openFullBtn->setObjectName(QStringLiteral("memeOpenFullButton"));
     openFullBtn->setMinimumHeight(32);
     root->addWidget(openFullBtn);
 
@@ -153,7 +155,7 @@ void MemeStreamRail::rebuild(const QList<MemeStreamItem>& items)
         QLabel* empty = new QLabel(tr("No memes yet.\nOpen full feed to post from Core."));
         empty->setWordWrap(true);
         empty->setAlignment(Qt::AlignCenter);
-        empty->setStyleSheet(QStringLiteral("color: gray;"));
+        empty->setObjectName(QStringLiteral("mutedLabel"));
         feedLayout->addWidget(empty);
     }
     feedLayout->addStretch();
@@ -169,7 +171,9 @@ QWidget* MemeStreamRail::buildCard(const MemeStreamItem& item)
     lay->setSpacing(4);
 
     QLabel* t = new QLabel(item.title.isEmpty() ? tr("(untitled)") : item.title);
-    t->setStyleSheet(QStringLiteral("font-weight: bold;"));
+    QFont tf = t->font();
+    tf.setBold(true);
+    t->setFont(tf);
     t->setWordWrap(true);
     lay->addWidget(t);
 
@@ -179,7 +183,7 @@ QWidget* MemeStreamRail::buildCard(const MemeStreamItem& item)
             body = body.left(77) + QStringLiteral("…");
         QLabel* b = new QLabel(body);
         b->setWordWrap(true);
-        b->setStyleSheet(QStringLiteral("font-size: 11px;"));
+        b->setObjectName(QStringLiteral("mutedLabel"));
         lay->addWidget(b);
     }
 
@@ -189,10 +193,11 @@ QWidget* MemeStreamRail::buildCard(const MemeStreamItem& item)
         tipShort = tipShort.left(6) + QStringLiteral("…") + tipShort.right(4);
     QLabel* tipLbl = new QLabel(tr("Tip → %1").arg(tipShort));
     tipLbl->setToolTip(tip);
-    tipLbl->setStyleSheet(QStringLiteral("color: gray; font-size: 10px;"));
+    tipLbl->setObjectName(QStringLiteral("mutedLabel"));
     lay->addWidget(tipLbl);
 
     QPushButton* tipBtn = new QPushButton(tr("Tip"));
+    tipBtn->setObjectName(QStringLiteral("memeTipButton"));
     tipBtn->setMinimumHeight(28);
     lay->addWidget(tipBtn);
 

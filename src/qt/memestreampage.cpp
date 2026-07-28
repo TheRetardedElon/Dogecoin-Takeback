@@ -64,7 +64,9 @@ void MemeStreamPage::setupUi()
     header->addWidget(title);
     header->addStretch();
     refreshBtn = new QPushButton(tr("Refresh"));
+    refreshBtn->setObjectName(QStringLiteral("memePrimaryButton"));
     webBtn = new QPushButton(tr("View on web"));
+    webBtn->setObjectName(QStringLiteral("memePrimaryButton"));
     header->addWidget(refreshBtn);
     header->addWidget(webBtn);
     root->addLayout(header);
@@ -94,12 +96,13 @@ void MemeStreamPage::setupUi()
     imgRow->addWidget(imageLabel, 1);
     pub->addLayout(imgRow);
     publishBtn = new QPushButton(tr("Publish to Meme Stream"));
+    publishBtn->setObjectName(QStringLiteral("memePrimaryButton"));
     publishBtn->setMinimumHeight(36);
     pub->addWidget(publishBtn);
     QLabel* hint = new QLabel(tr("Your Dogecoin receive address is set as author so others can Tip you. "
                                  "Posts use the built-in Core publish key (web remains view-only)."));
     hint->setWordWrap(true);
-    hint->setStyleSheet("color: gray; font-size: 11px;");
+    hint->setObjectName(QStringLiteral("mutedLabel"));
     pub->addWidget(hint);
     root->addWidget(publishFrame);
 
@@ -308,7 +311,10 @@ QWidget* MemeStreamPage::buildItemCard(const MemeStreamItem& item)
     QVBoxLayout* lay = new QVBoxLayout(card);
 
     QLabel* t = new QLabel(item.title.isEmpty() ? tr("(untitled)") : item.title);
-    t->setStyleSheet("font-weight: bold; font-size: 14px;");
+    QFont tf = t->font();
+    tf.setBold(true);
+    tf.setPointSize(tf.pointSize() + 1);
+    t->setFont(tf);
     t->setWordWrap(true);
     lay->addWidget(t);
 
@@ -324,13 +330,16 @@ QWidget* MemeStreamPage::buildItemCard(const MemeStreamItem& item)
         tipShort = tipShort.left(8) + QStringLiteral("…") + tipShort.right(6);
     QLabel* tipLbl = new QLabel(tr("Tip → %1").arg(tipShort));
     tipLbl->setToolTip(tip);
-    tipLbl->setStyleSheet("color: gray;");
+    tipLbl->setObjectName(QStringLiteral("mutedLabel"));
     lay->addWidget(tipLbl);
 
     QHBoxLayout* actions = new QHBoxLayout();
     QPushButton* likeBtn = new QPushButton(tr("Like · %1").arg(item.likeCount));
+    likeBtn->setObjectName(QStringLiteral("memePrimaryButton"));
     QPushButton* tipBtn = new QPushButton(tr("Tip"));
+    tipBtn->setObjectName(QStringLiteral("memeTipButton"));
     QPushButton* boostBtn = new QPushButton(tr("Boost"));
+    boostBtn->setObjectName(QStringLiteral("memePrimaryButton"));
     boostBtn->setToolTip(tr("Boost is a larger on-chain tip (uses Send)."));
     actions->addWidget(likeBtn);
     actions->addWidget(tipBtn);

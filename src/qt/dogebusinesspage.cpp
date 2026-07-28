@@ -59,7 +59,7 @@ void DogeBusinessPage::setupUi()
     QLabel* sub = new QLabel(tr("Merchant tools built into Dogecoin Core — invoices, POS, and dashboard. "
                                 "Your keys stay in this wallet (not external GigaWallet)."));
     sub->setWordWrap(true);
-    sub->setStyleSheet("color: gray;");
+    sub->setObjectName(QStringLiteral("mutedLabel"));
     root->addWidget(sub);
 
     tabs = new QTabWidget(this);
@@ -74,7 +74,7 @@ void DogeBusinessPage::setupUi()
         f->setFrameShape(QFrame::StyledPanel);
         QVBoxLayout* fl = new QVBoxLayout(f);
         QLabel* t = new QLabel(title);
-        t->setStyleSheet("color: gray;");
+        t->setObjectName(QStringLiteral("mutedLabel"));
         *out = new QLabel(QStringLiteral("—"));
         QFont bf = (*out)->font();
         bf.setBold(true);
