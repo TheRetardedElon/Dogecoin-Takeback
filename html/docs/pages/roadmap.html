@@ -40,28 +40,29 @@
         or green build) so progress is never only “in chat.”
       </p>
 
-      <h2>Phase 0 — Control plane <span class="badge badge-partial">In progress</span></h2>
+      <h2>Phase 0 — Control plane <span class="badge badge-done">Done</span></h2>
       <ul class="checklist">
         <li class="done">Confirm tree at <code>C:\dogedev</code></li>
         <li class="done">Stand up <code>html/docs/</code> living documentation</li>
         <li class="done">Baseline rebrand residual scan</li>
         <li class="done">Install Git for Windows; restore from <code>dogecoin-rebrand.bundle</code></li>
         <li class="done">History: <code>51dcd47</code> pre-rebrand → <code>975ef57</code> rebrand+themes</li>
-        <li class="todo">Commit docs + post-bundle deltas; keep working tree clean</li>
+        <li class="done">Commit docs + post-bundle deltas; junk blob removed</li>
         <li class="todo">Push / mirror remote backup (never single-disk again)</li>
-        <li class="todo">Tag <code>baseline-rebrand-ui</code> after first green build</li>
+        <li class="done">Tag <code>baseline-green-build</code> after first green build</li>
       </ul>
 
-      <h2>Phase 1 — Green build <span class="badge badge-todo">Next</span></h2>
+      <h2>Phase 1 — Green build <span class="badge badge-done">Done</span></h2>
       <ul class="checklist">
-        <li class="todo">Toolchain: autotools, Boost, libevent, Qt5, BDB 5.3 (or depends)</li>
-        <li class="todo"><code>./autogen.sh &amp;&amp; ./configure --with-gui=qt5</code></li>
-        <li class="todo">Build dogecoind, dogecoin-cli, dogecoin-tx, dogecoin-qt</li>
-        <li class="todo">Smoke: regtest start, theme switch, open wallet</li>
-        <li class="todo">Record results on Build &amp; run page</li>
+        <li class="done">WSL2 Ubuntu + deps (Boost, Qt5, BDB 5.3, libevent, …)</li>
+        <li class="done"><code>./configure --with-gui=qt5 --enable-c++17 --with-incompatible-bdb</code></li>
+        <li class="done">Build dogecoind, dogecoin-cli, dogecoin-tx, dogecoin-qt</li>
+        <li class="done">Smoke: regtest <code>getblockchaininfo</code></li>
+        <li class="partial">GUI theme switch smoke (daemon proven; GUI binary linked)</li>
+        <li class="done">Record results on Build &amp; run page</li>
       </ul>
 
-      <h2>Phase 2 — Finish rebrand conversion <span class="badge badge-todo">Queued</span></h2>
+      <h2>Phase 2 — Finish rebrand conversion <span class="badge badge-todo">Next</span></h2>
       <ul class="checklist">
         <li class="todo">T1 functional identifiers (see Rebrand audit)</li>
         <li class="todo">T1 user-facing strings / RPC help</li>

@@ -41,10 +41,12 @@
         build succeeds or fails on a real machine.
       </p>
 
-      <div class="callout warn">
-        <strong>Not yet verified on this recovery machine</strong>
-        At first assessment, Git was missing from PATH and no successful local
-        compile was re-proven. Treat the steps below as the intended path.
+      <div class="callout ok">
+        <strong>Verified green build (2026-07-27/28)</strong>
+        WSL2 Ubuntu + <code>--enable-c++17 --with-gui=qt5 --with-incompatible-bdb</code>.
+        Built: <code>dogecoind</code>, <code>dogecoin-cli</code>, <code>dogecoin-tx</code>,
+        <code>dogecoin-qt</code>. Regtest smoke: <code>getblockchaininfo</code> OK.
+        Tag: <code>baseline-green-build</code>.
       </div>
 
       <h2>Recommended host</h2>
@@ -72,9 +74,15 @@ sudo apt install -y build-essential libtool autotools-dev automake \
       <h2>Configure &amp; build</h2>
       <pre><code>cd /path/to/dogedev   # or /mnt/c/dogedev from WSL
 ./autogen.sh
-./configure --with-gui=qt5
-# optional: ./configure --with-gui=qt5 --enable-debug
+# Modern Ubuntu/Boost 1.69+ needs C++17 (default C++11 fails Boost headers)
+./configure --with-gui=qt5 --with-incompatible-bdb --enable-c++17 \
+  --with-boost-libdir=/usr/lib/x86_64-linux-gnu
 make -j$(nproc)</code></pre>
+      <p>
+        Notes: header-only Boost.System is handled in
+        <code>build-aux/m4/ax_boost_system.m4</code>. Use
+        <code>--enable-c++17</code> on current Ubuntu/WSL.
+      </p>
 
       <h2>Artifacts to expect</h2>
       <table>
@@ -110,10 +118,16 @@ src/qt/dogecoin-qt -regtest</code></pre>
         </thead>
         <tbody>
           <tr>
+            <td>2026-07-28</td>
+            <td>WSL2 Ubuntu 26.04</td>
+            <td><span class="badge badge-done">Green</span></td>
+            <td>All 4 binaries; regtest RPC OK; tag baseline-green-build</td>
+          </tr>
+          <tr>
             <td>2026-07-27</td>
-            <td>Windows workspace</td>
-            <td><span class="badge badge-todo">Not run</span></td>
-            <td>Docs bootstrap only; Git missing on PATH at survey</td>
+            <td>Windows native</td>
+            <td><span class="badge badge-todo">N/A</span></td>
+            <td>No MSVC/autotools path used; build via WSL</td>
           </tr>
         </tbody>
       </table>
