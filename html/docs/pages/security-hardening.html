@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Security &amp; hardening — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="security-hardening.html">Security hardening</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="rebrand-audit.html">Rebrand audit</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="sqlite-wallet-plan.html">SQLite wallet plan</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Security &amp; hardening</h1>
+      <p class="lead">
+        How a Dogecoin Core <em>development</em> machine and running node can be
+        compromised — and what we enforce on this project. Written after prior
+        drive-wipe / possible targeting concerns. We cannot prove past compromise
+        from code alone; we can reduce surface and make the next environment harder to abuse.
+      </p>
+
+      <div class="callout danger">
+        <strong>Assume funds are independent of “was I hacked?” debates</strong>
+        If any mainnet wallet lived on a machine that ran experimental builds with
+        open RPC, root processes, or unknown peer exposure: treat that wallet as
+        potentially burned. Move remaining value only from a clean machine +
+        known-good software after you control keys.
+      </div>
+
+      <h2>What is (and is not) likely</h2>
+      <table>
+        <thead>
+          <tr><th>Vector</th><th>Realistic for Core client work?</th><th>Notes for this tree</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Exposed JSON-RPC</strong></td>
+            <td><span class="badge badge-todo">Highest practical risk</span></td>
+            <td>Default binds localhost only if <code>-rpcallowip</code> unset. Dev often widens this.</td>
+          </tr>
+          <tr>
+            <td><strong>P2P memory corruption</strong></td>
+            <td><span class="badge badge-partial">Real, hard</span></td>
+            <td>Untrusted peers feed parsers. We did not add custom P2P message handlers in recovery work; stick to review + hardening flags.</td>
+          </tr>
+          <tr>
+            <td><strong>UI / external feeds</strong></td>
+            <td><span class="badge badge-partial">If custom panels</span></td>
+            <td>Meme stream / price panels must never run as trusted HTML/JS inside the process that holds keys.</td>
+          </tr>
+          <tr>
+            <td><strong>Supply chain / toolchain</strong></td>
+            <td><span class="badge badge-partial">Common on Windows</span></td>
+            <td>Prefer WSL/Docker non-root builds; verify tarball hashes for depends.</td>
+          </tr>
+          <tr>
+            <td><strong>Logs / git secrets</strong></td>
+            <td><span class="badge badge-todo">Easy footgun</span></td>
+            <td>Never commit <code>wallet.dat</code>, <code>.cookie</code>, live conf with passwords.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Immediate hardening checklist</h2>
+      <table>
+        <thead>
+          <tr><th>Action</th><th>Command / configuration</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Isolate RPC interface</strong></td>
+            <td><code>rpcbind=127.0.0.1</code><br/><code># never rpcallowip=0.0.0.0/0</code></td>
+            <td>Restrict RPC strictly to localhost unless you have a deliberate tunnel.</td>
+          </tr>
+          <tr>
+            <td><strong>Enforce RPC cookie auth</strong></td>
+            <td>Remove plaintext <code>rpcpassword=</code>; use cookie / <code>rpcauth</code></td>
+            <td>Avoid credentials sitting in conf files and shell history.</td>
+          </tr>
+          <tr>
+            <td><strong>Run as low-privilege user</strong></td>
+            <td><code>adduser --system dogecoin</code> (Linux/WSL)</td>
+            <td>Limits blast radius if the process is exploited.</td>
+          </tr>
+          <tr>
+            <td><strong>Sanitize debug logs</strong></td>
+            <td>Review custom <code>LogPrintf</code>; avoid logging secrets</td>
+            <td>Private keys / seeds must never hit disk logs.</td>
+          </tr>
+          <tr>
+            <td><strong>Containerized development</strong></td>
+            <td>Build inside WSL2 / Docker (non-root)</td>
+            <td>Isolates toolchain from primary host OS.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Defaults in this codebase (verified)</h2>
+      <ul>
+        <li>
+          <strong>RPC bind:</strong> If <code>-rpcallowip</code> is <em>not</em> set,
+          HTTP RPC listens only on <code>127.0.0.1</code> and <code>::1</code>
+          (<code>src/httpserver.cpp</code>). Setting <code>-rpcbind</code> alone without
+          allowip is ignored with a warning (refuses “bind everyone”).
+        </li>
+        <li>
+          <strong>Cookie auth:</strong> When no <code>rpcpassword</code> is set, cookie
+          auth is the intended path (see <code>doc/getting-started.md</code> / conf comments).
+        </li>
+        <li>
+          <strong>Hardening flags:</strong> <code>configure.ac</code> enables stack protector,
+          <code>_FORTIFY_SOURCE=2</code>, RELRO/NOW, PIE where the linker supports them.
+        </li>
+        <li>
+          <strong>Mainnet ports:</strong> P2P <code>22556</code>, RPC <code>22555</code>
+          (see root README). Scanners target these.
+        </li>
+      </ul>
+
+      <h2>How compromise often looks in a “dev + node” setup</h2>
+      <ol>
+        <li>
+          <strong>Open RPC during POS/GPE experiments</strong> —
+          <code>rpcallowip=0.0.0.0/0</code> + weak/static password + port forward/NAT slip
+          → remote <code>sendtoaddress</code> / <code>dumpwallet</code>.
+        </li>
+        <li>
+          <strong>Running as Administrator/root</strong> —
+          any RCE becomes full host ownership; HDD wipe fits “post-compromise cleanup or malware”
+          better than “consensus bug.”
+        </li>
+        <li>
+          <strong>Wallet + experimental binary on same machine</strong> —
+          one bad build or one RPC leak is enough; architecture isolation (hot wallet elsewhere) matters more than rebrand perfection.
+        </li>
+        <li>
+          <strong>Not unique to Dogecoin</strong> —
+          same pattern hits Bitcoin Core, Litecoin, etc. when RPC is exposed.
+        </li>
+      </ol>
+
+      <h2>What our recovery work did <em>not</em> do</h2>
+      <ul>
+        <li>Did not change consensus (DigiShield, AuxPoW, script rules).</li>
+        <li>Did not add remote UI webviews for meme stream into the spend path.</li>
+        <li>Did not open RPC by default in code.</li>
+        <li>Did not implement SQLite write path yet (BDB only for loadable wallets).</li>
+      </ul>
+
+      <h2>Incident response checklist (if you suspect prior compromise)</h2>
+      <ul class="checklist">
+        <li class="todo">On a <strong>clean</strong> machine: generate new keys / new wallet; never reuse seeds from the suspect host if they may have been logged.</li>
+        <li class="todo">Sweep remaining funds only after keys are controlled offline / known-good software.</li>
+        <li class="todo">Search old datadirs for <code>dogecoin.conf</code> with <code>rpcallowip</code>, plaintext passwords, <code>debug.log</code> with secrets.</li>
+        <li class="todo">Rotate any passwords used on that host; check forwarded router ports 22555/22556.</li>
+        <li class="todo">Rebuild only in WSL/Docker as non-root; keep mainnet wallets off the build machine.</li>
+        <li class="todo">Enable OS full-disk encryption and separate “dev” vs “funds” machines if possible.</li>
+      </ul>
+
+      <h2>Recommended dogecoin.conf skeleton (dev node, no external RPC)</h2>
+      <pre><code># Mainnet or regtest — adjust as needed
+# server=1 only if you need local RPC
+
+# RPC: localhost only + cookie auth (do not set rpcpassword in plaintext)
+rpcbind=127.0.0.1
+# do NOT set rpcallowip unless you understand the risk
+# rpcuser / rpcpassword: prefer cookie or rpcauth from share/rpcuser/rpcuser.py
+
+# Reduce accidental exposure
+# listen=1 is for P2P (needed for a normal node); RPC is separate
+
+# Logging: avoid dumping wallet internals
+# debug=0
+</code></pre>
+
+      <h2>Going forward on this project</h2>
+      <ul>
+        <li>Keep GPE / GigaWallet / meme stream <strong>outside</strong> the process that holds spend keys when possible.</li>
+        <li>Any future ZMQ/RPC bridges for retail: authenticate, localhost or mTLS, never raw public RPC.</li>
+        <li>Document security changes in this page when we add features that touch network surfaces.</li>
+      </ul>
+
+      <div class="footer">
+        Related: <a href="architecture.html">Architecture</a> ·
+        <a href="sqlite-wallet-plan.html">SQLite wallet plan</a> ·
+        <a href="build-and-run.html">Build &amp; run</a>
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

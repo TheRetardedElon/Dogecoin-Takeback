@@ -127,6 +127,21 @@ contrib/devtools/split-debug.sh
 # Snapcraft
 parts/
 prime/
+
+# --- Secrets / runtime data (never commit) ---
+wallet.dat
+*.dat.bak
+.cookie
+*.cookie
+debug.log
+dogecoin.conf
+!share/dogecoin.conf
+!contrib/**/dogecoin.conf
+!contrib/debian/examples/dogecoin.conf
+.env
+.env.*
+*.pem
+!share/certs/**
 stage/
 *.snap
 
