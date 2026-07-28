@@ -75,7 +75,7 @@ RAW_TEST_FILES =
 
 GENERATED_TEST_FILES = $(JSON_TEST_FILES:.json=.json.h) $(RAW_TEST_FILES:.raw=.raw.h)
 
-# test_bitcoin binary #
+# test_dogecoin binary #
 BITCOIN_TESTS =\
   test/arith_uint256_tests.cpp \
   test/scriptnum10.h \
@@ -168,7 +168,7 @@ test_test_dogecoin_LDADD += $(ZMQ_LIBS)
 endif
 #
 
-# test_bitcoin_fuzzy binary #
+# test_dogecoin_fuzzy binary #
 test_test_dogecoin_fuzzy_SOURCES = test/test_dogecoin_fuzzy.cpp
 test_test_dogecoin_fuzzy_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES)
 test_test_dogecoin_fuzzy_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)

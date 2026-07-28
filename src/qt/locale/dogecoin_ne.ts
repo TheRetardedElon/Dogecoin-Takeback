@@ -3515,7 +3515,7 @@ Use this functionality with extreme caution.</source>
     </message>
 </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>dogecoin-core</name>
     <message>
         <source>Delete all wallet transactions and only recover those parts of the blockchain through -rescan on startup</source>
         <translation>वालेटको सबै कारोबार मेटाउनुहोस् र -स्टार्टअपको पुनः स्क्यान मार्फत ब्लकचेनका ती भागहरूलाई मात्र पुनः प्राप्त गर्नुहोस्</translation>

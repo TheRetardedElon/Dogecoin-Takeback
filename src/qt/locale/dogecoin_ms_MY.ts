@@ -3500,7 +3500,7 @@ Alihkan fail data ke dalam tab semasa</translation>
     </message>
 </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>dogecoin-core</name>
     <message>
         <source>Dogecoin Core</source>
         <translation type="unfinished"></translation>

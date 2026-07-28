@@ -3580,7 +3580,7 @@ Use this functionality with extreme caution.</source>
     </message>
 </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>dogecoin-core</name>
     <message>
         <source>Options:</source>
         <translation>옵션:</translation>

@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
     // Don't remove this, it's needed to access
     // QCoreApplication:: in the tests
     QCoreApplication app(qt_argc, const_cast<char **>(&qt_argv));
-    app.setApplicationName("Bitcoin-Qt-test");
+    app.setApplicationName("Dogecoin-Qt-test");
 
     URITests test1;
     if (QTest::qExec(&test1) != 0)

@@ -3501,7 +3501,7 @@ Use this functionality with extreme caution.</source>
     </message>
 </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>dogecoin-core</name>
     <message>
         <source>Dogecoin Core</source>
         <translation>Dogecoin Kern</translation>

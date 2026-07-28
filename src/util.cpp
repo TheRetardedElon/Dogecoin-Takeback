@@ -106,7 +106,7 @@ using namespace std;
 // Application startup time (used for uptime calculation)
 const int64_t nStartupTime = GetTime();
 
-const char * const BITCOIN_CONF_FILENAME = "dogecoin.conf";
+const char * const DOGECOIN_CONF_FILENAME = "dogecoin.conf";
 const char * const BITCOIN_PID_FILENAME = "dogecoind.pid";
 
 CCriticalSection cs_args;

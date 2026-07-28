@@ -3512,7 +3512,7 @@ Gebruik deze functie met extreme voorzichtigheid.</translation>
     </message>
 </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>dogecoin-core</name>
     <message>
         <source>Options:</source>
         <translation>Opties:</translation>

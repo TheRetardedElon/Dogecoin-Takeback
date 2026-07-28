@@ -3512,7 +3512,7 @@ Utilisez cette fonctionnalité avec une extrême prudence.</translation>
     </message>
 </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>dogecoin-core</name>
     <message>
         <source>Dogecoin Core</source>
         <translation>Dogecoin Core</translation>

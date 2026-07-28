@@ -83,7 +83,7 @@ static void InitMessage(const std::string &message)
  */
 static std::string Translate(const char* psz)
 {
-    return QCoreApplication::translate("bitcoin-core", psz).toStdString();
+    return QCoreApplication::translate("dogecoin-core", psz).toStdString();
 }
 
 static QString GetLangTerritory()
@@ -477,7 +477,7 @@ void DogecoinApplication::initializeResult(int retval)
         // payment requests:
         connect(paymentServer, SIGNAL(receivedPaymentRequest(SendCoinsRecipient)),
                           window, SLOT(handlePaymentRequest(SendCoinsRecipient)));
-        // Now that initialization/startup is done, process any command-line bitcoin: URIs
+        // Now that initialization/startup is done, process any command-line dogecoin: URIs
         connect(window, SIGNAL(receivedURI(QString)),
                          paymentServer, SLOT(handleURIOrFile(QString)));
         connect(paymentServer, SIGNAL(message(QString,QString,unsigned int)),
@@ -580,7 +580,7 @@ MAIN_FUNCTION
         return EXIT_FAILURE;
     }
     try {
-        ReadConfigFile(GetArg("-conf", BITCOIN_CONF_FILENAME));
+        ReadConfigFile(GetArg("-conf", DOGECOIN_CONF_FILENAME));
     } catch (const std::exception& e) {
         QMessageBox::critical(0, QObject::tr(PACKAGE_NAME),
                               QObject::tr("Error: Cannot parse configuration file: %1. Only use key=value syntax.").arg(e.what()));

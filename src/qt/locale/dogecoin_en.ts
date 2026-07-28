@@ -4463,7 +4463,7 @@ Use this functionality with extreme caution.</source>
     </message>
 </context>
 <context>
-    <name>bitcoin-core</name>
+    <name>dogecoin-core</name>
     <message>
         <location filename="../bitcoinstrings.cpp" line="+12"/>
         <source>Dogecoin Core</source>

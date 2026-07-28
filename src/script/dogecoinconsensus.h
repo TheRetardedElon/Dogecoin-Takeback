@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-#if defined(BUILD_BITCOIN_INTERNAL) && defined(HAVE_CONFIG_H)
+#if defined(BUILD_DOGECOIN_INTERNAL) && defined(HAVE_CONFIG_H)
 #include "config/dogecoin-config.h"
   #if defined(_WIN32)
     #if defined(DLL_EXPORT)
@@ -21,7 +21,7 @@
   #elif defined(HAVE_FUNC_ATTRIBUTE_VISIBILITY)
     #define EXPORT_SYMBOL __attribute__ ((visibility ("default")))
   #endif
-#elif defined(MSC_VER) && !defined(STATIC_LIBBITCOINCONSENSUS)
+#elif defined(MSC_VER) && !defined(STATIC_LIBDOGECOINCONSENSUS)
   #define EXPORT_SYMBOL __declspec(dllimport)
 #endif
 

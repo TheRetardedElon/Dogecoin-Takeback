@@ -56,7 +56,7 @@ extern bool fLogIPs;
 extern std::atomic<bool> fReopenDebugLog;
 extern CTranslationInterface translationInterface;
 
-extern const char * const BITCOIN_CONF_FILENAME;
+extern const char * const DOGECOIN_CONF_FILENAME;
 extern const char * const BITCOIN_PID_FILENAME;
 
 /**
