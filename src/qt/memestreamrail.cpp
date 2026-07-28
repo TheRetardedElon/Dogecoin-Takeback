@@ -177,6 +177,16 @@ QWidget* MemeStreamRail::buildCard(const MemeStreamItem& item)
     t->setWordWrap(true);
     lay->addWidget(t);
 
+    if (!item.imageUrl.isEmpty()) {
+        QLabel* img = new QLabel();
+        img->setObjectName(QStringLiteral("memeImage"));
+        img->setMinimumHeight(80);
+        img->setMaximumHeight(160);
+        img->setAlignment(Qt::AlignCenter);
+        lay->addWidget(img);
+        client->loadImageInto(img, item.imageUrl, QSize(280, 150));
+    }
+
     if (!item.body.isEmpty()) {
         QString body = item.body;
         if (body.size() > 80)

@@ -12,6 +12,9 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QUrl>
+#include <QSize>
+
+class QLabel;
 
 /**
  * HTTP client for GoPastEarth MemeStream public API.
@@ -53,6 +56,18 @@ public:
     void publish(const QString& title, const QString& body, const QString& walletAddress,
                  const QByteArray& imageData = QByteArray(), const QString& imageFileName = QString());
     void likeItem(const QString& itemId, const QString& walletAddress);
+
+    /**
+     * Resolve relative media paths (e.g. /media/memestream/x.png) against baseUrl.
+     * Absolute https URLs are returned unchanged.
+     */
+    QUrl resolveMediaUrl(const QString& pathOrUrl) const;
+
+    /**
+     * Async-load an image into a QLabel (scaled to maxSize, KeepAspectRatio).
+     * Safe if the label is destroyed before the reply finishes.
+     */
+    void loadImageInto(QLabel* target, const QString& pathOrUrl, const QSize& maxSize);
 
     /** Load defaults from -memestreambaseurl / -memestreamkey. */
     void loadFromArgs();

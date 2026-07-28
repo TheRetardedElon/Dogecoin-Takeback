@@ -318,6 +318,18 @@ QWidget* MemeStreamPage::buildItemCard(const MemeStreamItem& item)
     t->setWordWrap(true);
     lay->addWidget(t);
 
+    // Image (relative /media/... resolved against gopastearth.com)
+    if (!item.imageUrl.isEmpty()) {
+        QLabel* img = new QLabel();
+        img->setObjectName(QStringLiteral("memeImage"));
+        img->setMinimumHeight(120);
+        img->setMaximumHeight(360);
+        img->setAlignment(Qt::AlignCenter);
+        img->setScaledContents(false);
+        lay->addWidget(img);
+        client->loadImageInto(img, item.imageUrl, QSize(520, 340));
+    }
+
     if (!item.body.isEmpty()) {
         QLabel* b = new QLabel(item.body);
         b->setWordWrap(true);

@@ -12,7 +12,10 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLabel>
 #include <QNetworkRequest>
+#include <QPixmap>
+#include <QPointer>
 #include <QUrlQuery>
 #include <QVariant>
 #include <QVariantList>
@@ -262,6 +265,63 @@ void MemeStreamClient::onLikeFinished()
     Q_EMIT likeSucceeded(itemId, likes);
 }
 
+QUrl MemeStreamClient::resolveMediaUrl(const QString& pathOrUrl) const
+{
+    QString s = pathOrUrl.trimmed();
+    if (s.isEmpty() || s == QLatin1String("null") || s == QLatin1String("undefined"))
+        return QUrl();
+    // Absolute URL
+    if (s.startsWith(QLatin1String("http://"), Qt::CaseInsensitive) ||
+        s.startsWith(QLatin1String("https://"), Qt::CaseInsensitive) ||
+        s.startsWith(QLatin1String("data:"), Qt::CaseInsensitive)) {
+        return QUrl(s);
+    }
+    // Relative site path: /media/memestream/foo.png
+    if (!s.startsWith(QLatin1Char('/')))
+        s.prepend(QLatin1Char('/'));
+    return QUrl(m_baseUrl + s);
+}
+
+void MemeStreamClient::loadImageInto(QLabel* target, const QString& pathOrUrl, const QSize& maxSize)
+{
+    if (!target)
+        return;
+    const QUrl url = resolveMediaUrl(pathOrUrl);
+    if (!url.isValid()) {
+        target->clear();
+        target->setVisible(false);
+        return;
+    }
+    target->setVisible(true);
+    target->setText(tr("Loading image…"));
+
+    QNetworkRequest req(url);
+    req.setRawHeader("Accept", "image/*,*/*");
+    QNetworkReply* reply = m_nam.get(req);
+    QPointer<QLabel> label = target;
+    const QSize bound = maxSize.isValid() ? maxSize : QSize(480, 320);
+    connect(reply, &QNetworkReply::finished, this, [reply, label, bound]() {
+        reply->deleteLater();
+        if (!label)
+            return;
+        if (reply->error() != QNetworkReply::NoError) {
+            label->setText(QString());
+            label->setVisible(false);
+            return;
+        }
+        QPixmap px;
+        if (!px.loadFromData(reply->readAll()) || px.isNull()) {
+            label->setText(QString());
+            label->setVisible(false);
+            return;
+        }
+        label->setText(QString());
+        label->setPixmap(px.scaled(bound, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        label->setAlignment(Qt::AlignCenter);
+        label->setVisible(true);
+    });
+}
+
 MemeStreamItem MemeStreamClient::parseItemObject(const QVariantMap& m)
 {
     MemeStreamItem item;
@@ -276,14 +336,24 @@ MemeStreamItem MemeStreamClient::parseItemObject(const QVariantMap& m)
     if (item.author.isEmpty())
         item.author = m.value(QStringLiteral("wallet")).toString();
     item.tipAddress = m.value(QStringLiteral("tipAddress")).toString();
-    if (item.tipAddress.isEmpty())
+    if (item.tipAddress.isEmpty() || item.tipAddress == QLatin1String("null"))
         item.tipAddress = item.author;
-    item.imageUrl = m.value(QStringLiteral("imageUrl")).toString();
-    if (item.imageUrl.isEmpty())
-        item.imageUrl = m.value(QStringLiteral("image")).toString();
-    item.likeCount = m.value(QStringLiteral("likeCount")).toInt();
-    if (!m.contains(QStringLiteral("likeCount")))
-        item.likeCount = m.value(QStringLiteral("likes")).toInt();
+
+    // GPE returns relative paths: "/media/memestream/<file>"
+    QVariant img = m.value(QStringLiteral("imageUrl"));
+    if (!img.isValid() || img.isNull())
+        img = m.value(QStringLiteral("image"));
+    if (!img.isValid() || img.isNull())
+        img = m.value(QStringLiteral("thumbnail"));
+    if (!img.isValid() || img.isNull())
+        img = m.value(QStringLiteral("mediaUrl"));
+    item.imageUrl = img.toString();
+    if (item.imageUrl == QLatin1String("null"))
+        item.imageUrl.clear();
+
+    item.likeCount = m.value(QStringLiteral("likes")).toInt();
+    if (m.contains(QStringLiteral("likeCount")))
+        item.likeCount = m.value(QStringLiteral("likeCount")).toInt();
     item.createdAt = m.value(QStringLiteral("createdAt")).toString();
     if (item.createdAt.isEmpty())
         item.createdAt = m.value(QStringLiteral("created")).toString();

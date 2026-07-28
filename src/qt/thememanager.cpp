@@ -737,6 +737,12 @@ QString ThemeManager::getProShellStylesheet() const
         "}\n"
         "QScrollArea { background-color: transparent; border: none; }\n"
         "QScrollArea > QWidget > QWidget { background-color: transparent; }\n"
+        "QLabel#memeImage {\n"
+        "  background-color: %1;\n"
+        "  border: 1px solid %3;\n"
+        "  border-radius: 6px;\n"
+        "  padding: 4px;\n"
+        "}\n"
     ).arg(inputBg, text, inputBorder, accent, card, text2);
 
     return s;
