@@ -140,6 +140,7 @@ dogecoin.conf
 !contrib/debian/examples/dogecoin.conf
 .env
 .env.*
+local/
 *.pem
 !share/certs/**
 stage/
