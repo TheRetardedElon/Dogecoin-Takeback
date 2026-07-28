@@ -34,6 +34,29 @@
         <code>C:\dogedev</code> (1.14.99-class). Not an official Dogecoin Core release note.
       </p>
 
+      <h2>2026-07-28 (later)</h2>
+      <table>
+        <thead>
+          <tr><th>Change</th><th>Area</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <strong>MemeStream media SSRF hardening</strong>: only allowlisted hosts
+              (<code>*.gopastearth.com</code> / API base), paths under <code>/media/</code>,
+              no <code>data:</code>, 2 MiB image cap, manual redirect policy.
+            </td>
+            <td>Qt / HTTP</td>
+            <td><code>memestreamclient.cpp</code></td>
+          </tr>
+          <tr>
+            <td>Invoice list persistence via <code>QSettings</code> (local merchant UI).</td>
+            <td>Qt wallet UX</td>
+            <td>Not consensus; addresses still from Core keypool</td>
+          </tr>
+        </tbody>
+      </table>
+
       <h2>2026-07-28</h2>
       <table>
         <thead>

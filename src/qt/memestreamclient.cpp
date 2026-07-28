@@ -265,20 +265,70 @@ void MemeStreamClient::onLikeFinished()
     Q_EMIT likeSucceeded(itemId, likes);
 }
 
+namespace {
+
+// Security: only load media from the API base host or gopastearth.com.
+// Reject file://, arbitrary SSRF, path traversal, and huge payloads.
+static const int MAX_MEME_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MiB
+
+bool isAllowedMediaHost(const QString& host, const QString& baseHost)
+{
+    const QString h = host.toLower();
+    if (h.isEmpty())
+        return false;
+    if (!baseHost.isEmpty() && h == baseHost.toLower())
+        return true;
+    if (h == QLatin1String("gopastearth.com") || h.endsWith(QLatin1String(".gopastearth.com")))
+        return true;
+    return false;
+}
+
+bool isSafeMediaPath(const QString& path)
+{
+    // Relative GPE media only — never open arbitrary site paths from feed JSON.
+    if (!path.startsWith(QLatin1String("/media/")))
+        return false;
+    if (path.contains(QLatin1String("..")) || path.contains(QLatin1Char('\\')))
+        return false;
+    return true;
+}
+
+} // namespace
+
 QUrl MemeStreamClient::resolveMediaUrl(const QString& pathOrUrl) const
 {
     QString s = pathOrUrl.trimmed();
     if (s.isEmpty() || s == QLatin1String("null") || s == QLatin1String("undefined"))
         return QUrl();
-    // Absolute URL
+
+    // Disallow data:/file:/etc. Absolute http(s) only if host is allowlisted.
     if (s.startsWith(QLatin1String("http://"), Qt::CaseInsensitive) ||
-        s.startsWith(QLatin1String("https://"), Qt::CaseInsensitive) ||
-        s.startsWith(QLatin1String("data:"), Qt::CaseInsensitive)) {
-        return QUrl(s);
+        s.startsWith(QLatin1String("https://"), Qt::CaseInsensitive)) {
+        QUrl u(s);
+        if (!u.isValid() || u.host().isEmpty())
+            return QUrl();
+        // Prefer HTTPS; allow HTTP only for loopback testing.
+        if (u.scheme().toLower() == QLatin1String("http")) {
+            const QString h = u.host().toLower();
+            if (h != QLatin1String("127.0.0.1") && h != QLatin1String("localhost"))
+                return QUrl();
+        }
+        QUrl base(m_baseUrl);
+        if (!isAllowedMediaHost(u.host(), base.host()))
+            return QUrl();
+        // Absolute URL must still target /media/ on allowlisted hosts (no SSRF to /admin etc.)
+        if (!u.path().startsWith(QLatin1String("/media/")))
+            return QUrl();
+        if (u.path().contains(QLatin1String("..")))
+            return QUrl();
+        return u;
     }
-    // Relative site path: /media/memestream/foo.png
+
+    // Relative site path only: /media/memestream/foo.png
     if (!s.startsWith(QLatin1Char('/')))
         s.prepend(QLatin1Char('/'));
+    if (!isSafeMediaPath(s))
+        return QUrl();
     return QUrl(m_baseUrl + s);
 }
 
@@ -296,7 +346,11 @@ void MemeStreamClient::loadImageInto(QLabel* target, const QString& pathOrUrl, c
     target->setText(tr("Loading image…"));
 
     QNetworkRequest req(url);
-    req.setRawHeader("Accept", "image/*,*/*");
+    req.setRawHeader("Accept", "image/*");
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+    // Do not follow redirects off allowlisted hosts (SSRF hardening).
+    req.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::ManualRedirectPolicy);
+#endif
     QNetworkReply* reply = m_nam.get(req);
     QPointer<QLabel> label = target;
     const QSize bound = maxSize.isValid() ? maxSize : QSize(480, 320);
@@ -309,8 +363,14 @@ void MemeStreamClient::loadImageInto(QLabel* target, const QString& pathOrUrl, c
             label->setVisible(false);
             return;
         }
+        const QByteArray bytes = reply->readAll();
+        if (bytes.size() <= 0 || bytes.size() > MAX_MEME_IMAGE_BYTES) {
+            label->setText(QString());
+            label->setVisible(false);
+            return;
+        }
         QPixmap px;
-        if (!px.loadFromData(reply->readAll()) || px.isNull()) {
+        if (!px.loadFromData(bytes) || px.isNull()) {
             label->setText(QString());
             label->setVisible(false);
             return;

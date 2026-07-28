@@ -70,6 +70,8 @@ private:
     void setupUi();
     void rebuildInvoiceTable();
     void updateDashboard();
+    void loadInvoices();
+    void saveInvoices() const;
     QString allocateReceiveAddress(const QString& label);
     QString dogecoinUri(const QString& address, CAmount amount, const QString& label) const;
     Invoice* selectedInvoice();

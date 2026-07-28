@@ -121,19 +121,48 @@
             <td>BDB only today</td>
             <td>Encrypt wallet; filesystem ACLs; dual-stack later</td>
           </tr>
+          <tr>
+            <td><strong>MemeStream HTTP client (Qt)</strong></td>
+            <td>SSRF if feed JSON pointed image loads at internal URLs; huge-image DoS</td>
+            <td>Feed + image load to GPE only</td>
+            <td><span class="badge badge-done">Hardened 2026-07-28</span> — host allowlist, <code>/media/</code> path only, no <code>data:</code>, 2 MiB cap, manual redirects</td>
+          </tr>
+          <tr>
+            <td><strong>Built-in MemeStream publish key</strong></td>
+            <td>Obfuscated material recoverable from binary</td>
+            <td>Embedded for Core-only posts</td>
+            <td><span class="badge badge-partial">Obscurity only</span> — rotate on GPE if leaked; not a secret vault</td>
+          </tr>
+          <tr>
+            <td><strong>alertnotify / blocknotify / walletnotify</strong></td>
+            <td><code>system()</code> shell if attacker controls conf + args</td>
+            <td>Off unless user sets</td>
+            <td>Never put untrusted data in notify command templates</td>
+          </tr>
         </tbody>
       </table>
 
       <h2>3. What we checked in this audit pass</h2>
       <ul class="checklist">
-        <li class="done">ConnectBlock script-check lifetime vs CVE-2024-52911 pattern</li>
+        <li class="done">ConnectBlock script-check lifetime vs CVE-2024-52911 pattern (still fixed)</li>
         <li class="done">RPC default bind behavior (<code>httpserver.cpp</code>)</li>
-        <li class="done">UPnP default / miniupnpc presence</li>
+        <li class="done">UPnP default / miniupnpc presence (<code>DEFAULT_UPNP=false</code>)</li>
         <li class="done">dumpwallet path uses backup dir helper (not arbitrary system root by default)</li>
         <li class="done">Hardening flags in <code>configure.ac</code> (stack protector, FORTIFY, RELRO, PIE)</li>
+        <li class="done">MemeStream image URL SSRF surface (allowlist + path + size + redirects)</li>
+        <li class="done">No 0-day confirmed in this pass beyond known class issues already patched</li>
         <li class="partial">No full fuzz campaign of P2P deserializers (out of scope for one pass)</li>
         <li class="partial">No formal audit of all 1.14-era memory issues beyond known BTC disclosures</li>
       </ul>
+
+      <div class="callout warn">
+        <strong>No undisclosed “0day” found this pass</strong>
+        We re-checked UAF/UPnP status, RPC/P2P residual risk, and new Qt HTTP code.
+        Residual risk is mostly <strong>operational</strong> (RPC exposure, same-process wallet+P2P,
+        untrusted notify commands) and <strong>age-of-codebase</strong> (1.14-class needs ongoing
+        backports). A determined audit firm could still find memory-safety bugs in P2P parsers —
+        that is not evidence of current compromise.
+      </div>
 
       <h2>4. Recommended runtime profile (dev + minimal exposure)</h2>
       <pre><code># dogecoin.conf — safer defaults for a workstation

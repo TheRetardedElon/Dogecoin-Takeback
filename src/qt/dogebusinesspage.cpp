@@ -34,6 +34,7 @@
 #include <QUuid>
 #include <QAbstractItemView>
 #include <QFrame>
+#include <QSettings>
 
 DogeBusinessPage::DogeBusinessPage(const PlatformStyle* _platformStyle, QWidget* parent)
     : QWidget(parent),
@@ -43,6 +44,9 @@ DogeBusinessPage::DogeBusinessPage(const PlatformStyle* _platformStyle, QWidget*
       posCurrentAmount(0)
 {
     setupUi();
+    loadInvoices();
+    rebuildInvoiceTable();
+    updateDashboard();
 }
 
 void DogeBusinessPage::setupUi()
@@ -340,6 +344,7 @@ void DogeBusinessPage::onCreateInvoice()
     invNote->clear();
     rebuildInvoiceTable();
     updateDashboard();
+    saveInvoices();
     Q_EMIT message(tr("Doge Business"), tr("Invoice created: %1").arg(addr), CClientUIInterface::MSG_INFORMATION);
 }
 
@@ -409,6 +414,7 @@ void DogeBusinessPage::onMarkPaid()
     inv->status = QStringLiteral("paid");
     rebuildInvoiceTable();
     updateDashboard();
+    saveInvoices();
 }
 
 void DogeBusinessPage::onCancelInvoice()
@@ -419,6 +425,7 @@ void DogeBusinessPage::onCancelInvoice()
     inv->status = QStringLiteral("cancelled");
     rebuildInvoiceTable();
     updateDashboard();
+    saveInvoices();
 }
 
 void DogeBusinessPage::onPosDigit()
@@ -483,6 +490,7 @@ void DogeBusinessPage::onPosCharge()
     invoices.prepend(inv);
     rebuildInvoiceTable();
     updateDashboard();
+    saveInvoices();
 }
 
 void DogeBusinessPage::onPosNewSale()
@@ -491,4 +499,43 @@ void DogeBusinessPage::onPosNewSale()
     posCurrentAddress.clear();
     posCurrentAmount = 0;
     posAddress->setText(tr("Address: —"));
+}
+
+void DogeBusinessPage::loadInvoices()
+{
+    invoices.clear();
+    QSettings settings;
+    const int n = settings.beginReadArray(QStringLiteral("dogeBusiness/invoices"));
+    for (int i = 0; i < n; ++i) {
+        settings.setArrayIndex(i);
+        Invoice inv;
+        inv.id = settings.value(QStringLiteral("id")).toString();
+        inv.label = settings.value(QStringLiteral("label")).toString();
+        inv.amount = settings.value(QStringLiteral("amount")).toLongLong();
+        inv.address = settings.value(QStringLiteral("address")).toString();
+        inv.note = settings.value(QStringLiteral("note")).toString();
+        inv.status = settings.value(QStringLiteral("status"), QStringLiteral("open")).toString();
+        inv.created = settings.value(QStringLiteral("created")).toLongLong();
+        if (!inv.id.isEmpty() && !inv.address.isEmpty())
+            invoices.append(inv);
+    }
+    settings.endArray();
+}
+
+void DogeBusinessPage::saveInvoices() const
+{
+    QSettings settings;
+    settings.beginWriteArray(QStringLiteral("dogeBusiness/invoices"), invoices.size());
+    for (int i = 0; i < invoices.size(); ++i) {
+        settings.setArrayIndex(i);
+        const Invoice& inv = invoices.at(i);
+        settings.setValue(QStringLiteral("id"), inv.id);
+        settings.setValue(QStringLiteral("label"), inv.label);
+        settings.setValue(QStringLiteral("amount"), static_cast<qlonglong>(inv.amount));
+        settings.setValue(QStringLiteral("address"), inv.address);
+        settings.setValue(QStringLiteral("note"), inv.note);
+        settings.setValue(QStringLiteral("status"), inv.status);
+        settings.setValue(QStringLiteral("created"), static_cast<qlonglong>(inv.created));
+    }
+    settings.endArray();
 }
