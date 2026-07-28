@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Security changelog — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Security</div>
+        <a href="security-hardening.html">Security hardening</a>
+        <a href="security-audit-core.html">Core attack audit</a>
+        <a href="security-changelog.html">Security changelog</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Security changelog (this fork)</h1>
+      <p class="lead">
+        Security-relevant changes landed during recovery and hardening of
+        <code>C:\dogedev</code> (1.14.99-class). Not an official Dogecoin Core release note.
+      </p>
+
+      <h2>2026-07-28</h2>
+      <table>
+        <thead>
+          <tr><th>Change</th><th>Area</th><th>Commit / tag</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <strong>ConnectBlock script-check UAF fix</strong> (CVE-2024-52911 class).
+              <code>PrecomputedTransactionData</code> now outlives
+              <code>CCheckQueueControl</code> so worker threads cannot use freed memory
+              on early validation returns.
+            </td>
+            <td>P2P / validation</td>
+            <td><code>de8d297</code> · <code>security-cve-2024-52911-class</code></td>
+          </tr>
+          <tr>
+            <td>
+              <strong>DEFAULT_UPNP = false</strong> always — UPnP must be explicit
+              <code>-upnp=1</code> even when miniupnpc is compiled in.
+            </td>
+            <td>Network exposure</td>
+            <td>this release</td>
+          </tr>
+          <tr>
+            <td>
+              Wallet DB format detection; refuse SQLite until dual-stack exists;
+              <code>getwalletinfo.format</code>.
+            </td>
+            <td>Wallet</td>
+            <td><code>89ea3f3</code> · <code>wallet-format-detect</code></td>
+          </tr>
+          <tr>
+            <td>
+              Security hardening guide; <code>.gitignore</code> for
+              <code>wallet.dat</code>, cookies, live conf, logs.
+            </td>
+            <td>Ops / repo</td>
+            <td><code>18eb138</code></td>
+          </tr>
+          <tr>
+            <td>Core attack-surface audit documentation.</td>
+            <td>Docs</td>
+            <td>security-audit-core.html</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Still open (not “fixed forever”)</h2>
+      <ul>
+        <li>Broader 1.14-era memory safety vs modern Bitcoin Core</li>
+        <li>RPC is safe only if operators do not open <code>rpcallowip</code> publicly</li>
+        <li>SQLite wallet dual-stack not yet implemented (BDB remains)</li>
+        <li>No full fuzz campaign of P2P deserializers in this project yet</li>
+      </ul>
+
+      <div class="footer">
+        <a href="security-audit-core.html">Core attack audit</a> ·
+        <a href="security-hardening.html">Hardening checklist</a>
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

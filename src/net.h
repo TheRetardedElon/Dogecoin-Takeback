@@ -67,12 +67,10 @@ static const int MAX_ADDNODE_CONNECTIONS = 8;
 static const int PROTECTED_INBOUND_PEERS = 4 + 8 + 4 + 4;
 /** -listen default */
 static const bool DEFAULT_LISTEN = true;
-/** -upnp default */
-#ifdef USE_UPNP
-static const bool DEFAULT_UPNP = USE_UPNP;
-#else
+/** -upnp default: always off unless user opts in with -upnp=1.
+ *  UPnP increases attack surface (port mapping + miniupnpc history).
+ *  USE_UPNP only controls whether UPnP support is compiled in. */
 static const bool DEFAULT_UPNP = false;
-#endif
 /** The maximum number of peer connections to maintain. */
 static const unsigned int DEFAULT_MAX_PEER_CONNECTIONS = 125;
 /** The default for -maxuploadtarget. 0 = Unlimited */
