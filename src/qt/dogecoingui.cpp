@@ -190,50 +190,81 @@ DogecoinGUI::DogecoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle
         nav->setObjectName("modernNavigation");
         
         QVBoxLayout* navLayout = new QVBoxLayout(nav);
-        QPushButton* overviewBtn = new QPushButton("🏠 Overview");
-        QPushButton* sendBtn = new QPushButton("💸 Send");
-        QPushButton* receiveBtn = new QPushButton("📥 Receive");
-        QPushButton* historyBtn = new QPushButton("📊 History");
-        QPushButton* consoleBtn = new QPushButton("⚙️ Console");
-        
-        // Store buttons for later connection
+        QLabel* brand = new QLabel(tr("Dogecoin Core Pro"));
+        QFont brandFont = brand->font();
+        brandFont.setBold(true);
+        brandFont.setPointSize(brandFont.pointSize() + 1);
+        brand->setFont(brandFont);
+        brand->setContentsMargins(8, 12, 8, 12);
+        navLayout->addWidget(brand);
+
+        QPushButton* overviewBtn = new QPushButton(tr("Home"));
+        QPushButton* sendBtn = new QPushButton(tr("Send"));
+        QPushButton* receiveBtn = new QPushButton(tr("Receive"));
+        QPushButton* historyBtn = new QPushButton(tr("Transactions"));
+        QPushButton* networkBtn = new QPushButton(tr("Network"));
+        QPushButton* businessBtn = new QPushButton(tr("Doge Business"));
+        QPushButton* memeBtn = new QPushButton(tr("Meme Stream"));
+        QPushButton* consoleBtn = new QPushButton(tr("Console"));
+
+        // Store buttons for later connection / theme styling
         m_navButtons.clear();
         m_navButtons["overview"] = overviewBtn;
         m_navButtons["send"] = sendBtn;
         m_navButtons["receive"] = receiveBtn;
         m_navButtons["history"] = historyBtn;
+        m_navButtons["network"] = networkBtn;
+        m_navButtons["business"] = businessBtn;
+        m_navButtons["meme"] = memeBtn;
         m_navButtons["console"] = consoleBtn;
-        
+
         navLayout->addWidget(overviewBtn);
         navLayout->addWidget(sendBtn);
         navLayout->addWidget(receiveBtn);
         navLayout->addWidget(historyBtn);
-        navLayout->addWidget(consoleBtn);
+        navLayout->addWidget(networkBtn);
+        navLayout->addWidget(businessBtn);
+        navLayout->addWidget(memeBtn);
         navLayout->addStretch();
-        
+        navLayout->addWidget(consoleBtn);
+
         // Connect navigation buttons to actual functionality with null checks
-        connect(overviewBtn, &QPushButton::clicked, [this]() { 
+        connect(overviewBtn, &QPushButton::clicked, [this]() {
             if (walletFrame) {
-                gotoOverviewPage(); 
+                gotoOverviewPage();
             }
         });
-        connect(sendBtn, &QPushButton::clicked, [this]() { 
+        connect(sendBtn, &QPushButton::clicked, [this]() {
             if (walletFrame) {
-                gotoSendCoinsPage(); 
+                gotoSendCoinsPage();
             }
         });
-        connect(receiveBtn, &QPushButton::clicked, [this]() { 
+        connect(receiveBtn, &QPushButton::clicked, [this]() {
             if (walletFrame) {
-                gotoReceiveCoinsPage(); 
+                gotoReceiveCoinsPage();
             }
         });
-        connect(historyBtn, &QPushButton::clicked, [this]() { 
+        connect(historyBtn, &QPushButton::clicked, [this]() {
             if (walletFrame) {
-                gotoHistoryPage(); 
+                gotoHistoryPage();
             }
         });
-        connect(consoleBtn, &QPushButton::clicked, [this]() { 
-            showDebugWindow(); 
+        connect(networkBtn, &QPushButton::clicked, [this]() {
+            // Network polish TBD — Debug Console holds peers/bans/traffic today
+            showDebugWindow();
+        });
+        connect(businessBtn, &QPushButton::clicked, [this]() {
+            if (walletFrame) {
+                gotoDogeBusinessPage();
+            }
+        });
+        connect(memeBtn, &QPushButton::clicked, [this]() {
+            if (walletFrame) {
+                gotoMemeStreamPage();
+            }
+        });
+        connect(consoleBtn, &QPushButton::clicked, [this]() {
+            showDebugWindow();
         });
         
         // Create wallet frame for actual functionality
@@ -2064,6 +2095,16 @@ void DogecoinGUI::gotoSendCoinsPage(QString addr)
     sendCoinsAction->setChecked(true);
     }
     if (walletFrame) walletFrame->gotoSendCoinsPage(addr);
+}
+
+void DogecoinGUI::gotoMemeStreamPage()
+{
+    if (walletFrame) walletFrame->gotoMemeStreamPage();
+}
+
+void DogecoinGUI::gotoDogeBusinessPage()
+{
+    if (walletFrame) walletFrame->gotoDogeBusinessPage();
 }
 
 void DogecoinGUI::gotoSignMessageTab(QString addr)

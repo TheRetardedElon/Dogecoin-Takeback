@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MemeStream + Core integration — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="diagrams.html">Diagrams</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="rebrand-audit.html">Rebrand audit</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="sqlite-wallet-plan.html">SQLite wallet plan</a>
+        <a href="memestream-integration.html">MemeStream integration</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>MemeStream + Dogecoin Core integration</h1>
+      <p class="lead">
+        Handoff for rebuilding the client-side Meme Stream tab in Dogecoin Core / Qt.
+        Captured from GPE (GoPastEarth) side discussion — 2026-07-28.
+      </p>
+      <div class="meta">
+        <span>Status: <strong>spec only</strong> — no <code>memestream</code> sources in this tree yet</span>
+        <span>API host: <code>https://gopastearth.com</code></span>
+        <span>SPA: <code>https://memestream.gopastearth.com</code></span>
+      </div>
+
+      <div class="callout danger">
+        <strong>Secrets stay out of git</strong>
+        Publish key and any RPC credentials live in local config / env only
+        (<code>-memestreamkey=</code>, GPE <code>.env</code>). Never commit production keys.
+        Wrong or missing publish key → <code>401 client_only</code> — not a GPE user login.
+      </div>
+
+      <h2>Two separate systems (do not mix)</h2>
+      <table>
+        <thead>
+          <tr><th>System</th><th>Direction</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>A. MemeStream</strong></td>
+            <td>Dogecoin Core/Qt → HTTPS → GPE API</td>
+            <td>Feed, publish, upload, soft “Wow” likes</td>
+          </tr>
+          <tr>
+            <td><strong>B. POS DOGE payments</strong></td>
+            <td>GPE backend → RPC → local <code>dogecoind</code></td>
+            <td>Invoices, watchers, walletnotify</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        <strong>MemeStream does not use Dogecoin Core RPC.</strong>
+        Core only needs an HTTP client + publish key + a wallet address.
+        POS crypto on the GPE server uses <code>DOGE_RPC_*</code> — unrelated to posting memes.
+      </p>
+
+      <h2>A. MemeStream (what Core must implement)</h2>
+
+      <h3>Product policy</h3>
+      <table>
+        <thead>
+          <tr><th>Surface</th><th>Post?</th><th>Author</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Web SPA <code>https://memestream.gopastearth.com</code></td>
+            <td>No (view + Wow only)</td>
+            <td>n/a</td>
+          </tr>
+          <tr>
+            <td>Dogecoin Core / Qt</td>
+            <td>Yes</td>
+            <td>DOGE address = author + tipAddress</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Shared secret (required for posts)</h3>
+      <table>
+        <thead>
+          <tr><th>Item</th><th>Value / rule</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Env on GPE</td><td><code>MEMESTREAM_PUBLISH_KEY</code></td></tr>
+          <tr><td>Core CLI</td><td><code>dogecoin-qt -memestreamkey=&lt;same key&gt;</code></td></tr>
+          <tr><td>Preferred header</td><td><code>X-MemeStream-Key: &lt;key&gt;</code> only</td></tr>
+          <tr><td>Also accepted</td><td><code>Authorization: MemeStream &lt;key&gt;</code> or body <code>memestreamKey</code></td></tr>
+          <tr><td>Never</td><td><code>Authorization: Bearer …</code>, <code>X-Api-Key</code>, GPE login/JWT</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Scope of this key (hard-enforced on GPE):</strong></p>
+      <ul>
+        <li>Allowed: <code>POST</code> publish, <code>POST</code> upload (≤69 KiB)</li>
+        <li>Denied: any other platform API (POS, admin, tenants, sessions, etc.)</li>
+      </ul>
+      <p>
+        <code>MEMESTREAM_PUBLISH_OPEN=1</code> would allow keyless publish — <strong>must stay unset in prod</strong>.
+      </p>
+
+      <h3>API bases (use only these)</h3>
+      <p>Canonical money/API host: <code>https://gopastearth.com</code></p>
+      <table>
+        <thead>
+          <tr><th>Base URL</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>https://gopastearth.com/api/public/memestream</code></td><td>Canonical</td></tr>
+          <tr><td><code>https://gopastearth.com/api/memestream</code></td><td>Same router (Core often omits <code>/public</code>)</td></tr>
+          <tr><td><code>https://gopastearth.com/api/memes</code></td><td>Short: GET=feed, POST=publish</td></tr>
+          <tr><td><code>https://gopastearth.com/api/feed</code></td><td>Short: GET=feed</td></tr>
+          <tr><td><code>https://memestream.gopastearth.com/api/…</code></td><td>SPA same-origin</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Do <strong>not</strong> call random <code>/api/*</code> without these paths —
+        generic routes require a session and return 401.
+      </p>
+
+      <h3>Endpoints Core cares about</h3>
+      <table>
+        <thead>
+          <tr><th>Method</th><th>Path</th><th>Auth</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>GET</td><td><code>/api/public/memestream/feed?limit=&amp;cursor=</code></td><td>Public</td><td>Feed + dogeOfTheDay</td></tr>
+          <tr><td>GET</td><td><code>/api/memes</code> or <code>/api/feed</code></td><td>Public</td><td>Feed aliases</td></tr>
+          <tr><td>POST</td><td><code>/api/public/memestream/publish</code></td><td><code>X-MemeStream-Key</code></td><td>Publish post</td></tr>
+          <tr><td>POST</td><td><code>/api/memes</code></td><td><code>X-MemeStream-Key</code></td><td>Publish alias</td></tr>
+          <tr><td>POST</td><td><code>/api/public/memestream/upload</code></td><td><code>X-MemeStream-Key</code></td><td>Image only ≤69 KiB</td></tr>
+          <tr><td>POST</td><td><code>/api/public/memestream/items/:id/like</code></td><td>Public*</td><td>Soft Wow</td></tr>
+        </tbody>
+      </table>
+      <p>*Likes: send <code>X-Doge-Address: &lt;wallet&gt;</code> (or body <code>wallet</code>) so Wow binds to identity.</p>
+
+      <h3>Publish body (JSON)</h3>
+<pre>POST https://gopastearth.com/api/memes
+Content-Type: application/json
+X-MemeStream-Key: &lt;from local config&gt;
+
+{
+  "title": "Follow your dreams",
+  "body": "such wow",
+  "wallet": "DYourReceivingAddressFromCoreWalletxxxx"
+}</pre>
+      <p>
+        Wallet field aliases: <code>wallet</code> (preferred), <code>author</code>, <code>address</code>,
+        <code>fromAddress</code>, <code>from</code>, or header <code>X-Doge-Address</code>.
+      </p>
+      <p><strong>Server forces:</strong></p>
+      <ul>
+        <li><code>source = dogecoin-client</code></li>
+        <li><code>tipAddress = author</code> (same wallet)</li>
+      </ul>
+      <p>Missing address → <code>wallet_required</code> (key can still be fine).</p>
+
+      <h3>Images</h3>
+      <table>
+        <thead>
+          <tr><th>Rule</th><th>Value</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Max size</td><td>69 KiB (70656 bytes)</td></tr>
+          <tr><td>Types</td><td>JPEG, PNG, GIF, WebP</td></tr>
+          <tr><td>Multipart fields</td><td><code>image</code>, <code>file</code>, <code>photo</code>, <code>meme</code>, <code>media</code>, <code>attachment</code>, <code>pic</code></td></tr>
+          <tr><td>JSON</td><td><code>imageBase64</code> data-URL</td></tr>
+          <tr><td>Two-step</td><td>POST <code>/upload</code> then publish with <code>imageUrl</code></td></tr>
+          <tr><td>Disk (GPE)</td><td><code>MEMESTREAM_IMAGE_DIR</code> (e.g. VFS mount)</td></tr>
+          <tr><td>Public URL</td><td><code>/media/memestream/&lt;file&gt;</code> (relative, same-origin)</td></tr>
+        </tbody>
+      </table>
+      <p>Text-only posts OK if no image; response has <code>imageAttached: true|false</code>.</p>
+
+      <h3>Tips (on-chain, in Core)</h3>
+      <div class="callout ok">
+        <strong>No GPE bridge for tips</strong>
+        After feed load, each item has <code>tipAddress</code> / <code>author</code> (DOGE address).
+        Core one-click tip = send DOGE to that address on-chain via the normal wallet.
+      </div>
+
+      <h3>Likes (“Wow”)</h3>
+      <ul>
+        <li>Public soft counter; once per identity.</li>
+        <li>Core should send <code>X-Doge-Address: &lt;wallet&gt;</code> (or body <code>wallet</code>).</li>
+      </ul>
+
+      <h3>Core UI sketch (from recovered Core Pro screenshots)</h3>
+      <ol>
+        <li><strong>Home right-rail</strong> — compact Meme Stream cards + Tip CTAs (always visible while browsing balance/activity)</li>
+        <li><strong>Dedicated Meme Stream nav page</strong> — full publish form + searchable feed + Like / Tip / Boost (better scrolling)</li>
+        <li><strong>Identity</strong> — author = Core wallet receive address (no separate username). Same address is tip target.</li>
+        <li>Publish with <code>X-MemeStream-Key</code> + that wallet; Tip opens Send pre-filled to creator address</li>
+        <li>Optional: “View on web” → SPA <code>https://memestream.gopastearth.com</code> (view-only)</li>
+        <li>Serious Mode can hide both rail + nav entry (local preference)</li>
+      </ol>
+      <p>Visual reference: <a href="ui-reference-core-pro.html">Core Pro UI reference</a> (gallery + layout contract).</p>
+
+      <h3>Example curls (local dev)</h3>
+<pre># Feed
+curl -sS 'https://gopastearth.com/api/public/memestream/feed?limit=20'
+
+# Publish text (set key from your local config — do not paste production keys into commits)
+curl -sS -X POST 'https://gopastearth.com/api/public/memestream/publish' \
+  -H 'Content-Type: application/json' \
+  -H "X-MemeStream-Key: $MEMESTREAM_PUBLISH_KEY" \
+  -d '{"title":"To the moon","body":"Such height","wallet":"DYourReceivingAddressHerexxxxxxxx"}'
+
+# Publish + small image
+curl -sS -F 'title=Such meme' -F 'body=Very small' \
+  -F 'wallet=DYourReceivingAddressHerexxxxxxxx' \
+  -F 'image=@tiny-doge.webp' \
+  -H "X-MemeStream-Key: $MEMESTREAM_PUBLISH_KEY" \
+  https://gopastearth.com/api/public/memestream/publish</pre>
+
+      <h3>GPE code map (server — not Core)</h3>
+      <ul>
+        <li><code>backend/middleware/memeStreamAuth.js</code> — key extract + allowlist</li>
+        <li><code>backend/routes/public.memestream.routes.js</code></li>
+        <li><code>backend/services/memeStream.service.js</code></li>
+        <li><code>backend/config/memeStreamImageStorage.js</code></li>
+        <li>public-site SPA on 5174 → memestream.gopastearth.com</li>
+        <li>Docs: <code>app/docs/MEMESTREAM.md</code></li>
+      </ul>
+      <p>
+        Master Admin (Meme Stream manager UI) uses master_admin session for delete/feature —
+        <strong>not</strong> the Core publish key.
+      </p>
+
+      <h2>B. POS Dogecoin Core node (server-side — different path)</h2>
+      <p>
+        GPE backend talks to local <code>dogecoind</code> for POS crypto
+        (<strong>not</strong> for MemeStream posting). Env on GPE: <code>DOGE_RPC_URL</code>,
+        <code>DOGE_RPC_USER</code>, <code>DOGE_RPC_PASS</code>, watch intervals, master addresses, etc.
+        Sample conf shape in GPE repo: <code>app/configfiles/dogecoin.conf</code>.
+      </p>
+      <p>
+        <code>walletnotify</code> hits GPE backend for invoice reconciliation —
+        unrelated to MemeStream publish.
+      </p>
+
+      <h2>Checklist for rebuilding Core + MemeStream</h2>
+      <ul class="checklist">
+        <li class="todo">Ship/build Qt with Meme Stream tab + <code>-memestreamkey=</code></li>
+        <li class="todo">Set key from GPE <code>MEMESTREAM_PUBLISH_KEY</code> (local only)</li>
+        <li class="todo">Always send <code>X-MemeStream-Key</code> on publish/upload</li>
+        <li class="todo">Always send receiving wallet on publish</li>
+        <li class="todo">Feed: GET canonical feed URL</li>
+        <li class="todo">Images ≤69 KiB; tip on-chain to <code>tipAddress</code></li>
+        <li class="todo">Do not use MemeStream key for RPC or POS</li>
+      </ul>
+
+      <h2>What Core does not need</h2>
+      <ul>
+        <li>GPE user login / JWT / master_admin</li>
+        <li>Tenant IDs / POS device secrets</li>
+        <li>Dogecoin RPC credentials (unless you also run POS crypto on that machine)</li>
+        <li>Bridge software for MemeStream tips</li>
+      </ul>
+
+      <h2>Implementation notes for this tree</h2>
+      <div class="callout warn">
+        <strong>Not present yet</strong>
+        Recovery scan found no <code>memestream</code> client code under <code>C:\dogedev</code>.
+        This page is the contract so Phase 4 can rebuild without re-discovering GPE.
+      </div>
+      <ul>
+        <li>Prefer Qt Network (or libcurl) HTTP client — no RPC dependency for feed/publish.</li>
+        <li>Hide tab when Serious Mode is on (local setting).</li>
+        <li>Reuse existing send-coins flow for tips; never send funds through GPE for tips.</li>
+        <li>Next optional doc: Qt checklist (exact header names + error code mapping).</li>
+      </ul>
+
+      <h2>Related</h2>
+      <p>
+        <a href="roadmap.html">Roadmap</a> (Phase 4) ·
+        <a href="recovery-status.html">Recovery status</a> ·
+        <a href="security-audit-core.html">Core attack audit</a>
+      </p>
+
+      <div class="footer">Update when Core client code lands or GPE API changes.</div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

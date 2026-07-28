@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UI reference — Dogecoin Core Pro shell — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+  <style>
+    .shot {
+      margin: 1.25rem 0 2rem;
+      border: 1px solid var(--border, #333);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #0b0b0f;
+    }
+    .shot img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .shot figcaption {
+      padding: 0.65rem 1rem;
+      font-size: 0.9rem;
+      color: var(--muted, #aaa);
+      border-top: 1px solid var(--border, #333);
+    }
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 900px) {
+      .layout-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="diagrams.html">Diagrams</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="rebrand-audit.html">Rebrand audit</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="ui-reference-core-pro.html">Core Pro UI reference</a>
+        <a href="memestream-integration.html">MemeStream integration</a>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="sqlite-wallet-plan.html">SQLite wallet plan</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Dogecoin Core Pro — UI reference</h1>
+      <p class="lead">
+        Screenshots of the lost modern shell (sidebar nav, Meme Stream, Doge Business).
+        Use this as the product target when rebuilding — not the stock Bitcoin-class Qt layout.
+      </p>
+      <div class="meta">
+        <span>Captured: 2026-07 (promo / running client)</span>
+        <span>In tree today: partial modern shell only</span>
+        <span>Assets: <code>html/docs/assets/ui-reference/</code></span>
+      </div>
+
+      <div class="callout warn">
+        <strong>Gap vs current tree</strong>
+        <code>ModernNavigation</code> only has Overview / Send / Receive / History / AddressBook / Console.
+        Screenshots show <strong>Home, Send, Receive, Transactions, Network, Doge Business, Meme Stream</strong>
+        plus Home-side Meme Stream rail and full Business/POS/Invoices pages.
+        Those pages are <em>not</em> implemented in this recovery tree yet.
+      </div>
+
+      <h2>Shell layout (product contract)</h2>
+      <table>
+        <thead>
+          <tr><th>Region</th><th>Behavior</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Left nav</td>
+            <td>Brand “Dogecoin Core Pro”; items: Home, Send, Receive, Transactions, Network, Doge Business, Meme Stream; Settings at bottom</td>
+          </tr>
+          <tr>
+            <td>Main content</td>
+            <td>Stacked pages; dark theme gold accents; card-based panels</td>
+          </tr>
+          <tr>
+            <td>Home + Meme Stream rail</td>
+            <td>Right column on Home shows live feed cards + Tip buttons (compact). Dedicated Meme Stream nav for full scroll / publish</td>
+          </tr>
+          <tr>
+            <td>Sync chrome</td>
+            <td>Bottom progress (“Syncing Headers…”) + “N years behind” when catching up</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Identity = Dogecoin address</h2>
+      <div class="callout ok">
+        <strong>No separate social username</strong>
+        Whoever posts: author is the Core wallet receive address.
+        That address is also <code>tipAddress</code>. Viewer hits Tip → Core send flow
+        pre-filled to that address. Web SPA stays view-only; only Core posts with publish key.
+      </div>
+      <ul>
+        <li>Publish form shows “Author (wallet address — used for Tip)” from wallet model.</li>
+        <li>Feed cards show truncated tip target (e.g. <code>Tip → DH5yaieq…R3mr7L</code>).</li>
+        <li>Like / Wow should bind with <code>X-Doge-Address</code> = same wallet (see API doc).</li>
+      </ul>
+
+      <h2>Nav map (target)</h2>
+      <table>
+        <thead>
+          <tr><th>Nav</th><th>Screenshot</th><th>Contents</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Home</td><td>01</td><td>Balance Core, Network card, Doge Business Center tiles, Recent activity, Meme Stream sidebar</td></tr>
+          <tr><td>Send</td><td>02</td><td>Pay To / Label / Amount, fee slider, Send / Clear / Add Recipient</td></tr>
+          <tr><td>Receive</td><td>03</td><td>Request payment form + history table</td></tr>
+          <tr><td>Transactions</td><td>04</td><td>Filterable history grid, Export</td></tr>
+          <tr><td>Network</td><td>05</td><td>Placeholder → Debug Console for peers/bans/traffic (polish later)</td></tr>
+          <tr><td>Doge Business</td><td>06–09</td><td>Dashboard / Invoices / POS (keys stay in wallet — not external GigaWallet)</td></tr>
+          <tr><td>Meme Stream</td><td>07</td><td>Full publish form + searchable feed + Like / Tip / Boost</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Meme Stream dual surface</h2>
+      <ol>
+        <li><strong>Home sidebar</strong> — compact rail: few cards, Tip CTAs, “4 memes · live”, optional expand.</li>
+        <li><strong>Dedicated page</strong> — post form (title, body, ≤69 KiB image), Refresh, View on web, search, full grid with Like / Tip / Boost.</li>
+      </ol>
+      <p>
+        Tip is on-chain only (pre-fill Send). No GPE payment bridge for tips.
+        API contract: <a href="memestream-integration.html">MemeStream integration</a>.
+      </p>
+
+      <h2>Doge Business Center</h2>
+      <ul>
+        <li><strong>Dashboard</strong> — balance, open/paid invoice counts, volume; New invoice / Open POS / Receive page.</li>
+        <li><strong>Invoices</strong> — create labeled receive address + amount; Copy URI / address; Mark paid / Cancel (auto-watch later).</li>
+        <li><strong>POS</strong> — kiosk keypad amount, Charge → payment request address + Copy URI / New sale.</li>
+      </ul>
+      <p>Copy on UI: “Merchant tools built into Dogecoin Core — invoices, POS, and dashboard. Your keys stay in this wallet (not external GigaWallet).”</p>
+
+      <h2>Screenshot gallery</h2>
+
+      <figure class="shot">
+        <img src="../assets/ui-reference/01-home.png" alt="Home with balance, business tiles, and Meme Stream sidebar" />
+        <figcaption>01 — Home: Balance Core + Network + Doge Business tiles + right-rail Meme Stream with Tip buttons</figcaption>
+      </figure>
+
+      <div class="layout-grid">
+        <figure class="shot">
+          <img src="../assets/ui-reference/02-send.png" alt="Send page" />
+          <figcaption>02 — Send</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="../assets/ui-reference/03-receive.png" alt="Receive page" />
+          <figcaption>03 — Receive</figcaption>
+        </figure>
+      </div>
+
+      <div class="layout-grid">
+        <figure class="shot">
+          <img src="../assets/ui-reference/04-transactions.png" alt="Transactions page" />
+          <figcaption>04 — Transactions</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="../assets/ui-reference/05-network.png" alt="Network placeholder page" />
+          <figcaption>05 — Network (placeholder → console)</figcaption>
+        </figure>
+      </div>
+
+      <figure class="shot">
+        <img src="../assets/ui-reference/07-memestream-page.png" alt="Full Meme Stream page with publish form and feed" />
+        <figcaption>07 — Meme Stream full page: author = wallet address, publish form, feed with Like / Tip / Boost</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <img src="../assets/ui-reference/06-doge-business-dashboard.png" alt="Doge Business Center dashboard" />
+        <figcaption>06 — Doge Business Center · Dashboard</figcaption>
+      </figure>
+
+      <div class="layout-grid">
+        <figure class="shot">
+          <img src="../assets/ui-reference/08-invoices.png" alt="Invoices tab" />
+          <figcaption>08 — Invoices</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="../assets/ui-reference/09-pos.png" alt="POS kiosk tab" />
+          <figcaption>09 — POS keypad / Charge</figcaption>
+        </figure>
+      </div>
+
+      <h2>Rebuild checklist (UI)</h2>
+      <ul class="checklist">
+        <li class="todo">Extend nav: Network, Doge Business, Meme Stream (+ Settings placement)</li>
+        <li class="todo">Home: business quick tiles + Meme Stream right rail</li>
+        <li class="todo">Meme Stream page: HTTP client, publish key, wallet-as-author, tip → Send</li>
+        <li class="todo">Business: local invoice store + POS (wallet addresses only)</li>
+        <li class="todo">Network page polish (or deep-link console)</li>
+        <li class="todo">Wire Modern shell as live main window (or merge into DogecoinGUI)</li>
+      </ul>
+
+      <h2>Related</h2>
+      <p>
+        <a href="modern-ui.html">Modern UI &amp; themes</a> ·
+        <a href="memestream-integration.html">MemeStream API</a> ·
+        <a href="roadmap.html">Roadmap</a>
+      </p>
+
+      <div class="footer">Add more screenshots under <code>assets/ui-reference/</code> as they surface.</div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

@@ -145,7 +145,10 @@ QT_MOC_CPP = \
   qt/moc_verticallabel.cpp \
   qt/moc_walletframe.cpp \
   qt/moc_walletmodel.cpp \
-  qt/moc_walletview.cpp
+  qt/moc_walletview.cpp \
+  qt/moc_memestreamclient.cpp \
+  qt/moc_memestreampage.cpp \
+  qt/moc_dogebusinesspage.cpp
 
 DOGECOIN_MM = \
   qt/macdockiconhandler.mm \
@@ -172,7 +175,10 @@ DOGECOIN_QT_H = \
   qt/dogecoinaddressvalidator.h \
   qt/dogecoinamountfield.h \
   qt/dogecoingui.h \
+  qt/dogebusinesspage.h \
   qt/dogecoinunits.h \
+  qt/memestreamclient.h \
+  qt/memestreampage.h \
   qt/clientmodel.h \
   qt/coincontroldialog.h \
   qt/coincontroltreewidget.h \
@@ -316,8 +322,11 @@ DOGECOIN_QT_WALLET_CPP = \
   qt/askpassphrasedialog.cpp \
   qt/coincontroldialog.cpp \
   qt/coincontroltreewidget.cpp \
+  qt/dogebusinesspage.cpp \
   qt/editaddressdialog.cpp \
   qt/importkeysdialog.cpp \
+  qt/memestreamclient.cpp \
+  qt/memestreampage.cpp \
   qt/openuridialog.cpp \
   qt/overviewpage.cpp \
   qt/paymentserver.cpp \

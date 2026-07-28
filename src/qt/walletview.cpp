@@ -7,10 +7,12 @@
 
 #include "addressbookpage.h"
 #include "askpassphrasedialog.h"
+#include "dogebusinesspage.h"
 #include "dogecoingui.h"
 #include "clientmodel.h"
 #include "guiutil.h"
 #include "importkeysdialog.h"
+#include "memestreampage.h"
 #include "optionsmodel.h"
 #include "overviewpage.h"
 #include "platformstyle.h"
@@ -58,6 +60,8 @@ WalletView::WalletView(const PlatformStyle *_platformStyle, QWidget *parent):
 
     receiveCoinsPage = new ReceiveCoinsDialog(platformStyle);
     sendCoinsPage = new SendCoinsDialog(platformStyle);
+    memeStreamPage = new MemeStreamPage(platformStyle, this);
+    dogeBusinessPage = new DogeBusinessPage(platformStyle, this);
 
     usedSendingAddressesPage = new AddressBookPage(platformStyle, AddressBookPage::ForEditing, AddressBookPage::SendingTab, this);
     usedReceivingAddressesPage = new AddressBookPage(platformStyle, AddressBookPage::ForEditing, AddressBookPage::ReceivingTab, this);
@@ -66,8 +70,16 @@ WalletView::WalletView(const PlatformStyle *_platformStyle, QWidget *parent):
     addWidget(transactionsPage);
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
+    addWidget(memeStreamPage);
+    addWidget(dogeBusinessPage);
 
     importKeysDialog = new ImportKeysDialog(platformStyle);
+
+    // Tip from Meme Stream → Send page pre-filled with creator address
+    connect(memeStreamPage, SIGNAL(tipRequested(QString)), this, SLOT(gotoSendCoinsPage(QString)));
+    connect(memeStreamPage, SIGNAL(message(QString,QString,uint)), this, SIGNAL(message(QString,QString,uint)));
+    connect(dogeBusinessPage, SIGNAL(message(QString,QString,uint)), this, SIGNAL(message(QString,QString,uint)));
+    connect(dogeBusinessPage, SIGNAL(gotoReceiveRequested()), this, SLOT(gotoReceiveCoinsPage()));
 
     // Clicking on a transaction on the overview pre-selects the transaction on the transaction history page
     connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), transactionView, SLOT(focusTransaction(QModelIndex)));
@@ -127,6 +139,8 @@ void WalletView::setWalletModel(WalletModel *_walletModel)
     overviewPage->setWalletModel(_walletModel);
     receiveCoinsPage->setModel(_walletModel);
     sendCoinsPage->setModel(_walletModel);
+    memeStreamPage->setWalletModel(_walletModel);
+    dogeBusinessPage->setWalletModel(_walletModel);
     usedReceivingAddressesPage->setModel(_walletModel->getAddressTableModel());
     usedSendingAddressesPage->setModel(_walletModel->getAddressTableModel());
 
@@ -182,6 +196,18 @@ void WalletView::gotoOverviewPage()
 void WalletView::gotoHistoryPage()
 {
     setCurrentWidget(transactionsPage);
+}
+
+void WalletView::gotoMemeStreamPage()
+{
+    setCurrentWidget(memeStreamPage);
+    memeStreamPage->refresh();
+}
+
+void WalletView::gotoDogeBusinessPage()
+{
+    setCurrentWidget(dogeBusinessPage);
+    dogeBusinessPage->refresh();
 }
 
 void WalletView::gotoReceiveCoinsPage()
