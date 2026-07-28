@@ -15,11 +15,12 @@ class QLabel;
 class QTableView;
 class QPushButton;
 class QTimer;
+class QCheckBox;
 QT_END_NAMESPACE
 
 /**
- * Network status page for Core Pro shell: connections, sync, peer table.
- * Uses the same PeerTableModel as the debug console.
+ * Network status page for Core Pro shell: connections, sync, peers, bans.
+ * Uses the same PeerTableModel / BanTableModel as the debug console.
  */
 class NetworkPage : public QWidget
 {
@@ -37,6 +38,7 @@ Q_SIGNALS:
 private Q_SLOTS:
     void updateStats();
     void onOpenConsole();
+    void onNetworkActiveToggled(bool checked);
 
 private:
     void setupUi();
@@ -51,8 +53,11 @@ private:
     QLabel* trafficLabel;
     QLabel* warningsLabel;
     QTableView* peerView;
+    QTableView* banView;
     QPushButton* consoleBtn;
+    QCheckBox* networkActiveCheck;
     QTimer* pollTimer;
+    bool updatingNetworkToggle;
 };
 
 #endif // DOGECOIN_QT_NETWORKPAGE_H

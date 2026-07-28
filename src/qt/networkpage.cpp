@@ -4,6 +4,7 @@
 
 #include "networkpage.h"
 
+#include "bantablemodel.h"
 #include "clientmodel.h"
 #include "guiconstants.h"
 #include "guiutil.h"
@@ -11,10 +12,12 @@
 #include "platformstyle.h"
 
 #include <QAbstractItemView>
+#include <QCheckBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
 #include <QPushButton>
+#include <QSplitter>
 #include <QTableView>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -23,7 +26,8 @@ NetworkPage::NetworkPage(const PlatformStyle* _platformStyle, QWidget* parent)
     : QWidget(parent),
       platformStyle(_platformStyle),
       clientModel(0),
-      pollTimer(0)
+      pollTimer(0),
+      updatingNetworkToggle(false)
 {
     setupUi();
 }
@@ -43,9 +47,14 @@ void NetworkPage::setupUi()
     title->setFont(tf);
     head->addWidget(title);
     head->addStretch();
+
+    networkActiveCheck = new QCheckBox(tr("Network activity enabled"));
+    networkActiveCheck->setToolTip(tr("When off, this node stops connecting and accepting peers (local-only mode)."));
+    head->addWidget(networkActiveCheck);
+
     consoleBtn = new QPushButton(tr("Open Debug Console"));
     consoleBtn->setObjectName(QStringLiteral("homeQuickButton"));
-    consoleBtn->setToolTip(tr("Peers detail, bans, console, and traffic graph"));
+    consoleBtn->setToolTip(tr("Full console, traffic graph, and advanced peer tools"));
     head->addWidget(consoleBtn);
     root->addLayout(head);
 
@@ -83,13 +92,19 @@ void NetworkPage::setupUi()
     warningsLabel->setWordWrap(true);
     root->addWidget(warningsLabel);
 
+    QSplitter* split = new QSplitter(Qt::Vertical, this);
+    split->setChildrenCollapsible(false);
+
+    // Peers
+    QWidget* peersBox = new QWidget();
+    QVBoxLayout* peersLay = new QVBoxLayout(peersBox);
+    peersLay->setContentsMargins(0, 0, 0, 0);
     QLabel* peersTitle = new QLabel(tr("Connected peers"));
     QFont pf = peersTitle->font();
     pf.setBold(true);
     peersTitle->setFont(pf);
-    root->addWidget(peersTitle);
-
-    peerView = new QTableView(this);
+    peersLay->addWidget(peersTitle);
+    peerView = new QTableView(peersBox);
     peerView->setObjectName(QStringLiteral("networkPeerView"));
     peerView->verticalHeader()->hide();
     peerView->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -98,9 +113,37 @@ void NetworkPage::setupUi()
     peerView->setAlternatingRowColors(true);
     peerView->horizontalHeader()->setStretchLastSection(true);
     peerView->setSortingEnabled(true);
-    root->addWidget(peerView, 1);
+    peersLay->addWidget(peerView, 1);
+    split->addWidget(peersBox);
+
+    // Bans
+    QWidget* banBox = new QWidget();
+    QVBoxLayout* banLay = new QVBoxLayout(banBox);
+    banLay->setContentsMargins(0, 0, 0, 0);
+    QLabel* banTitle = new QLabel(tr("Banned peers"));
+    QFont bf = banTitle->font();
+    bf.setBold(true);
+    banTitle->setFont(bf);
+    banLay->addWidget(banTitle);
+    banView = new QTableView(banBox);
+    banView->setObjectName(QStringLiteral("networkBanView"));
+    banView->verticalHeader()->hide();
+    banView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    banView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    banView->setSelectionMode(QAbstractItemView::SingleSelection);
+    banView->setAlternatingRowColors(true);
+    banView->horizontalHeader()->setStretchLastSection(true);
+    banView->setSortingEnabled(true);
+    banView->setMaximumHeight(160);
+    banLay->addWidget(banView);
+    split->addWidget(banBox);
+
+    split->setStretchFactor(0, 3);
+    split->setStretchFactor(1, 1);
+    root->addWidget(split, 1);
 
     connect(consoleBtn, SIGNAL(clicked()), this, SLOT(onOpenConsole()));
+    connect(networkActiveCheck, SIGNAL(toggled(bool)), this, SLOT(onNetworkActiveToggled(bool)));
 
     pollTimer = new QTimer(this);
     connect(pollTimer, SIGNAL(timeout()), this, SLOT(updateStats()));
@@ -110,14 +153,23 @@ void NetworkPage::setupUi()
 void NetworkPage::setClientModel(ClientModel* model)
 {
     clientModel = model;
-    if (clientModel && clientModel->getPeerTableModel()) {
-        peerView->setModel(clientModel->getPeerTableModel());
-        peerView->setColumnWidth(PeerTableModel::Address, 200);
-        peerView->setColumnWidth(PeerTableModel::Subversion, 150);
-        peerView->setColumnWidth(PeerTableModel::Ping, 80);
-        clientModel->getPeerTableModel()->startAutoRefresh();
+    if (clientModel) {
+        if (clientModel->getPeerTableModel()) {
+            peerView->setModel(clientModel->getPeerTableModel());
+            peerView->setColumnWidth(PeerTableModel::Address, 200);
+            peerView->setColumnWidth(PeerTableModel::Subversion, 150);
+            peerView->setColumnWidth(PeerTableModel::Ping, 80);
+            clientModel->getPeerTableModel()->startAutoRefresh();
+        }
+        if (clientModel->getBanTableModel()) {
+            banView->setModel(clientModel->getBanTableModel());
+            banView->setColumnWidth(BanTableModel::Address, 220);
+            // BanTableModel has refresh() only (no auto timer like peers)
+            clientModel->getBanTableModel()->refresh();
+        }
     } else {
         peerView->setModel(0);
+        banView->setModel(0);
     }
     updateStats();
 }
@@ -160,9 +212,24 @@ void NetworkPage::updateStats()
 
     const QString warn = clientModel->getStatusBarWarnings();
     warningsLabel->setText(warn.isEmpty() ? tr("No network warnings.") : warn);
+
+    updatingNetworkToggle = true;
+    networkActiveCheck->setChecked(clientModel->getNetworkActive());
+    updatingNetworkToggle = false;
+
+    if (clientModel->getBanTableModel())
+        clientModel->getBanTableModel()->refresh();
 }
 
 void NetworkPage::onOpenConsole()
 {
     Q_EMIT openDebugConsole();
+}
+
+void NetworkPage::onNetworkActiveToggled(bool checked)
+{
+    if (updatingNetworkToggle || !clientModel)
+        return;
+    clientModel->setNetworkActive(checked);
+    updateStats();
 }
