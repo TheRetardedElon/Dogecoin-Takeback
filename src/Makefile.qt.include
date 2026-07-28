@@ -180,6 +180,7 @@ DOGECOIN_QT_H = \
   qt/dogecoinunits.h \
   qt/memestreamclient.h \
   qt/memestreampage.h \
+  qt/memestreampublishkey.h \
   qt/memestreamrail.h \
   qt/clientmodel.h \
   qt/coincontroldialog.h \
@@ -329,6 +330,7 @@ DOGECOIN_QT_WALLET_CPP = \
   qt/importkeysdialog.cpp \
   qt/memestreamclient.cpp \
   qt/memestreampage.cpp \
+  qt/memestreampublishkey.cpp \
   qt/memestreamrail.cpp \
   qt/openuridialog.cpp \
   qt/overviewpage.cpp \

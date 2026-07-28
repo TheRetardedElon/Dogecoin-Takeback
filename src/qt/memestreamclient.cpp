@@ -4,6 +4,7 @@
 
 #include "memestreamclient.h"
 
+#include "memestreampublishkey.h"
 #include "util.h"
 
 #include <QHttpMultiPart>
@@ -39,6 +40,11 @@ void MemeStreamClient::loadFromArgs()
         m_baseUrl = b;
     }
     std::string key = GetArg("-memestreamkey", "");
+    if (key.empty() && HasBuiltInMemeStreamPublishKey()) {
+        // Built-in material is obfuscated in the binary (not a plaintext string).
+        // Explicit -memestreamkey= always wins when set.
+        key = GetBuiltInMemeStreamPublishKey();
+    }
     m_publishKey = QString::fromStdString(key);
 }
 

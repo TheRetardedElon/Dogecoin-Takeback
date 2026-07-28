@@ -48,10 +48,11 @@
       </div>
 
       <div class="callout danger">
-        <strong>Secrets stay out of git</strong>
-        Publish key and any RPC credentials live in local config / env only
-        (<code>-memestreamkey=</code>, GPE <code>.env</code>). Never commit production keys.
-        Wrong or missing publish key → <code>401 client_only</code> — not a GPE user login.
+        <strong>Secrets stay out of git as plaintext</strong>
+        Prefer <code>-memestreamkey=</code> / datadir conf / gitignored <code>local/</code> for ops overrides.
+        Core may also ship a <em>built-in</em> publish material via multi-fragment XOR obfuscation
+        (<code>memestreampublishkey.cpp</code>) so the hex string is not stored whole in source —
+        that is obscurity only, not encryption. Wrong key → <code>401 client_only</code>.
       </div>
 
       <h2>Two separate systems (do not mix)</h2>
