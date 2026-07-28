@@ -152,7 +152,7 @@ BITCOIN_TESTS += \
 endif
 
 test_test_dogecoin_SOURCES = $(BITCOIN_TESTS) $(JSON_TEST_FILES) $(RAW_TEST_FILES)
-test_test_dogecoin_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) -I$(builddir)/test/ $(TESTDEFS) $(EVENT_CFLAGS)
+test_test_dogecoin_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES) -I$(builddir)/test/ $(TESTDEFS) $(EVENT_CFLAGS)
 test_test_dogecoin_LDADD = $(LIBDOGECOIN_SERVER) $(LIBDOGECOIN_CLI) $(LIBDOGECOIN_COMMON) $(LIBDOGECOIN_UTIL) $(LIBDOGECOIN_CONSENSUS) $(LIBDOGECOIN_CRYPTO) $(LIBUNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
   $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1) $(EVENT_LIBS)
 test_test_dogecoin_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
@@ -170,7 +170,7 @@ endif
 
 # test_bitcoin_fuzzy binary #
 test_test_dogecoin_fuzzy_SOURCES = test/test_dogecoin_fuzzy.cpp
-test_test_dogecoin_fuzzy_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+test_test_dogecoin_fuzzy_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES)
 test_test_dogecoin_fuzzy_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 test_test_dogecoin_fuzzy_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 

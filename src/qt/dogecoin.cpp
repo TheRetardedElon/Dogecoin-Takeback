@@ -521,8 +521,8 @@ MAIN_FUNCTION
     // Do not refer to data directory yet, this can be overridden by Intro::pickDataDirectory
 
     /// 2. Basic Qt initialization (not dependent on parameters or configuration)
-    Q_INIT_RESOURCE(bitcoin);
-    Q_INIT_RESOURCE(bitcoin_locale);
+    Q_INIT_RESOURCE(dogecoin);
+    Q_INIT_RESOURCE(dogecoin_locale);
 
 #if QT_VERSION > 0x050100
     // Generate high-dpi pixmaps

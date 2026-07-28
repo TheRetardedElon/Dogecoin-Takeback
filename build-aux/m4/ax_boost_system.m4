@@ -37,7 +37,7 @@ AC_DEFUN([AX_BOOST_SYSTEM],
 [
 	AC_ARG_WITH([boost-system],
 	AS_HELP_STRING([--with-boost-system@<:@=special-lib@:>@],
-                   [use the System library from boost - it is possible to specify a certain library for the linker
+                   [use the System library from boost - it is possible to specify a certain library for the linke
                         e.g. --with-boost-system=boost_system-gcc-mt ]),
         [
         if test "$withval" = "no"; then
@@ -108,8 +108,12 @@ AC_DEFUN([AX_BOOST_SYSTEM],
                   done
 
             fi
+            dnl Boost.System is header-only since Boost 1.69; allow empty lib.
             if test "x$ax_lib" = "x"; then
-                AC_MSG_ERROR(Could not find a version of the boost_system library!)
+                AC_MSG_NOTICE([boost_system appears header-only; not linking a system library])
+                BOOST_SYSTEM_LIB=""
+                AC_SUBST(BOOST_SYSTEM_LIB)
+                link_system="yes"
             fi
 			if test "x$link_system" = "xno"; then
 				AC_MSG_ERROR(Could not link against $ax_lib !)

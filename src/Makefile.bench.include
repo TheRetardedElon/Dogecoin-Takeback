@@ -32,7 +32,7 @@ bench_bench_dogecoin_SOURCES = \
 
 nodist_bench_bench_dogecoin_SOURCES = $(GENERATED_TEST_FILES)
 
-bench_bench_dogecoin_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CLFAGS) $(EVENT_PTHREADS_CFLAGS) -I$(builddir)/bench/
+bench_bench_dogecoin_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES) $(EVENT_CLFAGS) $(EVENT_PTHREADS_CFLAGS) -I$(builddir)/bench/
 bench_bench_dogecoin_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 bench_bench_dogecoin_LDADD = \
   $(LIBDOGECOIN_SERVER) \

@@ -13,7 +13,7 @@ TEST_QT_H = \
   qt/test/rpcnestedtests.h \
   qt/test/uritests.h
 
-qt_test_test_dogecoin_qt_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(BITCOIN_QT_INCLUDES) \
+qt_test_test_dogecoin_qt_CPPFLAGS = $(AM_CPPFLAGS) $(DOGECOIN_INCLUDES) $(DOGECOIN_QT_INCLUDES) \
   $(QT_INCLUDES) $(QT_TEST_INCLUDES)
 
 qt_test_test_dogecoin_qt_SOURCES = \

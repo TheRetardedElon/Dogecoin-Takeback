@@ -80,11 +80,11 @@ if test "x$use_cxx17" = xyes; then
   if test "x$use_cxx14" = xyes; then
     AC_MSG_ERROR("Both c++17 and c++14 are configured. Please configure only one standard")
   fi
-  AX_CXX_COMPILE_STDCXX([17], [noext], [mandatory], [nodefault])
+  AX_CXX_COMPILE_STDCXX([17], [noext], [mandatory])
 elif test "x$use_cxx14" = xyes; then
-  AX_CXX_COMPILE_STDCXX([14], [noext], [mandatory], [nodefault])
+  AX_CXX_COMPILE_STDCXX([14], [noext], [mandatory])
 else
-  AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory], [nodefault])
+  AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])
 fi
 
 
