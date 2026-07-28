@@ -1452,13 +1452,12 @@ void DogecoinGUI::showSettingsDialog()
     
     themeLayout->addLayout(themeButtonsLayout);
     
-    // Connect theme selection with simple cycling
-    static int currentThemeIndex = 0;
+    // Connect theme selection with simple cycling (uses m_themeIndex member)
     QStringList availableThemes = QStringList() << "basic" << "dark" << "light" << "cyberpunk" << "neon" << "futuristic" << "retro" << "minimal" << "matrix";
     
-    connect(cycleThemeBtn, &QPushButton::clicked, [currentThemeLabel, themeDropdown, &currentThemeIndex, availableThemes, this]() {
-        currentThemeIndex = (currentThemeIndex + 1) % availableThemes.size();
-        QString newTheme = availableThemes[currentThemeIndex];
+    connect(cycleThemeBtn, &QPushButton::clicked, [currentThemeLabel, themeDropdown, availableThemes, this]() {
+        m_themeIndex = (m_themeIndex + 1) % availableThemes.size();
+        QString newTheme = availableThemes[m_themeIndex];
         applyGlobalTheme(newTheme);
         currentThemeLabel->setText("🚀 Active Theme: " + newTheme);
         themeDropdown->setCurrentText(newTheme);
@@ -1902,35 +1901,23 @@ void DogecoinGUI::removeAllWallets()
 
 void DogecoinGUI::setWalletActionsEnabled(bool enabled)
 {
-    // Temporarily disable all wallet action enabling to prevent crashes from corrupted action pointers
-    // This allows the application to start while we investigate the root cause
-    return;
-    
-    // TODO: Re-enable once we fix the corrupted action pointer issue
-    /*
-    // Add extra safety checks to prevent crashes from invalid action pointers
-    try {
-        if (overviewAction && overviewAction->parent()) overviewAction->setEnabled(enabled);
-        if (sendCoinsAction && sendCoinsAction->parent()) sendCoinsAction->setEnabled(enabled);
-        if (sendCoinsMenuAction && sendCoinsMenuAction->parent()) sendCoinsMenuAction->setEnabled(enabled);
-        if (receiveCoinsAction && receiveCoinsAction->parent()) receiveCoinsAction->setEnabled(enabled);
-        if (receiveCoinsMenuAction && receiveCoinsMenuAction->parent()) receiveCoinsMenuAction->setEnabled(enabled);
-        if (historyAction && historyAction->parent()) historyAction->setEnabled(enabled);
-        if (encryptWalletAction && encryptWalletAction->parent()) encryptWalletAction->setEnabled(enabled);
-        if (backupWalletAction && backupWalletAction->parent()) backupWalletAction->setEnabled(enabled);
-        if (changePassphraseAction && changePassphraseAction->parent()) changePassphraseAction->setEnabled(enabled);
-        if (signMessageAction && signMessageAction->parent()) signMessageAction->setEnabled(enabled);
-        if (verifyMessageAction && verifyMessageAction->parent()) verifyMessageAction->setEnabled(enabled);
-        if (usedSendingAddressesAction && usedSendingAddressesAction->parent()) usedSendingAddressesAction->setEnabled(enabled);
-        if (usedReceivingAddressesAction && usedReceivingAddressesAction->parent()) usedReceivingAddressesAction->setEnabled(enabled);
-        if (openAction && openAction->parent()) openAction->setEnabled(enabled);
-        if (paperWalletAction && paperWalletAction->parent()) paperWalletAction->setEnabled(enabled);
-        if (importPrivateKeyAction && importPrivateKeyAction->parent()) importPrivateKeyAction->setEnabled(enabled);
-        if (showHelpMessageAction && showHelpMessageAction->parent()) showHelpMessageAction->setEnabled(enabled);
-    } catch (...) {
-        // Silently ignore any exceptions from invalid action pointers
-    }
-    */
+    // Null-check every action: modern shell may construct GUI before all actions exist.
+    if (overviewAction) overviewAction->setEnabled(enabled);
+    if (sendCoinsAction) sendCoinsAction->setEnabled(enabled);
+    if (sendCoinsMenuAction) sendCoinsMenuAction->setEnabled(enabled);
+    if (receiveCoinsAction) receiveCoinsAction->setEnabled(enabled);
+    if (receiveCoinsMenuAction) receiveCoinsMenuAction->setEnabled(enabled);
+    if (historyAction) historyAction->setEnabled(enabled);
+    if (encryptWalletAction) encryptWalletAction->setEnabled(enabled);
+    if (backupWalletAction) backupWalletAction->setEnabled(enabled);
+    if (changePassphraseAction) changePassphraseAction->setEnabled(enabled);
+    if (signMessageAction) signMessageAction->setEnabled(enabled);
+    if (verifyMessageAction) verifyMessageAction->setEnabled(enabled);
+    if (usedSendingAddressesAction) usedSendingAddressesAction->setEnabled(enabled);
+    if (usedReceivingAddressesAction) usedReceivingAddressesAction->setEnabled(enabled);
+    if (openAction) openAction->setEnabled(enabled);
+    if (paperWalletAction) paperWalletAction->setEnabled(enabled);
+    if (importPrivateKeyAction) importPrivateKeyAction->setEnabled(enabled);
 }
 
 void DogecoinGUI::createTrayIcon(const NetworkStyle *networkStyle)

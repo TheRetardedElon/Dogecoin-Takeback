@@ -140,12 +140,14 @@
         Dead <code>*_fixed.h</code> duplicates were deleted.
       </div>
 
-      <h2>Known remaining risks</h2>
+      <h2>Experimental sources (not linked)</h2>
+      <p>Kept on disk for a future UI rewrite; <strong>not</strong> in <code>Makefile.qt.include</code>:</p>
       <ul>
-        <li><code>ModernMainWindow</code> / modern card stack still compile but are not the main shell — optional later wire-up or drop from Makefile.</li>
-        <li><code>customthemes.*</code> / <code>themebuilder.h</code> / <code>enhancedthemeswitcher.h</code> not in Makefile yet.</li>
-        <li>MOC-generated files may exist in tree — builds regenerate; avoid hand-editing moc_*.</li>
+        <li><code>modernmainwindow.*</code>, <code>modernnavigation.*</code>, <code>modernoverviewpage.*</code>, <code>moderncard.*</code></li>
+        <li><code>themes/theme_manager.*</code> (EnhancedThemeManager)</li>
+        <li><code>customthemes.*</code>, <code>themebuilder.h</code>, <code>enhancedthemeswitcher.h</code></li>
       </ul>
+      <p>MOC-generated files may exist in tree — builds regenerate; avoid hand-editing moc_*.</p>
 
       <h2>Lost later ideas (rebuild candidates)</h2>
       <p>From prior design chat, not found as complete features in this tree:</p>
