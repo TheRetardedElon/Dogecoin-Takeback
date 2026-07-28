@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Storage stack — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="diagrams.html">Diagrams</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="rebrand-audit.html">Rebrand audit</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Storage stack</h1>
+      <p class="lead">
+        Current engines, planned replacements, and how to migrate without
+        breaking the network. Implementation of replacements is <strong>not</strong>
+        present in this tree yet — this page captures the engineering plan.
+      </p>
+
+      <h2>Current state</h2>
+      <table>
+        <thead>
+          <tr><th>Data</th><th>Engine</th><th>Code surface</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Chainstate / block index (KV)</td>
+            <td><span class="badge badge-todo">LevelDB</span></td>
+            <td><code>dbwrapper.*</code>, <code>txdb.*</code>, embedded <code>src/leveldb/</code></td>
+          </tr>
+          <tr>
+            <td>Raw blocks</td>
+            <td>Filesystem flat files</td>
+            <td><code>blocks/blk*.dat</code>, rev files</td>
+          </tr>
+          <tr>
+            <td>Wallet</td>
+            <td><span class="badge badge-todo">Berkeley DB</span></td>
+            <td><code>wallet/db.*</code>, <code>walletdb.*</code>, <code>db_cxx.h</code></td>
+          </tr>
+          <tr>
+            <td>Peers / bans</td>
+            <td>Custom flat / serialize</td>
+            <td><code>addrdb.*</code>, peers.dat style</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Target options (from prior design work)</h2>
+      <table>
+        <thead>
+          <tr><th>Component</th><th>Pragmatic</th><th>Eco / performance oriented</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Chainstate</td>
+            <td>RocksDB (LevelDB-like API)</td>
+            <td>libmdbx (mmap B+ tree; MRSW, map size policy)</td>
+          </tr>
+          <tr>
+            <td>Wallet</td>
+            <td colspan="2">SQLite + read-only BDB + <code>migratewallet</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Why the network does not crash</h2>
+      <div class="callout ok">
+        <strong>Consensus is validation + P2P, not disk format</strong>
+        Node A on LevelDB/BDB and Node B on RocksDB/SQLite can share the same
+        network if they enforce the same rules and speak the same protocol.
+        Deploy as optional client upgrades; require reindex or migrate tools
+        for local data only.
+      </div>
+
+      <h2>Engineering friction (real, not marketing)</h2>
+      <h3>CDBWrapper / LevelDB</h3>
+      <ul>
+        <li>Obfuscation of chainstate values (AV false-positive mitigation)</li>
+        <li><code>-dbcache</code> and memory accounting assumptions</li>
+        <li>Iterator / batch semantics used throughout validation</li>
+        <li>Full re-validation of <code>dbwrapper_tests</code> and IBD</li>
+      </ul>
+      <h3>libmdbx specifically</h3>
+      <ul>
+        <li>Multiple-reader / single-writer model may need write serialization redesign</li>
+        <li>Fixed maximum map size vs organic LevelDB growth</li>
+        <li>Idle CPU of the <em>database</em> drops; the node event loop does not</li>
+      </ul>
+      <h3>Wallet SQLite</h3>
+      <ul>
+        <li>Dogecoin is 1.14-class architecture — not a free upstream drop-in</li>
+        <li>Must preserve legacy wallet open path until migration completes</li>
+        <li>Keys and funds safety &gt; elegance; dual-stack for a long time</li>
+      </ul>
+
+      <h2>Recommended implementation order</h2>
+      <ol>
+        <li>Stabilize build and rebrand residuals (no storage change).</li>
+        <li><strong>Wallet SQLite dual-stack</strong> — biggest operator pain (BDB deps), clear migration story.</li>
+        <li>Optional: RocksDB behind CDBWrapper for chainstate (lower risk than mdbx).</li>
+        <li>Optional later: libmdbx if metrics justify the concurrency redesign.</li>
+      </ol>
+
+      <h2>Success criteria for any storage swap</h2>
+      <ul class="checklist">
+        <li class="todo">Regtest full functional suite green</li>
+        <li class="todo">Mainnet reindex completes and tips match known good peer</li>
+        <li class="todo">Wallet migrate round-trips keys/balances on test wallets</li>
+        <li class="todo">Old and new clients interop on same network</li>
+        <li class="todo">Document operator steps (-reindex, migratewallet)</li>
+      </ul>
+
+      <div class="footer">
+        Related discussion captured from prior Gemini/Grok design sessions —
+        treat this page as the engineering source of truth going forward.
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

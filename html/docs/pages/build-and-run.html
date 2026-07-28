@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Build &amp; run — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="diagrams.html">Diagrams</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="rebrand-audit.html">Rebrand audit</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Build &amp; run</h1>
+      <p class="lead">
+        How to compile this tree. Synthesized from <code>BUILD_GUIDE.md</code>
+        and upstream-style <code>doc/build-*.md</code>. Update this page when a
+        build succeeds or fails on a real machine.
+      </p>
+
+      <div class="callout warn">
+        <strong>Not yet verified on this recovery machine</strong>
+        At first assessment, Git was missing from PATH and no successful local
+        compile was re-proven. Treat the steps below as the intended path.
+      </div>
+
+      <h2>Recommended host</h2>
+      <p>
+        On Windows, WSL2 + Ubuntu 22.04 is the path of least pain for autotools
+        Dogecoin Core. Native MSVC is not the primary build story for this tree.
+      </p>
+
+      <h2>Dependencies (Ubuntu/Debian style)</h2>
+      <pre><code>sudo apt update
+sudo apt install -y build-essential libtool autotools-dev automake \
+  pkg-config bsdmainutils python3 \
+  libssl-dev libevent-dev \
+  libboost-system-dev libboost-filesystem-dev libboost-chrono-dev \
+  libboost-program-options-dev libboost-test-dev libboost-thread-dev \
+  libdb5.3++-dev libdb5.3-dev \
+  libqt5gui5 libqt5core5a libqt5dbus5 qttools5-dev qttools5-dev-tools \
+  libqrencode-dev libzmq3-dev</code></pre>
+      <p>
+        Wallet needs Berkeley DB (this tree targets 5.3-class via
+        <code>DOGECOIN_FIND_BDB53</code>). Disable wallet with
+        <code>--disable-wallet</code> only if you intentionally skip it.
+      </p>
+
+      <h2>Configure &amp; build</h2>
+      <pre><code>cd /path/to/dogedev   # or /mnt/c/dogedev from WSL
+./autogen.sh
+./configure --with-gui=qt5
+# optional: ./configure --with-gui=qt5 --enable-debug
+make -j$(nproc)</code></pre>
+
+      <h2>Artifacts to expect</h2>
+      <table>
+        <thead>
+          <tr><th>Binary</th><th>Typical path</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>dogecoind</td><td><code>src/dogecoind</code></td></tr>
+          <tr><td>dogecoin-cli</td><td><code>src/dogecoin-cli</code></td></tr>
+          <tr><td>dogecoin-tx</td><td><code>src/dogecoin-tx</code></td></tr>
+          <tr><td>dogecoin-qt</td><td><code>src/qt/dogecoin-qt</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Smoke tests (after first green build)</h2>
+      <pre><code># Regtest daemon
+src/dogecoind -regtest -daemon
+src/dogecoin-cli -regtest getblockchaininfo
+src/dogecoin-cli -regtest stop
+
+# GUI (from desktop session / WSLg)
+src/qt/dogecoin-qt -regtest</code></pre>
+      <ul>
+        <li>Theme switch does not crash</li>
+        <li>Overview shows balances (0 on fresh regtest)</li>
+        <li>RPC console answers <code>getnetworkinfo</code></li>
+      </ul>
+
+      <h2>Build log (fill in as we go)</h2>
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Host</th><th>Result</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>2026-07-27</td>
+            <td>Windows workspace</td>
+            <td><span class="badge badge-todo">Not run</span></td>
+            <td>Docs bootstrap only; Git missing on PATH at survey</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="footer">
+        Also see root <code>BUILD_GUIDE.md</code> and <code>doc/build-windows.md</code>.
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

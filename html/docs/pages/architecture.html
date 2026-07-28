@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Architecture — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="diagrams.html">Diagrams</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="rebrand-audit.html">Rebrand audit</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Architecture</h1>
+      <p class="lead">
+        How this codebase is layered. Consensus and P2P define the coin;
+        local storage and the Qt shell are replaceable without forking the network.
+      </p>
+
+      <div class="callout ok">
+        <strong>Golden rule</strong>
+        Local storage is not network consensus. A node may store chainstate in
+        LevelDB, RocksDB, libmdbx, or anything else, as long as validation math
+        and P2P rules stay correct. Wallet DB choice is also local.
+      </div>
+
+      <h2>Process binaries</h2>
+      <table>
+        <thead>
+          <tr><th>Binary</th><th>Entry</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>dogecoind</code></td>
+            <td><code>src/dogecoind.cpp</code></td>
+            <td>Full node daemon (P2P, validation, optional wallet, RPC)</td>
+          </tr>
+          <tr>
+            <td><code>dogecoin-qt</code></td>
+            <td><code>src/qt/dogecoin.cpp</code></td>
+            <td>Same core + Qt GUI (DogecoinGUI / modern shell)</td>
+          </tr>
+          <tr>
+            <td><code>dogecoin-cli</code></td>
+            <td><code>src/dogecoin-cli.cpp</code></td>
+            <td>JSON-RPC client against a running node</td>
+          </tr>
+          <tr>
+            <td><code>dogecoin-tx</code></td>
+            <td><code>src/dogecoin-tx.cpp</code></td>
+            <td>Offline raw transaction utility</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Layer stack</h2>
+      <pre><code>┌─────────────────────────────────────────────────────────┐
+│  Qt GUI  (DogecoinGUI, modern*, themes, RPC console)    │
+├─────────────────────────────────────────────────────────┤
+│  Wallet  (keys, txs, coin control)  ← still BDB         │
+├─────────────────────────────────────────────────────────┤
+│  RPC / HTTP / ZMQ  (external automation surface)        │
+├─────────────────────────────────────────────────────────┤
+│  Net processing + P2P  (peers, inv, blocks, mempool)    │
+├─────────────────────────────────────────────────────────┤
+│  Validation + mempool + miner  (policy + consensus use) │
+├─────────────────────────────────────────────────────────┤
+│  Consensus  (script, pow/DigiShield, AuxPoW, subsidy)   │
+├─────────────────────────────────────────────────────────┤
+│  Storage  chainstate/index ← LevelDB via CDBWrapper     │
+│           blocks/*.dat on filesystem                    │
+└─────────────────────────────────────────────────────────┘</code></pre>
+
+      <h2>Dogecoin-specific consensus pieces</h2>
+      <table>
+        <thead>
+          <tr><th>Feature</th><th>Where</th><th>Why it matters</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>DigiShield difficulty</td>
+            <td><code>src/dogecoin.cpp</code></td>
+            <td>Difficulty adjustment unique to DOGE lineage</td>
+          </tr>
+          <tr>
+            <td>AuxPoW (merge mining)</td>
+            <td><code>src/auxpow.*</code></td>
+            <td>Allows merge-mined proof of work</td>
+          </tr>
+          <tr>
+            <td>Block subsidy / no hard cap</td>
+            <td><code>src/dogecoin.cpp</code></td>
+            <td>Monetary policy</td>
+          </tr>
+          <tr>
+            <td>Scrypt PoW</td>
+            <td><code>src/crypto/</code>, pow path</td>
+            <td>Different from Bitcoin SHA-256d</td>
+          </tr>
+          <tr>
+            <td>Chain params / ports</td>
+            <td><code>chainparams.*</code></td>
+            <td>Mainnet P2P 22556, RPC 22555</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Data models (conceptual)</h2>
+      <h3>Chain / UTXO</h3>
+      <p>
+        Blocks land as raw data under the blocks directory. Indexes and UTXO
+        (chainstate) are key-value data behind <code>CDBWrapper</code>
+        (currently LevelDB). Validation updates coins views; reorgs use undo data.
+      </p>
+      <h3>Wallet</h3>
+      <p>
+        <code>CWallet</code> + <code>CWalletDB</code> persist keys, metadata, and
+        wallet transactions. Today that persistence is Berkeley DB
+        (<code>wallet.dat</code>). Migration to SQLite would touch this layer only.
+      </p>
+      <h3>GUI models</h3>
+      <p>
+        Qt uses model classes (<code>ClientModel</code>, <code>WalletModel</code>,
+        transaction tables) so the UI does not call consensus code directly from
+        widgets. Modern UI components wrap the same models with themed chrome.
+      </p>
+
+      <h2>What you can change without forking</h2>
+      <ul>
+        <li>Qt layout, themes, debug tools, meme-stream panels</li>
+        <li>Wallet backend (BDB → SQLite) with dual-stack migration</li>
+        <li>Chainstate engine (LevelDB → RocksDB/libmdbx) with reindex path</li>
+        <li>RPC extras, ZMQ consumers, external GPE / GigaWallet bridges</li>
+      </ul>
+      <h2>What you must not casually change</h2>
+      <ul>
+        <li>Script interpreter consensus results</li>
+        <li>Block / tx validity rules, subsidy, difficulty rules</li>
+        <li>P2P message semantics required for network compatibility</li>
+        <li>Address / key formats users depend on for funds</li>
+      </ul>
+
+      <div class="footer">
+        See also <a href="module-map.html">Module map</a> and
+        <a href="diagrams.html">Diagrams</a>.
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

@@ -10,6 +10,12 @@ src/test/test_dogecoin_fuzzy
 src/qt/test/test_dogecoin-qt
 src/bench/bench_dogecoin
 
+# Local recovery artifacts (keep on disk; do not commit large bundles)
+dogecoin-rebrand.bundle
+configure~
+src/stFxnSYg
+src/qt/stlm2TQQ
+
 # autoreconf
 Makefile.in
 aclocal.m4

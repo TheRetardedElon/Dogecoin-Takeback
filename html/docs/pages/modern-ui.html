@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Modern UI &amp; themes — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="diagrams.html">Diagrams</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="rebrand-audit.html">Rebrand audit</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Modern UI &amp; themes</h1>
+      <p class="lead">
+        Inventory of the custom Qt shell that survived. This is the main
+        product differentiator over stock Dogecoin Core UI.
+      </p>
+
+      <h2>Components on disk</h2>
+      <table>
+        <thead>
+          <tr><th>Component</th><th>Files</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ModernMainWindow</td>
+            <td><code>modernmainwindow.{h,cpp}</code> (+ <code>_fixed.h</code>)</td>
+            <td>Modern shell container</td>
+          </tr>
+          <tr>
+            <td>ModernNavigation</td>
+            <td><code>modernnavigation.*</code></td>
+            <td>Sidebar nav (overview, send, receive, …)</td>
+          </tr>
+          <tr>
+            <td>ModernOverviewPage</td>
+            <td><code>modernoverviewpage.*</code></td>
+            <td>Card-based balances / status</td>
+          </tr>
+          <tr>
+            <td>ModernCard</td>
+            <td><code>moderncard.*</code></td>
+            <td>Reusable themed card widget</td>
+          </tr>
+          <tr>
+            <td>ThemeManager</td>
+            <td><code>thememanager.*</code>, <code>themes/theme_manager.*</code></td>
+            <td>Built-in + CSS themes; global stylesheet</td>
+          </tr>
+          <tr>
+            <td>ThemeSwitcher</td>
+            <td><code>themeswitcher.*</code>, <code>enhancedthemeswitcher.h</code></td>
+            <td>UI to pick / cycle themes</td>
+          </tr>
+          <tr>
+            <td>CustomThemeManager</td>
+            <td><code>customthemes.*</code></td>
+            <td>Import/export custom theme packages</td>
+          </tr>
+          <tr>
+            <td>DogecoinGUI integration</td>
+            <td><code>dogecoingui.*</code></td>
+            <td>Owns <code>modernUI</code>, theme apply, title bar hooks</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Themes present</h2>
+      <table>
+        <thead>
+          <tr><th>Folder / name</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>themes/matrix/</code></td><td>Green terminal aesthetic</td></tr>
+          <tr><td><code>themes/cyberpunk/</code></td><td>Neon purple</td></tr>
+          <tr><td><code>themes/neon/</code></td><td>Electric accents</td></tr>
+          <tr><td><code>themes/dark/</code>, <code>light/</code></td><td>Baseline modern</td></tr>
+          <tr><td><code>themes/retro/</code></td><td>DRIP-style dark blue + neon green (per changelog)</td></tr>
+          <tr><td><code>themes/futuristic/</code>, <code>minimal/</code>, <code>woodgrain/</code></td><td>Additional CSS packs</td></tr>
+          <tr><td><code>themes/custom/example_gaming/</code></td><td>Custom theme example + <code>theme.json</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Known integration risks</h2>
+      <ul>
+        <li>Parallel <code>*_fixed.h</code> headers — decide single source of truth before large edits.</li>
+        <li>Some enhanced theme manager wiring is commented out in <code>dogecoingui.cpp</code>.</li>
+        <li>Two theme manager implementations (<code>qt/thememanager</code> vs <code>qt/themes/theme_manager</code>) — map which is live on startup.</li>
+        <li>MOC-generated files committed in tree — builds may regenerate; avoid hand-editing moc_*.</li>
+      </ul>
+
+      <h2>Lost later ideas (rebuild candidates)</h2>
+      <p>From prior design chat, not found as complete features in this tree:</p>
+      <ul>
+        <li>Peer world map with ASN diversity, pin actions</li>
+        <li>Traffic graph broken down by P2P message class</li>
+        <li>Live bandwidth / connection sliders</li>
+        <li>ZMQ event sniffer tab, RPC playground, mempool heatmap</li>
+        <li>Meme Stream tab gated to client users</li>
+      </ul>
+
+      <h2>How to work on UI safely</h2>
+      <ol>
+        <li>Prefer changing presentation only (stylesheets, modern* widgets).</li>
+        <li>Keep WalletModel / ClientModel as data sources — do not put consensus logic in widgets.</li>
+        <li>After theme changes, verify options dialog still inherits global theme.</li>
+        <li>Screenshot baseline once build works; store under <code>html/docs/assets/screenshots/</code> later.</li>
+      </ol>
+
+      <div class="footer">
+        Historical notes: root <code>MODERN_UI_README.md</code>, <code>DOGECOIN_CHANGELOG.md</code> Phase 7.
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

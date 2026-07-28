@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Module map — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="diagrams.html">Diagrams</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="rebrand-audit.html">Rebrand audit</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Module map</h1>
+      <p class="lead">
+        Where to look in <code>src/</code> when you need to change something.
+        File counts are approximate from the recovery scan.
+      </p>
+
+      <h2>Core directories</h2>
+      <table>
+        <thead>
+          <tr><th>Path</th><th>~Files</th><th>Owns</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>src/</code> (top-level)</td>
+            <td>—</td>
+            <td>Net, validation, init, chain, coins, dbwrapper, dogecoin-specific logic</td>
+          </tr>
+          <tr>
+            <td><code>src/consensus/</code></td>
+            <td>5</td>
+            <td>Consensus params, merkle, tx verify hooks</td>
+          </tr>
+          <tr>
+            <td><code>src/crypto/</code></td>
+            <td>26</td>
+            <td>Hashes (incl. scrypt path), low-level crypto helpers</td>
+          </tr>
+          <tr>
+            <td><code>src/policy/</code></td>
+            <td>6</td>
+            <td>Mempool/fee policy (not consensus-critical in the hard sense)</td>
+          </tr>
+          <tr>
+            <td><code>src/primitives/</code></td>
+            <td>6</td>
+            <td>Block/tx primitive types</td>
+          </tr>
+          <tr>
+            <td><code>src/script/</code></td>
+            <td>16</td>
+            <td>Script interpreter, standardness, dogecoinconsensus export</td>
+          </tr>
+          <tr>
+            <td><code>src/rpc/</code></td>
+            <td>17</td>
+            <td>JSON-RPC command surface</td>
+          </tr>
+          <tr>
+            <td><code>src/wallet/</code></td>
+            <td>19</td>
+            <td>Wallet, BDB layer, wallet RPC</td>
+          </tr>
+          <tr>
+            <td><code>src/zmq/</code></td>
+            <td>7</td>
+            <td>ZeroMQ notifications</td>
+          </tr>
+          <tr>
+            <td><code>src/qt/</code></td>
+            <td>419</td>
+            <td>Entire GUI, themes, modern UI, forms, locales</td>
+          </tr>
+          <tr>
+            <td><code>src/test/</code></td>
+            <td>126</td>
+            <td>Unit tests</td>
+          </tr>
+          <tr>
+            <td><code>src/bench/</code></td>
+            <td>19</td>
+            <td>Microbenchmarks</td>
+          </tr>
+          <tr>
+            <td><code>src/leveldb/</code></td>
+            <td>vendor</td>
+            <td>Embedded LevelDB — do not “rebrand” casually</td>
+          </tr>
+          <tr>
+            <td><code>src/secp256k1/</code></td>
+            <td>vendor</td>
+            <td>Upstream crypto lib</td>
+          </tr>
+          <tr>
+            <td><code>src/univalue/</code></td>
+            <td>vendor</td>
+            <td>JSON value library</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Key files cheat sheet</h2>
+      <table>
+        <thead>
+          <tr><th>Task</th><th>Start here</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Node startup / shutdown</td><td><code>init.cpp</code>, <code>dogecoind.cpp</code></td></tr>
+          <tr><td>P2P messages</td><td><code>protocol.*</code>, <code>net_processing.*</code>, <code>net.*</code></td></tr>
+          <tr><td>Block validation</td><td><code>validation.*</code>, <code>consensus/</code></td></tr>
+          <tr><td>Dogecoin consensus rules</td><td><code>dogecoin.cpp</code>, <code>auxpow.*</code>, <code>pow.*</code></td></tr>
+          <tr><td>UTXO / chainstate DB</td><td><code>txdb.*</code>, <code>dbwrapper.*</code>, <code>coins.*</code></td></tr>
+          <tr><td>Wallet keys &amp; spends</td><td><code>wallet/wallet.*</code>, <code>walletdb.*</code>, <code>db.*</code></td></tr>
+          <tr><td>Main window UI</td><td><code>qt/dogecoingui.*</code>, <code>qt/modernmainwindow.*</code></td></tr>
+          <tr><td>Themes</td><td><code>qt/thememanager.*</code>, <code>qt/themes/</code></td></tr>
+          <tr><td>Overview / balances UI</td><td><code>qt/modernoverviewpage.*</code>, <code>qt/overviewpage.*</code></td></tr>
+          <tr><td>Network traffic graph</td><td><code>qt/trafficgraphwidget.*</code>, <code>qt/rpcconsole.*</code></td></tr>
+          <tr><td>Peers table</td><td><code>qt/peertablemodel.*</code>, <code>qt/peerdialog.*</code></td></tr>
+          <tr><td>Build Qt into binary</td><td><code>src/Makefile.qt.include</code>, <code>configure.ac</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2>Outside src/</h2>
+      <table>
+        <thead>
+          <tr><th>Path</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>depends/</code></td><td>Reproducible dependency builds</td></tr>
+          <tr><td><code>qa/rpc-tests/</code></td><td>Functional / RPC tests (Python)</td></tr>
+          <tr><td><code>doc/</code></td><td>Upstream-style build and protocol docs</td></tr>
+          <tr><td><code>contrib/</code></td><td>Packaging, gitian, seeds, devtools</td></tr>
+          <tr><td><code>html/docs/</code></td><td><strong>This living documentation</strong></td></tr>
+          <tr><td><code>-FlowDiagramLatest/</code></td><td>Architecture diagrams</td></tr>
+        </tbody>
+      </table>
+
+      <div class="footer">
+        Expand this page as we touch modules — add “owner notes” per area when learned.
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

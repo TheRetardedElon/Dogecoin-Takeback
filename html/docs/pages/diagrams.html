@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Diagrams — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="diagrams.html">Diagrams</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="rebrand-audit.html">Rebrand audit</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Diagrams</h1>
+      <p class="lead">
+        Visual artifacts recovered with the tree. Add new diagrams here as we
+        re-document subsystems.
+      </p>
+
+      <h2>Post-migration flow diagram</h2>
+      <p>
+        Source: <code>-FlowDiagramLatest/dogecoin-post-migration-diagram</code>
+        (PNG + SVG). Copied into docs assets for stable linking.
+      </p>
+      <div class="diagram-frame">
+        <img
+          src="../assets/diagrams/dogecoin-post-migration-diagram.png"
+          alt="Dogecoin post-migration architecture flow diagram"
+        />
+      </div>
+      <p>
+        <a href="../assets/diagrams/dogecoin-post-migration-diagram.svg">Open SVG</a>
+        ·
+        <a href="../assets/diagrams/dogecoin-post-migration-diagram.png">Open PNG</a>
+      </p>
+
+      <h2>Text layer diagram</h2>
+      <p>See <a href="architecture.html">Architecture</a> for the ASCII layer stack.</p>
+
+      <h2>Mermaid (from prior markdown)</h2>
+      <p>
+        Root file <code>DOGECOIN_ARCHITECTURE_MERMAID.md</code> contains Mermaid
+        source. When a Mermaid-capable viewer is available, render it and export
+        PNG into <code>assets/diagrams/</code>.
+      </p>
+
+      <h2>Planned diagram backlog</h2>
+      <ul class="checklist">
+        <li class="todo">Wallet open / encrypt / spend sequence</li>
+        <li class="todo">IBD and chainstate write path through CDBWrapper</li>
+        <li class="todo">Qt signal flow: ClientModel → modern overview</li>
+        <li class="todo">Theme application order at startup</li>
+        <li class="todo">Future SQLite migratewallet flow</li>
+      </ul>
+
+      <div class="footer">
+        Drop screenshots of the running client into <code>assets/screenshots/</code> when available.
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

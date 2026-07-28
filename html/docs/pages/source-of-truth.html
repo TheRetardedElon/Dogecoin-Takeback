@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Source of truth — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="diagrams.html">Diagrams</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="rebrand-audit.html">Rebrand audit</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Source of truth</h1>
+      <p class="lead">
+        How we decide what is real when memory, chat logs, old markdown, and
+        code disagree.
+      </p>
+
+      <h2>Priority order</h2>
+      <ol>
+        <li>
+          <strong>Code that compiles and runs</strong> —
+          behavior of the binaries is final.
+        </li>
+        <li>
+          <strong>This HTML docs site</strong> (<code>html/docs/</code>) —
+          living recovery knowledge; update when we learn something.
+        </li>
+        <li>
+          <strong>Automated scans</strong> —
+          rebrand residual counts, greps, test results.
+        </li>
+        <li>
+          <strong>Root project markdown</strong> —
+          <code>DOGECOIN_CHANGELOG.md</code>, plans, architecture notes —
+          historical, may overclaim.
+        </li>
+        <li>
+          <strong>Chat transcripts</strong> (Gemini, etc.) —
+          design intent only until reflected in code/docs.
+        </li>
+        <li>
+          <strong>Memory of lost HDD work</strong> —
+          rebuild tickets, not assumptions of presence.
+        </li>
+      </ol>
+
+      <h2>Canonical paths</h2>
+      <table>
+        <thead>
+          <tr><th>Concern</th><th>Canonical location</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Project tree</td>
+            <td><code>C:\dogedev</code></td>
+          </tr>
+          <tr>
+            <td>Living documentation</td>
+            <td><code>C:\dogedev\html\docs\</code></td>
+          </tr>
+          <tr>
+            <td>Flow diagrams</td>
+            <td><code>-FlowDiagramLatest/</code> + docs <code>assets/diagrams/</code></td>
+          </tr>
+          <tr>
+            <td>Git history</td>
+            <td>Local <code>.git</code> restored from <code>dogecoin-rebrand.bundle</code> (keep bundle as offline backup; do not rely on one disk)</td>
+          </tr>
+          <tr>
+            <td>Upstream Dogecoin reference</td>
+            <td>Official dogecoin/dogecoin for comparison only — this tree is the product</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Backup doctrine</h2>
+      <div class="callout danger">
+        <strong>Single-disk is how we got here</strong>
+        After Git is restored: at least one remote (GitHub/GitLab) and one
+        offline copy. Docs and diagrams live in the same repo as code.
+      </div>
+
+      <h2>How to update these docs</h2>
+      <ul>
+        <li>Edit HTML under <code>html/docs/</code> (same look via <code>assets/styles.css</code>).</li>
+        <li>Keep the sidebar nav links in sync when adding a page.</li>
+        <li>Record dates on dashboard / build log when status changes.</li>
+        <li>Prefer short factual updates over rewriting history.</li>
+      </ul>
+
+      <div class="footer">
+        Open the site: <code>html/docs/index.html</code> in any browser.
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{
+  "date": "2026-07-27",
+  "workspace": "C:\\dogedev",
+  "scope": "src/**/*.{cpp,h} excluding leveldb, secp256k1, univalue, moc, ui_, locale",
+  "categories": {
+    "header_guards_BITCOIN_": 563,
+    "copyright_Bitcoin_Core": 414,
+    "string_literal_bitcoin": 264,
+    "comment_only_ish": 118,
+    "class_or_type_Bitcoin": 59,
+    "include_bitcoin": 0,
+    "other": 13
+  },
+  "key_renames": {
+    "dogecoind.cpp": true,
+    "bitcoind.cpp": false,
+    "dogecoingui": true,
+    "bitcoingui": false,
+    "dogecoin-config.h.in": true,
+    "bitcoin-config.h.in": false,
+    "dogecoinconsensus.h": true,
+    "bitcoinconsensus.h": false,
+    "test_dogecoin.h": true,
+    "test_bitcoin.h": false
+  },
+  "storage": {
+    "chainstate": "LevelDB via CDBWrapper",
+    "wallet": "Berkeley DB"
+  },
+  "notes": "Changelog claims full bitcoin elimination; live scan shows substantial residuals. Prefer this snapshot + rebrand-audit.html."
+}

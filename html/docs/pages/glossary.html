@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Glossary — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="diagrams.html">Diagrams</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="rebrand-audit.html">Rebrand audit</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Glossary</h1>
+      <p class="lead">Shared vocabulary so “conversion,” “consensus,” and “wallet DB” stay unambiguous.</p>
+
+      <table>
+        <thead>
+          <tr><th>Term</th><th>Meaning here</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Consensus</strong></td>
+            <td>Rules that determine which blocks/txs are valid. Changing these can fork the network.</td>
+          </tr>
+          <tr>
+            <td><strong>Policy</strong></td>
+            <td>Node-local relay/mempool preferences. Can differ between nodes without forking.</td>
+          </tr>
+          <tr>
+            <td><strong>Chainstate</strong></td>
+            <td>UTXO / tip index data used for validation; currently LevelDB-backed.</td>
+          </tr>
+          <tr>
+            <td><strong>CDBWrapper</strong></td>
+            <td>Abstraction over the KV store for chainstate/index (obfuscation + cache hooks).</td>
+          </tr>
+          <tr>
+            <td><strong>BDB / Berkeley DB</strong></td>
+            <td>Legacy wallet.dat engine. Painful dependency; migration target is SQLite.</td>
+          </tr>
+          <tr>
+            <td><strong>Rebrand / conversion</strong></td>
+            <td>Bitcoin naming → Dogecoin naming in files, types, UI, docs — not a consensus change.</td>
+          </tr>
+          <tr>
+            <td><strong>Header guard</strong></td>
+            <td><code>#ifndef BITCOIN_FOO_H</code> style include guards (T3 rebrand work).</td>
+          </tr>
+          <tr>
+            <td><strong>IBD</strong></td>
+            <td>Initial Block Download — syncing the chain from peers.</td>
+          </tr>
+          <tr>
+            <td><strong>AuxPoW</strong></td>
+            <td>Auxiliary Proof of Work; enables merge mining.</td>
+          </tr>
+          <tr>
+            <td><strong>DigiShield</strong></td>
+            <td>Dogecoin difficulty adjustment algorithm family used here.</td>
+          </tr>
+          <tr>
+            <td><strong>GPE / GoPastEarth</strong></td>
+            <td>External multi-tenant business platform; retail/crypto bridge lives there, not in consensus.</td>
+          </tr>
+          <tr>
+            <td><strong>GigaWallet</strong></td>
+            <td>Foundation-oriented invoice/payment backend pattern for merchants.</td>
+          </tr>
+          <tr>
+            <td><strong>DogeConnect</strong></td>
+            <td>Payment-request style protocol for wallet/POS handshakes (design-level here).</td>
+          </tr>
+          <tr>
+            <td><strong>Meme Stream</strong></td>
+            <td>Planned client-gated social/meme feed (e.g. memestream.gopastearth.com).</td>
+          </tr>
+          <tr>
+            <td><strong>Allowlist</strong></td>
+            <td>Bitcoin strings we intentionally keep (copyrights, historical URLs).</td>
+          </tr>
+          <tr>
+            <td><strong>Baseline tag</strong></td>
+            <td>Git tag once build + known features are frozen as recovery starting point.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="footer">Add terms whenever a discussion gets ambiguous.</div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

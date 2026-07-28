@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rebrand audit — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="diagrams.html">Diagrams</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="rebrand-audit.html">Rebrand audit</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Bitcoin → Dogecoin rebrand audit</h1>
+      <p class="lead">
+        Manual, tiered plan to finish conversion. Not every “bitcoin” string is
+        a bug — some are history, protocol references, or external URLs.
+        We classify before we rewrite.
+      </p>
+
+      <div class="callout warn">
+        <strong>Do not bulk-replace blindly</strong>
+        A global sed of “bitcoin” → “dogecoin” will break copyrights, historical
+        links, some test vectors, and potentially protocol documentation.
+        Use tiers and review.
+      </div>
+
+      <h2>What is already done (strong)</h2>
+      <ul class="checklist">
+        <li class="done">Primary source filenames: dogecoind, dogecoin-cli, dogecoin-tx, dogecoin-qt entry</li>
+        <li class="done">Qt core types: DogecoinGUI, DogecoinApplication, DogecoinUnits, amount/address classes</li>
+        <li class="done">Config template: <code>dogecoin-config.h.in</code> (no bitcoin-config.h.in)</li>
+        <li class="done">Consensus lib header: <code>dogecoinconsensus.h</code></li>
+        <li class="done">Test harness header: <code>test_dogecoin.h</code></li>
+        <li class="done">Locales/qrc largely dogecoin-prefixed</li>
+        <li class="done">No broken <code>#include "…bitcoin…"</code> remaining in scanned src</li>
+      </ul>
+
+      <h2>Scan summary (2026-07-27)</h2>
+      <p>Scope: <code>src/**/*.{cpp,h}</code> excluding vendor (leveldb, secp256k1, univalue), moc/ui, locales.</p>
+      <table>
+        <thead>
+          <tr><th>Category</th><th>Hits</th><th>Tier</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Header guards <code>BITCOIN_*</code></td>
+            <td>~563</td>
+            <td>T3 mechanical</td>
+            <td>Rename to <code>DOGECOIN_*</code> with script + compile</td>
+          </tr>
+          <tr>
+            <td>Copyright Bitcoin Core developers</td>
+            <td>~414</td>
+            <td>T0 keep</td>
+            <td>Leave; add Dogecoin lines where missing</td>
+          </tr>
+          <tr>
+            <td>String literals / i18n</td>
+            <td>~264</td>
+            <td>T1 user-facing</td>
+            <td>Fix product strings; migrate translation context carefully</td>
+          </tr>
+          <tr>
+            <td>Comments</td>
+            <td>~118</td>
+            <td>T2 clarity</td>
+            <td>Update when touching file</td>
+          </tr>
+          <tr>
+            <td>Class / type / macro identifiers</td>
+            <td>~59</td>
+            <td>T1 functional</td>
+            <td>Fix incomplete renames first</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Broader tree (docs, qa, contrib included): on the order of ~680 files / ~2800 match lines — many historical docs and tests.</p>
+
+      <h2>Tier definitions</h2>
+      <h3>T0 — Intentionally leave</h3>
+      <ul>
+        <li>Copyright headers naming Bitcoin Core developers</li>
+        <li>External URLs (bitcointalk, bitcoin.org developer refs) when historically accurate</li>
+        <li>Comments explaining Bitcoin heritage where educational</li>
+      </ul>
+
+      <h3>T1 — Must finish for “proper Dogecoin convention”</h3>
+      <p>Incomplete renames that still say Bitcoin in identifiers, tests, IPC names, or user-visible copy:</p>
+      <table>
+        <thead>
+          <tr><th>Example (live tree)</th><th>Issue</th><th>Suggested fix</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Q_INIT_RESOURCE(bitcoin_locale)</code> in <code>dogecoin.cpp</code></td>
+            <td>Resource name mismatch risk</td>
+            <td>Align with <code>dogecoin_locale</code> qrc</td>
+          </tr>
+          <tr>
+            <td><code>QT_TRANSLATE_NOOP("bitcoin-core", …)</code></td>
+            <td>i18n context still bitcoin-core</td>
+            <td>Migrate to <code>dogecoin-core</code> + update .ts (coordinated)</td>
+          </tr>
+          <tr>
+            <td><code>app.setApplicationName("Bitcoin-Qt-test")</code></td>
+            <td>Test identity</td>
+            <td><code>Dogecoin-Qt-test</code></td>
+          </tr>
+          <tr>
+            <td><code>test_bitcoin_*</code> temp paths</td>
+            <td>Test leftovers</td>
+            <td><code>test_dogecoin_*</code></td>
+          </tr>
+          <tr>
+            <td><code>BITCOIN_IPC_*</code>, comments “bitcoin: URI”</td>
+            <td>Prefix value may already be dogecoin:</td>
+            <td>Rename macros; keep URI scheme correct</td>
+          </tr>
+          <tr>
+            <td><code>HMM_BITCOIN_QT</code>, <code>BITCOIN_CONF_FILENAME</code></td>
+            <td>Macro branding</td>
+            <td>Dogecoin-named macros if values already doge</td>
+          </tr>
+          <tr>
+            <td><code>bitcoinconsensus_verify_script…</code> in bench</td>
+            <td>API name residue</td>
+            <td>Match exported <code>dogecoinconsensus_*</code></td>
+          </tr>
+          <tr>
+            <td>RPC help “less bitcoins than you enter”</td>
+            <td>User-facing</td>
+            <td>“dogecoins” / “DOGE”</td>
+          </tr>
+          <tr>
+            <td>Dialog comments “sending bitcoins”</td>
+            <td>Docs in headers</td>
+            <td>dogecoins</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>T2 — Comments &amp; developer docs</h3>
+      <p>
+        Protocol comments that say “Bitcoin protocol message types” can become
+        “Dogecoin P2P message types (Bitcoin-derived)” for accuracy.
+        Update when editing those files; no need for a risky mega-PR alone.
+      </p>
+
+      <h3>T3 — Mechanical header guards &amp; include guards</h3>
+      <p>
+        Almost every header still uses <code>#ifndef BITCOIN_FOO_H</code>.
+        Safe mechanical migration to <code>DOGECOIN_FOO_H</code> after a green
+        build, with automated check that no double-include breakage occurs.
+        Prefer one PR: guards only, no logic changes.
+      </p>
+
+      <h2>Hot files (highest residual density in src)</h2>
+      <table>
+        <thead>
+          <tr><th>File</th><th>~Matches</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>src/qt/dogecoinstrings.cpp</code></td><td>246</td><td>Mostly i18n context strings</td></tr>
+          <tr><td><code>src/protocol.h</code></td><td>30</td><td>Comments + external bitcoin.org links</td></tr>
+          <tr><td><code>src/Makefile.qt.include</code></td><td>24</td><td>Build leftovers to verify</td></tr>
+          <tr><td><code>src/Makefile.am</code></td><td>16</td><td>Build system naming</td></tr>
+          <tr><td><code>src/util.cpp</code></td><td>12</td><td>Paths/config names</td></tr>
+          <tr><td><code>src/qt/paymentserver.cpp</code></td><td>10</td><td>IPC / URI</td></tr>
+          <tr><td><code>src/qt/dogecoin.cpp</code></td><td>10</td><td>App bootstrap / resources</td></tr>
+          <tr><td><code>src/init.cpp</code></td><td>9</td><td>Startup messaging</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Recommended conversion order</h2>
+      <ol>
+        <li>Establish Git + green build (so renames are reversible).</li>
+        <li>T1 functional identifiers (macros, consensus API, resource init, tests).</li>
+        <li>T1 user-visible strings and RPC help.</li>
+        <li>i18n context migration (<code>bitcoin-core</code> → <code>dogecoin-core</code>) as its own careful step.</li>
+        <li>T3 header guards in a mechanical pass.</li>
+        <li>T2 comments opportunistically; refresh <code>doc/</code> last.</li>
+      </ol>
+
+      <h2>Definition of “conversion complete”</h2>
+      <ul class="checklist">
+        <li class="todo">No user-facing “Bitcoin” in Qt UI or RPC help (except intentional history)</li>
+        <li class="todo">No public C++ API still named Bitcoin* / bitcoinconsensus* inconsistently</li>
+        <li class="todo">All app/resources/tests use dogecoin product names</li>
+        <li class="todo">Header guards consistently DOGECOIN_* (optional but desired)</li>
+        <li class="todo">Scan script clean under agreed allowlist (copyrights, URLs)</li>
+        <li class="todo">Document allowlist in this page</li>
+      </ul>
+
+      <h2>Allowlist (initial)</h2>
+      <pre><code># Keep / do not auto-rewrite
+"The Bitcoin Core developers"   # copyright history
+bitcointalk.org                  # historical reference URLs
+bitcoin.org/en/developer-reference  # protocol heritage links (update when we host our own)
+Bitcoin Core in comparative docs    # when explicitly comparing projects</code></pre>
+
+      <div class="footer">
+        Re-run scan after each tier. Update counts on the dashboard when done.
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

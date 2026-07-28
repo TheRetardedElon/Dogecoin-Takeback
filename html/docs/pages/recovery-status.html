@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Recovery status — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="diagrams.html">Diagrams</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="rebrand-audit.html">Rebrand audit</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Recovery status</h1>
+      <p class="lead">
+        Honest inventory of what is present under <code>C:\dogedev</code>
+        after the HDD loss, versus what only exists as intent (chat plans,
+        memories, or lost later work).
+      </p>
+      <div class="meta">
+        <span>Source tree: <code>C:\dogedev</code></span>
+        <span>Git: restored from local bundle (2026-07-27)</span>
+        <span>Baseline: <code>975ef57</code> rebrand + themes</span>
+      </div>
+
+      <h2>Survived — use this as baseline</h2>
+      <table>
+        <thead>
+          <tr><th>Asset</th><th>Location</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Full Dogecoin Core-class tree</td>
+            <td><code>src/</code>, <code>depends/</code>, <code>doc/</code>, <code>contrib/</code>, <code>qa/</code></td>
+            <td>Compilable project structure (needs toolchain)</td>
+          </tr>
+          <tr>
+            <td>Entry binaries renamed</td>
+            <td><code>dogecoind.cpp</code>, <code>dogecoin-cli.cpp</code>, <code>dogecoin-tx.cpp</code>, <code>qt/dogecoin.cpp</code></td>
+            <td>No legacy <code>bitcoind.cpp</code> / <code>bitcoingui</code> filenames</td>
+          </tr>
+          <tr>
+            <td>Qt GUI classes</td>
+            <td><code>DogecoinGUI</code>, units, amount field, address validator</td>
+            <td>Modern shell hooks present</td>
+          </tr>
+          <tr>
+            <td>Modern UI components</td>
+            <td><code>modernmainwindow</code>, <code>modernnavigation</code>, <code>modernoverviewpage</code>, <code>moderncard</code></td>
+            <td>Plus <code>*_fixed.h</code> WIP variants</td>
+          </tr>
+          <tr>
+            <td>Theme system</td>
+            <td><code>src/qt/themes/</code> + <code>thememanager.*</code></td>
+            <td>matrix, cyberpunk, neon, dark, light, retro, woodgrain, futuristic, minimal, custom</td>
+          </tr>
+          <tr>
+            <td>Project markdown (historical)</td>
+            <td>Root <code>DOGECOIN_*.md</code>, <code>MODERN_UI_README.md</code>, <code>BUILD_GUIDE.md</code></td>
+            <td>Useful but not always complete vs code</td>
+          </tr>
+          <tr>
+            <td>Flow diagram</td>
+            <td><code>-FlowDiagramLatest/</code> (also copied into docs assets)</td>
+            <td>Post-migration architecture visual</td>
+          </tr>
+          <tr>
+            <td>Git history</td>
+            <td><code>.git/</code> + local <code>dogecoin-rebrand.bundle</code></td>
+            <td>Restored 2026-07-27; 2 commits (pre-rebrand + rebrand/UI)</td>
+          </tr>
+          <tr>
+            <td>Helper scripts</td>
+            <td><code>scan_bitcoin_references.sh</code>, rename/fix scripts</td>
+            <td>Re-run after toolchain available</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Not in this tree (planned or lost later)</h2>
+      <table>
+        <thead>
+          <tr><th>Item</th><th>Evidence</th><th>Impact</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Berkeley DB → SQLite wallet</td>
+            <td><code>src/wallet/db.h</code> still includes <code>db_cxx.h</code></td>
+            <td>Still need BDB to build wallet</td>
+          </tr>
+          <tr>
+            <td>LevelDB → RocksDB / libmdbx</td>
+            <td><code>dbwrapper.h</code> includes LevelDB</td>
+            <td>Chainstate still LSM/LevelDB</td>
+          </tr>
+          <tr>
+            <td>Advanced peer map / ASN / traffic-by-message UI</td>
+            <td>No matching sources found</td>
+            <td>Debug/network UX to rebuild</td>
+          </tr>
+          <tr>
+            <td>Meme Stream client ↔ gopastearth</td>
+            <td>No <code>memestream</code> code in tree</td>
+            <td>Needs API keys + new integration</td>
+          </tr>
+          <tr>
+            <td>GigaWallet / DogeConnect in Core</td>
+            <td>Architecture discussion only</td>
+            <td>Belongs mostly outside Core (GPE)</td>
+          </tr>
+          <tr>
+            <td>Remote backup (GitHub/etc.)</td>
+            <td>Not configured yet</td>
+            <td>Push when remote exists — avoid single-disk risk</td>
+          </tr>
+          <tr>
+            <td>Post-bundle working-tree delta</td>
+            <td>Modified theme/UI files + untracked custom themes</td>
+            <td>On-disk work beyond <code>975ef57</code>; not all committed yet</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Risks while regaining control</h2>
+      <div class="callout danger">
+        <strong>Do not treat the old changelog as absolute truth</strong>
+        <code>DOGECOIN_CHANGELOG.md</code> claims 100% Bitcoin elimination.
+        Live scan shows hundreds of residual references. Prefer code + this
+        audit over the changelog for conversion status.
+      </div>
+      <ul>
+        <li><strong>WIP dual files</strong> — <code>*_fixed.h</code> next to originals; clarify which is canonical before building.</li>
+        <li><strong>Commented theme wiring</strong> — some enhanced theme manager paths are commented in <code>dogecoingui.cpp</code>.</li>
+        <li><strong>No version control on this copy</strong> — every change is one mistake away from loss again until Git + remote backup exists.</li>
+        <li><strong>Toolchain</strong> — Git was not on PATH when first assessed; install Git + build deps before compile claims.</li>
+      </ul>
+
+      <h2>Immediate control checklist</h2>
+      <ul class="checklist">
+        <li class="done">Locate surviving tree at <code>C:\dogedev</code></li>
+        <li class="done">Create living HTML docs under <code>html/docs/</code></li>
+        <li class="done">Baseline rebrand residual scan (categories + counts)</li>
+        <li class="done">Install Git; restore history from <code>dogecoin-rebrand.bundle</code></li>
+        <li class="done">Branches: <code>master</code>, <code>baseline-rebrand</code> @ <code>975ef57</code></li>
+        <li class="todo">Configure remote + push backup</li>
+        <li class="todo">First clean configure + build of dogecoind / dogecoin-qt</li>
+        <li class="todo">Tag after green build + docs commit</li>
+        <li class="todo">Execute rebrand residual tiers (see audit)</li>
+      </ul>
+
+      <div class="footer">
+        Related: <a href="source-of-truth.html">Source of truth</a> ·
+        <a href="rebrand-audit.html">Rebrand audit</a> ·
+        <a href="roadmap.html">Roadmap</a>
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

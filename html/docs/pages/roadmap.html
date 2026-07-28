@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Roadmap — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav>
+        <div class="nav-section">Start here</div>
+        <a href="../index.html">Dashboard</a>
+        <a href="recovery-status.html">Recovery status</a>
+        <a href="roadmap.html">Roadmap</a>
+        <div class="nav-section">Understanding</div>
+        <a href="architecture.html">Architecture</a>
+        <a href="module-map.html">Module map</a>
+        <a href="diagrams.html">Diagrams</a>
+        <a href="glossary.html">Glossary</a>
+        <div class="nav-section">Workstreams</div>
+        <a href="rebrand-audit.html">Rebrand audit</a>
+        <a href="modern-ui.html">Modern UI &amp; themes</a>
+        <a href="storage-stack.html">Storage stack</a>
+        <a href="build-and-run.html">Build &amp; run</a>
+        <div class="nav-section">Repo</div>
+        <a href="source-of-truth.html">Source of truth</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>Roadmap — regain full control</h1>
+      <p class="lead">
+        Ordered plan. Each phase produces a durable artifact (tag, doc update,
+        or green build) so progress is never only “in chat.”
+      </p>
+
+      <h2>Phase 0 — Control plane <span class="badge badge-partial">In progress</span></h2>
+      <ul class="checklist">
+        <li class="done">Confirm tree at <code>C:\dogedev</code></li>
+        <li class="done">Stand up <code>html/docs/</code> living documentation</li>
+        <li class="done">Baseline rebrand residual scan</li>
+        <li class="done">Install Git for Windows; restore from <code>dogecoin-rebrand.bundle</code></li>
+        <li class="done">History: <code>51dcd47</code> pre-rebrand → <code>975ef57</code> rebrand+themes</li>
+        <li class="todo">Commit docs + post-bundle deltas; keep working tree clean</li>
+        <li class="todo">Push / mirror remote backup (never single-disk again)</li>
+        <li class="todo">Tag <code>baseline-rebrand-ui</code> after first green build</li>
+      </ul>
+
+      <h2>Phase 1 — Green build <span class="badge badge-todo">Next</span></h2>
+      <ul class="checklist">
+        <li class="todo">Toolchain: autotools, Boost, libevent, Qt5, BDB 5.3 (or depends)</li>
+        <li class="todo"><code>./autogen.sh &amp;&amp; ./configure --with-gui=qt5</code></li>
+        <li class="todo">Build dogecoind, dogecoin-cli, dogecoin-tx, dogecoin-qt</li>
+        <li class="todo">Smoke: regtest start, theme switch, open wallet</li>
+        <li class="todo">Record results on Build &amp; run page</li>
+      </ul>
+
+      <h2>Phase 2 — Finish rebrand conversion <span class="badge badge-todo">Queued</span></h2>
+      <ul class="checklist">
+        <li class="todo">T1 functional identifiers (see Rebrand audit)</li>
+        <li class="todo">T1 user-facing strings / RPC help</li>
+        <li class="todo">i18n context migration plan</li>
+        <li class="todo">T3 header-guard mechanical pass</li>
+        <li class="todo">Allowlist-based scan = “clean”</li>
+      </ul>
+
+      <h2>Phase 3 — UI solidification <span class="badge badge-todo">Queued</span></h2>
+      <ul class="checklist">
+        <li class="todo">Resolve <code>*_fixed.h</code> vs main headers</li>
+        <li class="todo">Single theme manager code path</li>
+        <li class="todo">Screenshot gallery in docs</li>
+        <li class="todo">Network / peers polish (rebuild lost designs)</li>
+      </ul>
+
+      <h2>Phase 4 — External features <span class="badge badge-plan">Later</span></h2>
+      <ul class="checklist">
+        <li class="todo">Meme Stream client integration (keys from GPE)</li>
+        <li class="todo">GPE / invoicing bridge (prefer outside consensus)</li>
+        <li class="todo">Optional GigaWallet / DogeConnect alignment</li>
+      </ul>
+
+      <h2>Phase 5 — Storage modernization <span class="badge badge-plan">Later</span></h2>
+      <ul class="checklist">
+        <li class="todo">SQLite wallet dual-stack + migratewallet</li>
+        <li class="todo">Optional RocksDB chainstate</li>
+        <li class="todo">Evaluate libmdbx only with metrics</li>
+      </ul>
+
+      <h2>Working agreement</h2>
+      <div class="callout info">
+        <strong>Docs move with code</strong>
+        When a phase completes, update the dashboard percentages, this checklist,
+        and the relevant workstream page the same day. Documentation is part of
+        regaining control — not optional polish at the end.
+      </div>
+
+      <div class="footer">
+        Next concrete step after docs: Git restore + build environment.
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>
