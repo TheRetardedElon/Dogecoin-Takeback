@@ -510,8 +510,9 @@ std::string HelpMessage(HelpMessageMode mode)
 
 std::string LicenseInfo()
 {
-    const std::string URL_SOURCE_CODE = "<https://github.com/dogecoin/dogecoin>";
-    const std::string URL_WEBSITE = "<https://dogecoin.com>";
+    // Takeback / Core Pro tree — About dialog + -version license text
+    const std::string URL_SOURCE_CODE = "<https://github.com/TheRetardedElon/Dogecoin-Takeback>";
+    const std::string URL_WEBSITE = "<https://github.com/TheRetardedElon/Dogecoin-Takeback>";
 
     return CopyrightHolders(strprintf(_("Copyright (C) %i-%i"), 2013, COPYRIGHT_YEAR) + " ") + "\n" +
            "\n" +

@@ -729,7 +729,9 @@ QString ThemeManager::getProShellStylesheet() const
         "  background-color: %10;\n"
         "  color: %4;\n"
         "}\n"
-    ).arg(bg2, border, text, text2, card, cardBorder, btn, btnText, btnHover, bg3);
+    // Qt 5.7 multi-arg QString::arg supports at most 9 string args; chain for %10.
+    ).arg(bg2, border, text, text2, card, cardBorder, btn, btnText, btnHover)
+     .arg(bg3);
 
     s += QString(
         "QLineEdit, QPlainTextEdit, QTextEdit, QSpinBox, QDoubleSpinBox {\n"

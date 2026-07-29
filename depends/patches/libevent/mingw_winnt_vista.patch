@@ -1,0 +1,14 @@
+--- a/evutil.c
++++ b/evutil.c
+@@ -40,8 +40,9 @@
+ #include <tchar.h>
+ #include <process.h>
+ #undef _WIN32_WINNT
+-/* For structs needed by GetAdaptersAddresses */
+-#define _WIN32_WINNT 0x0501
++/* Keep Vista+ so mingw-w64 iphlpapi.h types (MIB_TCPTABLE2 etc.) match
++ * the NTDDI level used by modern MinGW headers. */
++#define _WIN32_WINNT 0x0601
+ #include <iphlpapi.h>
+ #include <netioapi.h>
+ #endif

@@ -1,0 +1,2 @@
+3eedce78d1e14ccfc5fdb52ab0ff4b2bfc13e8365584ee7ee16f33db8d97de7a  dogecoin-1.14.100-win64.zip
+2c5178690d16e54c9f68e0f27d8f8e920ad2f20f11d655c6e73b2e8e86813db5  dogecoin-1.14.100-win64-setup.exe

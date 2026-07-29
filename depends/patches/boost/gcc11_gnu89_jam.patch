@@ -1,0 +1,31 @@
+--- a/tools/build/src/engine/build.sh
++++ b/tools/build/src/engine/build.sh
+@@ -144,12 +144,12 @@ case $BOOST_JAM_TOOLSET in
+         if test -r ${BOOST_JAM_TOOLSET_ROOT}bin/gcc ; then
+             export PATH=${BOOST_JAM_TOOLSET_ROOT}bin:$PATH
+         fi
+-        BOOST_JAM_CC="gcc -DNT"
++        BOOST_JAM_CC="gcc-11 -std=gnu89 -DNT"
+         BOOST_JAM_OS="NT"
+         ;;
+ 
+         *)
+-        BOOST_JAM_CC=gcc
++        BOOST_JAM_CC="gcc-11 -std=gnu89"
+         esac
+     ;;
+ 
+--- a/tools/build/src/engine/build.jam
++++ b/tools/build/src/engine/build.jam
+@@ -214,9 +214,9 @@ toolset clang clang : "-o " : -D
+     [ opt --profile : -Wl,-x -O3 -finline-functions -g -pg ]
+     -I$(--python-include) -I$(--extra-include)
+     : -L$(--python-lib[1]) -l$(--python-lib[2]) ;
+ ## GCC 2.x, 3.x, 4.x
+-toolset gcc gcc : "-o " : -D
+-    : -pedantic -fno-strict-aliasing
++toolset gcc gcc-11 : "-o " : -D
++    : -std=gnu89 -fno-strict-aliasing -Wno-implicit-function-declaration
+     [ opt --release : [ opt --symbols : -g : -s ] -O3 ]
+     [ opt --debug : -g -O0 -fno-inline ]
+     [ opt --profile : -O3 -g -pg ]

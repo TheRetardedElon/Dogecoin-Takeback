@@ -1,7 +1,9 @@
 package=qrencode
 $(package)_version=3.4.4
-$(package)_download_path=https://fukuchi.org/works/qrencode/
+# Upstream fukuchi.org is often 404; Ubuntu orig tarball matches official hash.
+$(package)_download_path=https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/qrencode/3.4.4-1build1
 $(package)_file_name=qrencode-$(qrencode_version).tar.bz2
+$(package)_download_file=qrencode_3.4.4.orig.tar.bz2
 $(package)_sha256_hash=efe5188b1ddbcbf98763b819b146be6a90481aac30cfc8d858ab78a19cde1fa5
 
 define $(package)_set_vars

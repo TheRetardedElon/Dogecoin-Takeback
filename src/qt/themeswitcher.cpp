@@ -10,7 +10,12 @@
 #include <QFontDatabase>
 #include <QSettings>
 #include <QMessageBox>
+// Dogecoin depends Qt is built with -no-feature-colordialog (QT_NO_COLORDIALOG).
+#ifndef QT_NO_COLORDIALOG
 #include <QColorDialog>
+#endif
+#include <QInputDialog>
+#include <QLineEdit>
 #include <QSignalBlocker>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -344,7 +349,22 @@ void ThemeSwitcher::onColorChanged()
     else if (button == m_accentButton) currentColor = m_customAccent;
     else if (button == m_borderButton) currentColor = m_customBorder;
     
-    QColor newColor = QColorDialog::getColor(currentColor, this, tr("Select Color"));
+    QColor newColor;
+#ifndef QT_NO_COLORDIALOG
+    newColor = QColorDialog::getColor(currentColor, this, tr("Select Color"));
+#else
+    // Minimal depends Qt has no color dialog; accept #RRGGBB / named colors.
+    bool ok = false;
+    const QString hex = QInputDialog::getText(
+        this,
+        tr("Select Color"),
+        tr("Color (#RRGGBB or name):"),
+        QLineEdit::Normal,
+        currentColor.name(QColor::HexRgb),
+        &ok);
+    if (ok)
+        newColor = QColor(hex.trimmed());
+#endif
     if (newColor.isValid()) {
         if (button == m_primaryBgButton) m_customPrimaryBg = newColor;
         else if (button == m_secondaryBgButton) m_customSecondaryBg = newColor;
