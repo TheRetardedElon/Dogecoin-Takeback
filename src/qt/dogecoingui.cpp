@@ -300,6 +300,11 @@ DogecoinGUI::DogecoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle
     createActions();
     createMenuBar();
     createStatusBar();
+
+    // Tray + Notificator (required for non-modal MSG_INFORMATION toasts).
+    // Modern-UI refactor previously skipped this; Doge Business invoice create
+    // then crashed on notificator->notify(nullptr).
+    createTrayIcon(networkStyle);
     
     // Keep the old interface as fallback (commented out for now)
     if (false) {
@@ -2304,9 +2309,15 @@ void DogecoinGUI::message(const QString &title, const QString &message, unsigned
         int r = mBox.exec();
         if (ret != NULL)
             *ret = r == QMessageBox::Ok;
-    }
-    else
+    } else if (notificator) {
         notificator->notify((Notificator::Class)nNotifyIcon, strTitle, message);
+    } else {
+        // Fallback if tray/notificator was not initialized
+        QMessageBox mBox((QMessageBox::Icon)nMBoxIcon, strTitle, message, QMessageBox::Ok, this);
+        mBox.exec();
+        if (ret != NULL)
+            *ret = true;
+    }
 }
 
 void DogecoinGUI::changeEvent(QEvent *e)
