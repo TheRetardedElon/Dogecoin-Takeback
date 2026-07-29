@@ -16,12 +16,61 @@
 #include <QNetworkRequest>
 #include <QPixmap>
 #include <QPointer>
+#include <QSslConfiguration>
+#include <QSslSocket>
 #include <QUrlQuery>
 #include <QVariant>
 #include <QVariantList>
 #include <QVariantMap>
 
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include <wincrypt.h>
+#endif
+
 static const char* DEFAULT_BASE = "https://gopastearth.com";
+
+/** One-shot: ensure Qt SSL works and Windows system CAs are loaded (OpenSSL backend). */
+static void ensureMemeStreamSsl()
+{
+    static bool done = false;
+    if (done)
+        return;
+    done = true;
+
+#ifndef QT_NO_SSL
+    if (!QSslSocket::supportsSsl()) {
+        LogPrintf("MemeStream: Qt was built without SSL; HTTPS feeds will fail "
+                  "(Protocol \"https\" is unknown). Rebuild Qt with -openssl-linked.\n");
+        return;
+    }
+
+#ifdef Q_OS_WIN
+    // Qt OpenSSL backend does not use the Windows cert store by default.
+    // Import current-user + local-machine ROOT stores so gopastearth.com verifies.
+    QList<QSslCertificate> cas = QSslSocket::defaultCaCertificates();
+    const DWORD stores[] = { CERT_SYSTEM_STORE_CURRENT_USER, CERT_SYSTEM_STORE_LOCAL_MACHINE };
+    for (unsigned si = 0; si < sizeof(stores) / sizeof(stores[0]); ++si) {
+        HCERTSTORE hStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, 0,
+                                          stores[si] | CERT_STORE_READONLY_FLAG, "ROOT");
+        if (!hStore)
+            continue;
+        PCCERT_CONTEXT ctx = 0;
+        while ((ctx = CertEnumCertificatesInStore(hStore, ctx)) != 0) {
+            QByteArray der(reinterpret_cast<const char*>(ctx->pbCertEncoded),
+                           static_cast<int>(ctx->cbCertEncoded));
+            QList<QSslCertificate> parsed = QSslCertificate::fromData(der, QSsl::Der);
+            cas.append(parsed);
+        }
+        CertCloseStore(hStore, 0);
+    }
+    if (!cas.isEmpty())
+        QSslSocket::setDefaultCaCertificates(cas);
+#endif
+#else
+    LogPrintf("MemeStream: QT_NO_SSL defined; HTTPS unavailable.\n");
+#endif
+}
 
 MemeStreamClient::MemeStreamClient(QObject* parent)
     : QObject(parent),
@@ -30,6 +79,7 @@ MemeStreamClient::MemeStreamClient(QObject* parent)
       m_publishReply(0),
       m_likeReply(0)
 {
+    ensureMemeStreamSsl();
     loadFromArgs();
 }
 

@@ -4,7 +4,8 @@ $(package)_download_path=http://download.qt.io/new_archive/qt/5.7/$($(package)_v
 $(package)_suffix=opensource-src-$($(package)_version).tar.gz
 $(package)_file_name=qtbase-$($(package)_suffix)
 $(package)_sha256_hash=95f83e532d23b3ddbde7973f380ecae1bac13230340557276f75f2e37984e410
-$(package)_dependencies=zlib
+# openssl: required for QNetworkAccessManager HTTPS (Meme Stream, BIP70, etc.)
+$(package)_dependencies=openssl zlib
 $(package)_linux_dependencies=freetype fontconfig libxcb libxkbcommon
 $(package)_build_subdir=qtbase
 $(package)_qt_libs=corelib network widgets gui plugins testlib printsupport
@@ -54,7 +55,9 @@ $(package)_config_opts += -no-libudev
 $(package)_config_opts += -no-mitshm
 $(package)_config_opts += -no-mtdev
 $(package)_config_opts += -no-pulseaudio
-$(package)_config_opts += -no-openssl
+# Link OpenSSL into QtNetwork so https:// works (static depends openssl 1.0.2).
+# -no-openssl leaves "Protocol https is unknown" for Meme Stream on Windows.
+$(package)_config_opts += -openssl-linked
 $(package)_config_opts += -no-openvg
 $(package)_config_opts += -no-reduce-relocations
 $(package)_config_opts += -no-qml-debug
@@ -95,7 +98,8 @@ $(package)_config_opts += -no-feature-colordialog
 $(package)_config_opts += -no-feature-concurrent
 $(package)_config_opts += -no-feature-fontcombobox
 $(package)_config_opts += -no-feature-ftp
-$(package)_config_opts += -no-feature-http
+# HTTP required for QNetworkAccessManager (Meme Stream feed/publish)
+# $(package)_config_opts += -no-feature-http
 $(package)_config_opts += -no-feature-image_heuristic_mask
 $(package)_config_opts += -no-feature-imageformat_bmp
 $(package)_config_opts += -no-feature-imageformat_jpeg
@@ -204,6 +208,7 @@ define $(package)_config_cmds
   export PKG_CONFIG_SYSROOT_DIR=/ && \
   export PKG_CONFIG_LIBDIR=$(host_prefix)/lib/pkgconfig && \
   export PKG_CONFIG_PATH=$(host_prefix)/share/pkgconfig  && \
+  export OPENSSL_LIBS="-lssl -lcrypto -lws2_32 -lgdi32 -lcrypt32" && \
   ./configure $($(package)_config_opts) && \
   echo "host_build: QT_CONFIG ~= s/system-zlib/zlib" >> mkspecs/qconfig.pri && \
   echo "CONFIG += force_bootstrap" >> mkspecs/qconfig.pri && \
