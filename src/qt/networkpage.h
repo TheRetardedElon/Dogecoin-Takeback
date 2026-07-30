@@ -9,6 +9,7 @@
 
 class ClientModel;
 class PlatformStyle;
+class PeerMapWidget;
 
 QT_BEGIN_NAMESPACE
 class QLabel;
@@ -21,8 +22,8 @@ class QPoint;
 QT_END_NAMESPACE
 
 /**
- * Network status page for Core Pro shell: connections, sync, peers, bans.
- * Uses the same PeerTableModel / BanTableModel as the debug console.
+ * Network status page for Core Pro shell: live world map of peers, stats, tables, bans.
+ * Peer map is exclusive to this page (not the debug console).
  */
 class NetworkPage : public QWidget
 {
@@ -60,6 +61,7 @@ private:
     QLabel* ibdLabel;
     QLabel* trafficLabel;
     QLabel* warningsLabel;
+    PeerMapWidget* peerMap;
     QTableView* peerView;
     QTableView* banView;
     QPushButton* consoleBtn;

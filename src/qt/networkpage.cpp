@@ -10,20 +10,14 @@
 #include "guiutil.h"
 #include "net.h"
 #include "netbase.h"
+#include "peermapwidget.h"
 #include "peertablemodel.h"
 #include "platformstyle.h"
 
-#include <QAbstractItemView>
-#include <QAction>
 #include <QCheckBox>
 #include <QHBoxLayout>
-#include <QHeaderView>
 #include <QLabel>
-#include <QMenu>
 #include <QPushButton>
-#include <QSignalMapper>
-#include <QSplitter>
-#include <QTableView>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -31,6 +25,7 @@ NetworkPage::NetworkPage(const PlatformStyle* _platformStyle, QWidget* parent)
     : QWidget(parent),
       platformStyle(_platformStyle),
       clientModel(0),
+      peerMap(0),
       pollTimer(0),
       updatingNetworkToggle(false),
       peersContextMenu(0),
@@ -66,9 +61,10 @@ void NetworkPage::setupUi()
     head->addWidget(consoleBtn);
     root->addLayout(head);
 
-    QLabel* sub = new QLabel(tr("Live peer and sync status from this Core node. "
-                                "Right-click a peer to disconnect or ban; right-click a ban to unban. "
-                                "This is pure Dogecoin P2P — not an app-chain network."));
+    QLabel* sub = new QLabel(tr("Live map of your connected peers around the world. "
+                                "Click a cyan/magenta dot for node details. "
+                                "Disconnect/ban tools are in the Debug Console. "
+                                "Pure Dogecoin P2P — locations are approximate IP geolocation."));
     sub->setObjectName(QStringLiteral("mutedLabel"));
     sub->setWordWrap(true);
     root->addWidget(sub);
@@ -101,63 +97,14 @@ void NetworkPage::setupUi()
     warningsLabel->setWordWrap(true);
     root->addWidget(warningsLabel);
 
-    QSplitter* split = new QSplitter(Qt::Vertical, this);
-    split->setChildrenCollapsible(false);
+    // Map fills the page (peer/ban tables live in Debug Console)
+    peerMap = new PeerMapWidget(this);
+    peerMap->setMinimumHeight(320);
+    root->addWidget(peerMap, 1);
 
-    // Peers
-    QWidget* peersBox = new QWidget();
-    QVBoxLayout* peersLay = new QVBoxLayout(peersBox);
-    peersLay->setContentsMargins(0, 0, 0, 0);
-    QLabel* peersTitle = new QLabel(tr("Connected peers"));
-    QFont pf = peersTitle->font();
-    pf.setBold(true);
-    peersTitle->setFont(pf);
-    peersLay->addWidget(peersTitle);
-    peerView = new QTableView(peersBox);
-    peerView->setObjectName(QStringLiteral("networkPeerView"));
-    peerView->verticalHeader()->hide();
-    peerView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    peerView->setSelectionBehavior(QAbstractItemView::SelectRows);
-    peerView->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    peerView->setAlternatingRowColors(true);
-    peerView->horizontalHeader()->setStretchLastSection(true);
-    peerView->setSortingEnabled(true);
-    peerView->setContextMenuPolicy(Qt::CustomContextMenu);
-    peersLay->addWidget(peerView, 1);
-    split->addWidget(peersBox);
-
-    // Bans
-    QWidget* banBox = new QWidget();
-    QVBoxLayout* banLay = new QVBoxLayout(banBox);
-    banLay->setContentsMargins(0, 0, 0, 0);
-    QHBoxLayout* banHead = new QHBoxLayout();
-    QLabel* banTitle = new QLabel(tr("Banned peers"));
-    QFont bf = banTitle->font();
-    bf.setBold(true);
-    banTitle->setFont(bf);
-    banHead->addWidget(banTitle);
-    banHead->addStretch();
-    QLabel* banHint = new QLabel(tr("Right-click → Unban"));
-    banHint->setObjectName(QStringLiteral("mutedLabel"));
-    banHead->addWidget(banHint);
-    banLay->addLayout(banHead);
-    banView = new QTableView(banBox);
-    banView->setObjectName(QStringLiteral("networkBanView"));
-    banView->verticalHeader()->hide();
-    banView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    banView->setSelectionBehavior(QAbstractItemView::SelectRows);
-    banView->setSelectionMode(QAbstractItemView::SingleSelection);
-    banView->setAlternatingRowColors(true);
-    banView->horizontalHeader()->setStretchLastSection(true);
-    banView->setSortingEnabled(true);
-    banView->setMaximumHeight(160);
-    banView->setContextMenuPolicy(Qt::CustomContextMenu);
-    banLay->addWidget(banView);
-    split->addWidget(banBox);
-
-    split->setStretchFactor(0, 3);
-    split->setStretchFactor(1, 1);
-    root->addWidget(split, 1);
+    // Tables kept hidden for optional future use; disconnect/ban via Debug Console
+    peerView = 0;
+    banView = 0;
 
     connect(consoleBtn, SIGNAL(clicked()), this, SLOT(onOpenConsole()));
     connect(networkActiveCheck, SIGNAL(toggled(bool)), this, SLOT(onNetworkActiveToggled(bool)));
@@ -169,68 +116,26 @@ void NetworkPage::setupUi()
 
 void NetworkPage::setupContextMenus()
 {
-    // Peer: disconnect + ban durations (same as RPCConsole)
-    QAction* disconnectAction = new QAction(tr("&Disconnect"), this);
-    QAction* banAction1h = new QAction(tr("Ban for") + QStringLiteral(" ") + tr("1 &hour"), this);
-    QAction* banAction24h = new QAction(tr("Ban for") + QStringLiteral(" ") + tr("1 &day"), this);
-    QAction* banAction7d = new QAction(tr("Ban for") + QStringLiteral(" ") + tr("1 &week"), this);
-    QAction* banAction365d = new QAction(tr("Ban for") + QStringLiteral(" ") + tr("1 &year"), this);
-
-    peersContextMenu = new QMenu(this);
-    peersContextMenu->addAction(disconnectAction);
-    peersContextMenu->addSeparator();
-    peersContextMenu->addAction(banAction1h);
-    peersContextMenu->addAction(banAction24h);
-    peersContextMenu->addAction(banAction7d);
-    peersContextMenu->addAction(banAction365d);
-
-    QSignalMapper* banMapper = new QSignalMapper(this);
-    banMapper->setMapping(banAction1h, 60 * 60);
-    banMapper->setMapping(banAction24h, 60 * 60 * 24);
-    banMapper->setMapping(banAction7d, 60 * 60 * 24 * 7);
-    banMapper->setMapping(banAction365d, 60 * 60 * 24 * 365);
-    connect(banAction1h, SIGNAL(triggered()), banMapper, SLOT(map()));
-    connect(banAction24h, SIGNAL(triggered()), banMapper, SLOT(map()));
-    connect(banAction7d, SIGNAL(triggered()), banMapper, SLOT(map()));
-    connect(banAction365d, SIGNAL(triggered()), banMapper, SLOT(map()));
-    connect(banMapper, SIGNAL(mapped(int)), this, SLOT(banSelectedPeer(int)));
-    connect(disconnectAction, SIGNAL(triggered()), this, SLOT(disconnectSelectedPeer()));
-    connect(peerView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showPeersContextMenu(QPoint)));
-
-    // Ban list: unban
-    QAction* unbanAction = new QAction(tr("&Unban"), this);
-    banContextMenu = new QMenu(this);
-    banContextMenu->addAction(unbanAction);
-    connect(unbanAction, SIGNAL(triggered()), this, SLOT(unbanSelectedPeer()));
-    connect(banView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showBanContextMenu(QPoint)));
+    // Peer table UI removed — map only. Disconnect/ban via Debug Console.
+    peersContextMenu = 0;
+    banContextMenu = 0;
 }
 
 void NetworkPage::setClientModel(ClientModel* model)
 {
     clientModel = model;
-    if (clientModel) {
-        if (clientModel->getPeerTableModel()) {
-            peerView->setModel(clientModel->getPeerTableModel());
-            peerView->setColumnWidth(PeerTableModel::Address, 200);
-            peerView->setColumnWidth(PeerTableModel::Subversion, 150);
-            peerView->setColumnWidth(PeerTableModel::Ping, 80);
-            clientModel->getPeerTableModel()->startAutoRefresh();
-        }
-        if (clientModel->getBanTableModel()) {
-            banView->setModel(clientModel->getBanTableModel());
-            banView->setColumnWidth(BanTableModel::Address, 220);
-            clientModel->getBanTableModel()->refresh();
-        }
-    } else {
-        peerView->setModel(0);
-        banView->setModel(0);
-    }
+    if (peerMap)
+        peerMap->setClientModel(model);
+    if (clientModel && clientModel->getPeerTableModel())
+        clientModel->getPeerTableModel()->startAutoRefresh();
     updateStats();
 }
 
 void NetworkPage::refresh()
 {
     updateStats();
+    if (peerMap)
+        peerMap->refreshFromPeers();
 }
 
 void NetworkPage::updateStats()
@@ -271,8 +176,6 @@ void NetworkPage::updateStats()
     networkActiveCheck->setChecked(clientModel->getNetworkActive());
     updatingNetworkToggle = false;
 
-    if (clientModel->getBanTableModel())
-        clientModel->getBanTableModel()->refresh();
 }
 
 void NetworkPage::onOpenConsole()
@@ -290,70 +193,23 @@ void NetworkPage::onNetworkActiveToggled(bool checked)
 
 void NetworkPage::showPeersContextMenu(const QPoint& point)
 {
-    if (!peerView->indexAt(point).isValid() || !peersContextMenu)
-        return;
-    peersContextMenu->exec(peerView->viewport()->mapToGlobal(point));
+    Q_UNUSED(point);
 }
 
 void NetworkPage::showBanContextMenu(const QPoint& point)
 {
-    if (!banView->indexAt(point).isValid() || !banContextMenu)
-        return;
-    banContextMenu->exec(banView->viewport()->mapToGlobal(point));
+    Q_UNUSED(point);
 }
 
 void NetworkPage::disconnectSelectedPeer()
 {
-    if (!g_connman)
-        return;
-    const QList<QModelIndex> nodes = GUIUtil::getEntryData(peerView, PeerTableModel::NetNodeId);
-    for (int i = 0; i < nodes.count(); ++i) {
-        const NodeId id = nodes.at(i).data().toLongLong();
-        g_connman->DisconnectNode(id);
-    }
-    updateStats();
 }
 
 void NetworkPage::banSelectedPeer(int bantime)
 {
-    if (!clientModel || !g_connman)
-        return;
-
-    const QList<QModelIndex> nodes = GUIUtil::getEntryData(peerView, PeerTableModel::NetNodeId);
-    PeerTableModel* peerModel = clientModel->getPeerTableModel();
-    if (!peerModel)
-        return;
-
-    for (int i = 0; i < nodes.count(); ++i) {
-        const NodeId id = nodes.at(i).data().toLongLong();
-        const int row = peerModel->getRowByNodeId(id);
-        if (row < 0)
-            continue;
-        const CNodeCombinedStats* stats = peerModel->getNodeStats(row);
-        if (stats)
-            g_connman->Ban(stats->nodeStats.addr, BanReasonManuallyAdded, bantime);
-    }
-
-    if (clientModel->getBanTableModel())
-        clientModel->getBanTableModel()->refresh();
-    updateStats();
+    Q_UNUSED(bantime);
 }
 
 void NetworkPage::unbanSelectedPeer()
 {
-    if (!clientModel || !g_connman)
-        return;
-
-    const QList<QModelIndex> nodes = GUIUtil::getEntryData(banView, BanTableModel::Address);
-    for (int i = 0; i < nodes.count(); ++i) {
-        const QString strNode = nodes.at(i).data().toString();
-        CSubNet possibleSubnet;
-        LookupSubNet(strNode.toStdString(), possibleSubnet);
-        if (possibleSubnet.IsValid())
-            g_connman->Unban(possibleSubnet);
-    }
-
-    if (clientModel->getBanTableModel())
-        clientModel->getBanTableModel()->refresh();
-    updateStats();
 }
