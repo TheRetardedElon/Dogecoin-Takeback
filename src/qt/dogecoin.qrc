@@ -59,6 +59,7 @@
     </qresource>
     <qresource prefix="/images">
         <file alias="worldmap-yellow">res/images/worldmap-yellow.png</file>
+        <file alias="retrdoge-title">res/images/retrdoge-title.png</file>
     </qresource>
     <qresource prefix="/movies">
         <file alias="spinner-000">res/movies/spinner-000.png</file>

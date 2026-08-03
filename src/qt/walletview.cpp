@@ -12,6 +12,7 @@
 #include "clientmodel.h"
 #include "guiutil.h"
 #include "importkeysdialog.h"
+#include "arcadepage.h"
 #include "memestreampage.h"
 #include "memestreamrail.h"
 #include "networkpage.h"
@@ -75,6 +76,7 @@ WalletView::WalletView(const PlatformStyle *_platformStyle, QWidget *parent):
     memeStreamPage = new MemeStreamPage(platformStyle, this);
     dogeBusinessPage = new DogeBusinessPage(platformStyle, this);
     networkPage = new NetworkPage(platformStyle, this);
+    arcadePage = new ArcadePage(platformStyle, this);
 
     usedSendingAddressesPage = new AddressBookPage(platformStyle, AddressBookPage::ForEditing, AddressBookPage::SendingTab, this);
     usedReceivingAddressesPage = new AddressBookPage(platformStyle, AddressBookPage::ForEditing, AddressBookPage::ReceivingTab, this);
@@ -86,6 +88,7 @@ WalletView::WalletView(const PlatformStyle *_platformStyle, QWidget *parent):
     addWidget(memeStreamPage);
     addWidget(dogeBusinessPage);
     addWidget(networkPage);
+    addWidget(arcadePage);
 
     importKeysDialog = new ImportKeysDialog(platformStyle);
 
@@ -239,6 +242,13 @@ void WalletView::gotoNetworkPage()
     setCurrentWidget(networkPage);
     if (networkPage)
         networkPage->refresh();
+}
+
+void WalletView::gotoArcadePage()
+{
+    setCurrentWidget(arcadePage);
+    if (arcadePage)
+        arcadePage->focusGame();
 }
 
 void WalletView::gotoReceiveCoinsPage()

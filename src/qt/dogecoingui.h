@@ -231,6 +231,8 @@ private Q_SLOTS:
     void gotoDogeBusinessPage(int tab = 0);
     /** Switch to Network status page */
     void gotoNetworkPage();
+    /** Switch to Arcade mini-games page */
+    void gotoArcadePage();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");

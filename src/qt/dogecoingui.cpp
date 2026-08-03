@@ -206,6 +206,7 @@ DogecoinGUI::DogecoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle
         QPushButton* networkBtn = new QPushButton(tr("Network"));
         QPushButton* businessBtn = new QPushButton(tr("Doge Business"));
         QPushButton* memeBtn = new QPushButton(tr("Meme Stream"));
+        QPushButton* arcadeBtn = new QPushButton(tr("Arcade"));
         QPushButton* consoleBtn = new QPushButton(tr("Console"));
 
         // Store buttons for later connection / theme styling
@@ -217,6 +218,7 @@ DogecoinGUI::DogecoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle
         m_navButtons["network"] = networkBtn;
         m_navButtons["business"] = businessBtn;
         m_navButtons["meme"] = memeBtn;
+        m_navButtons["arcade"] = arcadeBtn;
         m_navButtons["console"] = consoleBtn;
 
         navLayout->addWidget(overviewBtn);
@@ -226,6 +228,7 @@ DogecoinGUI::DogecoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle
         navLayout->addWidget(networkBtn);
         navLayout->addWidget(businessBtn);
         navLayout->addWidget(memeBtn);
+        navLayout->addWidget(arcadeBtn);
         navLayout->addStretch();
         navLayout->addWidget(consoleBtn);
 
@@ -264,6 +267,11 @@ DogecoinGUI::DogecoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle
         connect(memeBtn, &QPushButton::clicked, [this]() {
             if (walletFrame) {
                 gotoMemeStreamPage();
+            }
+        });
+        connect(arcadeBtn, &QPushButton::clicked, [this]() {
+            if (walletFrame) {
+                gotoArcadePage();
             }
         });
         connect(consoleBtn, &QPushButton::clicked, [this]() {
@@ -2039,6 +2047,11 @@ void DogecoinGUI::gotoDogeBusinessPage(int tab)
 void DogecoinGUI::gotoNetworkPage()
 {
     if (walletFrame) walletFrame->gotoNetworkPage();
+}
+
+void DogecoinGUI::gotoArcadePage()
+{
+    if (walletFrame) walletFrame->gotoArcadePage();
 }
 
 void DogecoinGUI::gotoSignMessageTab(QString addr)

@@ -63,23 +63,29 @@ if [[ -f share/setup.nsi ]] && command -v makensis >/dev/null; then
   make deploy 2>&1 | tail -40 || true
 fi
 
-if ls dogecoin-*-setup*.exe >/dev/null 2>&1; then
-  cp -f dogecoin-*-setup*.exe "${SETUP_DST}"
-  log "Wrote ${SETUP_DST} ($(du -h "${SETUP_DST}" | awk '{print $1}'))"
-elif ls "${BUILD_ROOT}"/dogecoin-*-setup*.exe >/dev/null 2>&1; then
-  cp -f "${BUILD_ROOT}"/dogecoin-*-setup*.exe "${SETUP_DST}"
-  log "Wrote ${SETUP_DST}"
+# Prefer exact versioned setup; avoid multi-glob cp (fails when >1 match)
+SETUP_SRC=""
+if [[ -f "${BUILD_ROOT}/${REL_NAME}-setup.exe" ]]; then
+  SETUP_SRC="${BUILD_ROOT}/${REL_NAME}-setup.exe"
+elif [[ -f "${REL_NAME}-setup.exe" ]]; then
+  SETUP_SRC="${REL_NAME}-setup.exe"
 else
   # Manual makensis if OutFile is absolute to abs_top_srcdir
   if [[ -f share/setup.nsi ]]; then
     makensis -V2 share/setup.nsi || true
   fi
-  if ls dogecoin-*-setup*.exe >/dev/null 2>&1; then
-    cp -f dogecoin-*-setup*.exe "${SETUP_DST}"
-    log "Wrote ${SETUP_DST}"
-  else
-    log "WARN: NSIS setup not produced; zip is still usable"
+  if [[ -f "${REL_NAME}-setup.exe" ]]; then
+    SETUP_SRC="${REL_NAME}-setup.exe"
+  elif [[ -f "${BUILD_ROOT}/${REL_NAME}-setup.exe" ]]; then
+    SETUP_SRC="${BUILD_ROOT}/${REL_NAME}-setup.exe"
   fi
+fi
+
+if [[ -n "${SETUP_SRC}" ]]; then
+  cp -f "${SETUP_SRC}" "${SETUP_DST}"
+  log "Wrote ${SETUP_DST} ($(du -h "${SETUP_DST}" | awk '{print $1}'))"
+else
+  log "WARN: NSIS setup not produced; zip is still usable"
 fi
 
 # Checksums
@@ -125,7 +131,8 @@ ${REL_NAME}/
 ## Notes
 - First sync downloads the full Dogecoin chain (or enable pruned mode in Options).
 - Windows SmartScreen may warn on **unsigned** builds — expected until code-signed.
-- Pure DOGE client (no EVM). Pro features: Home, Meme Stream, Business, Network, Options.
+- Pure DOGE client (no EVM). Pro features: Home, Meme Stream, Business, Network, Options, Arcade.
+- Arcade: Retr-Doge Shibe Blaster — retro client-side mini-game (no wallet/network).
 
 ## Verify
 \`\`\`

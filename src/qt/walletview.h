@@ -25,6 +25,7 @@ class MemeStreamPage;
 class MemeStreamRail;
 class DogeBusinessPage;
 class NetworkPage;
+class ArcadePage;
 
 QT_BEGIN_NAMESPACE
 class QModelIndex;
@@ -76,6 +77,7 @@ private:
     MemeStreamPage *memeStreamPage;
     DogeBusinessPage *dogeBusinessPage;
     NetworkPage *networkPage;
+    ArcadePage *arcadePage;
 
     TransactionView *transactionView;
 
@@ -99,6 +101,8 @@ public Q_SLOTS:
     void gotoDogeBusinessPage(int tab = 0);
     /** Switch to Network status page */
     void gotoNetworkPage();
+    /** Switch to Arcade mini-games page */
+    void gotoArcadePage();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");
