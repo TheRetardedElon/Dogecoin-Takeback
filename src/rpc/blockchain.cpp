@@ -1860,18 +1860,22 @@ UniValue getibdinfo(const JSONRPCRequest& request)
     if (request.fHelp || request.params.size() != 0)
         throw runtime_error(
             "getibdinfo\n"
-            "\nReturns Initial Block Download / peer-delivery telemetry (non-consensus).\n"
+            "\nReturns Initial Block Download / peer-delivery / prune-disk telemetry (non-consensus).\n"
             "Counters are process-lifetime atomics for diagnosing stuck sync, peer stalls,\n"
             "and chainstate flush cost. Enable detailed logs with -debug=ibd.\n"
             "\nResult:\n"
             "{\n"
             "  \"initialblockdownload\": true|false,\n"
-            "  \"blocks\": n,                  (numeric) current tip height\n"
-            "  \"headers\": n,                 (numeric) best header height\n"
-            "  \"blocks_in_flight\": n,        (numeric) unique blocks currently requested\n"
-            "  \"verificationprogress\": x,    (numeric) 0..1 estimate\n"
+            "  \"blocks\": n,\n"
+            "  \"headers\": n,\n"
+            "  \"verificationprogress\": x,\n"
             "  \"dbcache_bytes\": n,           (numeric) current coins cache memory\n"
-            "  \"stats\": { ... }              (object) IBDStats counters (see doc/ibd-p0-peer-telemetry.md)\n"
+            "  \"dbcache_limit_bytes\": n,     (numeric) configured in-memory UTXO cache budget\n"
+            "  \"size_on_disk\": n,            (numeric) block/undo file usage\n"
+            "  \"pruned\": bool,\n"
+            "  \"prune_target_bytes\": n,      (numeric; only if automatic prune)\n"
+            "  \"ibd_rescue\": bool,           (boolean) -ibdrescue setting\n"
+            "  \"stats\": { ... }\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getibdinfo", "")
@@ -1889,9 +1893,13 @@ UniValue getibdinfo(const JSONRPCRequest& request)
         obj.pushKV("dbcache_bytes", (uint64_t)pcoinsTip->DynamicMemoryUsage());
     else
         obj.pushKV("dbcache_bytes", 0);
-
-    // mapBlocksInFlight lives in net_processing; approximate via peer state if needed.
-    // Tip + headers + stats are the operator-facing core.
+    obj.pushKV("dbcache_limit_bytes", (uint64_t)nCoinCacheUsage);
+    obj.pushKV("size_on_disk", (uint64_t)CalculateCurrentUsage());
+    obj.pushKV("pruned", fPruneMode);
+    if (fPruneMode && nPruneTarget != std::numeric_limits<uint64_t>::max()) {
+        obj.pushKV("prune_target_bytes", (uint64_t)nPruneTarget);
+    }
+    obj.pushKV("ibd_rescue", GetBoolArg("-ibdrescue", true));
     obj.pushKV("stats", IBDStats::ToUniValue(IBDStats::GetSnapshot()));
     return obj;
 }

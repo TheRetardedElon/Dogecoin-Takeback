@@ -159,12 +159,24 @@ Process-global, not per-peer (keeps `CNode` / wire protocol clean).
 - Changing `BLOCK_STALLING_TIMEOUT` defaults without field data from `getibdinfo`  
 - Consensus or AuxPoW changes  
 
-## 5. Follow-ups (P0.1 / P1)
+## 5. Follow-ups
 
-1. ~~GUI: surface stall/rescue counters on Network page during IBD~~ — implemented.  
-2. Adaptive `MAX_BLOCKS_IN_TRANSIT_PER_PEER` under high RTT (data-driven).  
-3. ~~Optional `-ibdrescue=0` kill-switch~~ — implemented (`-ibdrescue`, default on).  
-4. Design doc for AssumeUTXO **after** multi-node IBD telemetry samples.
+### P0.1 (implemented)
+
+1. ~~GUI: stall/rescue on Network page~~  
+2. ~~`-ibdrescue` kill-switch~~  
+3. **IBD-aware chainstate flush policy** — soft flush only near 95% cache full during IBD; 2× periodic flush interval; still critical/prune/always.  
+4. **Prune UX** — clearer help, reindex warnings, InitWarning for tight automatic targets (&lt; 5500 MiB).  
+5. **Startup tips** — log `-dbcache` guidance when unset; prune mode note.  
+6. **Outbound diversity (ASMAP-lite)** — soft avoid stacking &gt;2 outbounds in same IPv4 /8; try up to 200 addrman candidates.  
+7. **`getibdinfo`** — prune / dbcache budget / size_on_disk / ibd_rescue fields.  
+8. **`-debug=ibd`** listed in help categories.
+
+### Later
+
+1. Adaptive `MAX_BLOCKS_IN_TRANSIT_PER_PEER` under high RTT (data-driven).  
+2. Full **ASMAP** ASN maps (replaces /8 soft preference).  
+3. Design doc for AssumeUTXO **after** multi-node IBD telemetry samples.
 
 ## 6. Test plan
 

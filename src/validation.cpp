@@ -2111,6 +2111,17 @@ bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode, int n
     bool fPeriodicWrite = mode == FLUSH_STATE_PERIODIC && nNow > nLastWrite + (int64_t)DATABASE_WRITE_INTERVAL * 1000000;
     // It's been very long since we flushed the cache. Do this infrequently, to optimize cache usage.
     bool fPeriodicFlush = mode == FLUSH_STATE_PERIODIC && nNow > nLastFlush + (int64_t)DATABASE_FLUSH_INTERVAL * 1000000;
+
+    // P0.1: During IBD, prefer filling the coins cache and avoid soft flush thrash
+    // (write amplification on LevelDB). Still flush on critical pressure, prune, and
+    // (less frequently) time-based intervals. Block-index writes remain on schedule.
+    const bool fIbdFlushPolicy = IsInitialBlockDownload();
+    if (fIbdFlushPolicy && mode == FLUSH_STATE_PERIODIC) {
+        // Soft flush only when ~95% full (not at the usual ~50-90% thresholds).
+        fCacheLarge = cacheSize > (nTotalSpace * 95 / 100);
+        fPeriodicFlush = nNow > nLastFlush + (int64_t)DATABASE_FLUSH_INTERVAL * 2 * 1000000;
+    }
+
     // Combine all conditions that result in a full cache flush.
     bool fDoFullFlush = (mode == FLUSH_STATE_ALWAYS) || fCacheLarge || fCacheCritical || fPeriodicFlush || fFlushForPrune;
     // Write blocks and block index to disk.

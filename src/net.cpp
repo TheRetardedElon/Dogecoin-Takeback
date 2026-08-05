@@ -1823,6 +1823,18 @@ void CConnman::ThreadOpenConnections()
 
         int64_t nANow = GetAdjustedTime();
         int nTries = 0;
+        // Soft diversity: count how many outbound peers share the same IPv4 /8 (first octet).
+        // GetGroup() already enforces unique /16; this reduces clustering inside large cloud ranges
+        // that span many /16s under one provider (ASMAP-lite until full ASN maps land).
+        std::map<int, int> mapIpv4OctetCount;
+        {
+            LOCK(cs_vNodes);
+            BOOST_FOREACH(CNode* pnode, vNodes) {
+                if (!pnode->fInbound && !pnode->fFeeler && !pnode->fOneShot && pnode->addr.IsIPv4()) {
+                    mapIpv4OctetCount[pnode->addr.GetByte(3)]++;
+                }
+            }
+        }
         while (!interruptNet)
         {
             CAddrInfo addr = addrman.Select(fFeeler);
@@ -1831,11 +1843,9 @@ void CConnman::ThreadOpenConnections()
             if (!addr.IsValid() || setConnected.count(addr.GetGroup()) || IsLocal(addr))
                 break;
 
-            // If we didn't find an appropriate destination after trying 100 addresses fetched from addrman,
-            // stop this loop, and let the outer loop run again (which sleeps, adds seed nodes, recalculates
-            // already-connected network ranges, ...) before trying new addrman addresses.
+            // Try harder for diversity than stock (100) — cheap, helps avoid “same cloud” outbounds.
             nTries++;
-            if (nTries > 100)
+            if (nTries > 200)
                 break;
 
             if (IsLimited(addr))
@@ -1862,6 +1872,13 @@ void CConnman::ThreadOpenConnections()
             // do not allow non-default ports, unless after 50 invalid addresses selected already
             if (addr.GetPort() != Params().GetDefaultPort() && nTries < 50)
                 continue;
+
+            // Prefer not to stack >2 outbound into the same IPv4 /8 unless we've tried many times.
+            if (!fFeeler && addr.IsIPv4() && nTries < 80) {
+                const int octet = addr.GetByte(3);
+                if (mapIpv4OctetCount[octet] >= 2)
+                    continue;
+            }
 
             addrConnect = addr;
 

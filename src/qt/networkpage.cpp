@@ -179,7 +179,8 @@ void NetworkPage::updateStats()
         const double prog = clientModel->getVerificationProgress(0) * 100.0;
         ibdLabel->setText(tr("Syncing (~%1%)").arg(prog, 0, 'f', 1));
         if (ibdDetailLabel)
-            ibdDetailLabel->setText(tr("IBD telemetry: %1").arg(clientModel->getIbdStatsSummary()));
+            ibdDetailLabel->setText(tr("IBD telemetry: %1 — raise -dbcache if flushes dominate; see getibdinfo")
+                                        .arg(clientModel->getIbdStatsSummary()));
     } else {
         ibdLabel->setText(tr("Synced"));
         if (ibdDetailLabel) {

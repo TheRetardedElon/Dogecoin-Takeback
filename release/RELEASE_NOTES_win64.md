@@ -1,58 +1,45 @@
 # Dogecoin Core Pro / Takeback — Windows x64
 
 ## Version
-- Client: **1.14.101** (release)
+- Client: **1.14.101** (Pro / Takeback tree)
 - Target: Windows 64-bit (x86_64)
 - Built: WSL2 cross-compile (depends + MinGW-w64 posix, Qt 5.7.1)
-- Date: 2026-08-05
 
 ## Artifacts
 - `dogecoin-1.14.101-win64.zip` — portable package
-- `dogecoin-1.14.101-win64-setup.exe` — NSIS installer
+- `dogecoin-1.14.101-win64-setup.exe` — NSIS installer (if present)
 - `SHA256SUMS-win64.txt` — checksums
 
-## What's new in 1.14.101
-
-### IBD P0 — performance & operability (non-consensus)
-- **`getibdinfo` RPC** — stall disconnects, rescue fetches, download timeouts, chainstate flush cost
-- **IBD rescue fetch** — when preferred download peers stall/saturate, other peers can fetch blocks
-- **`-ibdrescue`** — default **on**; `-ibdrescue=0` restores preferred-only download
-- **`-debug=ibd`** — detailed IBD / flush / stall logs
-- **Network page** — live “IBD telemetry: stall · rescue · dl-to · flush”
-- **`getpeerinfo`** fields: `preferred_download`, `stalling`, `stalling_seconds`, `blocks_in_flight`
-
-Design notes: `doc/ibd-p0-peer-telemetry.md`
-
-### Arcade (client only; from 1.14.100 line)
-- **Arcade** left-nav tab
-- **Retr-Doge Shibe Blaster** — pure Qt retro shooter
-
-### Safety
-- Pure DOGE client — **no consensus / AuxPoW / PoW changes**
-
-## Nav
-Home → Send/Receive/Transactions → Network → Doge Business → Meme Stream → Arcade → Console
+## Zip layout
+```
+dogecoin-1.14.101-win64/
+  dogecoin-qt.exe      # GUI wallet
+  daemon/dogecoind.exe # full node daemon
+  bin/dogecoin-cli.exe
+  bin/dogecoin-tx.exe
+  COPYING.txt
+  readme.txt
+```
 
 ## Install
 ### Installer
 1. Run `dogecoin-1.14.101-win64-setup.exe`
-2. Launch Dogecoin Core from the Start Menu
+2. Launch **Dogecoin Core** from the Start Menu
 
 ### Portable
 1. Extract the zip
 2. Run `dogecoin-qt.exe`
 
-## Ops (IBD)
-```
-dogecoin-cli getibdinfo
-dogecoin-cli getpeerinfo
-dogecoind -debug=ibd
-dogecoind -ibdrescue=0
-```
+## What's new in 1.14.101
+- **IBD P0:** `getibdinfo`, peer stall telemetry, IBD rescue fetch (`-ibdrescue`, default on), Network page IBD line
+- **Arcade:** Retr-Doge Shibe Blaster (client-only mini-game)
+- Pure DOGE — no consensus / AuxPoW changes
 
 ## Notes
-- First sync downloads the full chain (or use prune mode in Options).
-- Windows SmartScreen may warn on unsigned builds.
+- First sync downloads the full Dogecoin chain (or enable pruned mode in Options).
+- Windows SmartScreen may warn on **unsigned** builds — expected until code-signed.
+- Pure DOGE client (no EVM). Pro: Home, Meme Stream, Business, Network, Options, Arcade.
+- Ops: `dogecoin-cli getibdinfo` · `-debug=ibd` · `-ibdrescue=0` to disable rescue fetch.
 
 ## Verify
 ```
