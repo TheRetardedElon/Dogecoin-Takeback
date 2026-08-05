@@ -38,6 +38,8 @@ void InitializeActiveChainstate()
         return;
     }
     // Lifetime: process duration. Points at validation globals which outlive this.
+    // coins_tip is a reference to the global pcoinsTip pointer, so later reassignment
+    // (load/reindex/tests) is visible through CoinsTip().
     static CChainState single("ibd", chainActive, pcoinsTip);
     g_active_chainstate = &single;
     LogPrintf("Chainstate: active=\"%s\" (single-chainstate Phase A; AssumeUTXO dual state not yet enabled)\n",
@@ -51,6 +53,10 @@ bool IsActiveChainstateInitialized()
 
 CChainState& ActiveChainstate()
 {
+    // Lazy bind for unit tests and any path that builds a tip before AppInitMain ends.
+    if (!g_active_chainstate) {
+        InitializeActiveChainstate();
+    }
     assert(g_active_chainstate != nullptr);
     return *g_active_chainstate;
 }

@@ -14,6 +14,7 @@
 #include "checkpoints.h"
 #include "clientversion.h"
 #include "validation.h"
+#include "node/chainstate.h"
 #include "net.h"
 #include "txmempool.h"
 #include "ui_interface.h"
@@ -74,7 +75,7 @@ int ClientModel::getNumConnections(unsigned int flags) const
 int ClientModel::getNumBlocks() const
 {
     LOCK(cs_main);
-    return chainActive.Height();
+    return ActiveChain().Height();
 }
 
 int ClientModel::getHeaderTipHeight() const
@@ -121,8 +122,8 @@ QDateTime ClientModel::getLastBlockDate() const
 {
     LOCK(cs_main);
 
-    if (chainActive.Tip())
-        return QDateTime::fromTime_t(chainActive.Tip()->GetBlockTime());
+    if (ActiveChain().Tip())
+        return QDateTime::fromTime_t(ActiveChain().Tip()->GetBlockTime());
 
     return QDateTime::fromTime_t(Params().GenesisBlock().GetBlockTime()); // Genesis block's time of current network
 }
@@ -143,7 +144,7 @@ double ClientModel::getVerificationProgress(const CBlockIndex *tipIn) const
     if (!tip)
     {
         LOCK(cs_main);
-        tip = chainActive.Tip();
+        tip = ActiveChain().Tip();
     }
     return GuessVerificationProgress(Params().TxData(), tip);
 }

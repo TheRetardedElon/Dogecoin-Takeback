@@ -58,10 +58,10 @@ double GetDifficulty(const CBlockIndex* blockindex)
     // minimum difficulty = 1.0.
     if (blockindex == nullptr)
     {
-        if (chainActive.Tip() == nullptr)
+        if (ActiveChain().Tip() == nullptr)
             return 1.0;
         else
-            blockindex = chainActive.Tip();
+            blockindex = ActiveChain().Tip();
     }
 
     int nShift = (blockindex->nBits >> 24) & 0xff;
@@ -125,8 +125,8 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     result.pushKV("hash", blockindex->GetBlockHash().GetHex());
     int confirmations = -1;
     // Only report confirmations if the block is on the main chain
-    if (chainActive.Contains(blockindex))
-        confirmations = chainActive.Height() - blockindex->nHeight + 1;
+    if (ActiveChain().Contains(blockindex))
+        confirmations = ActiveChain().Height() - blockindex->nHeight + 1;
     result.pushKV("confirmations", confirmations);
     result.pushKV("height", blockindex->nHeight);
     result.pushKV("version", blockindex->nVersion);
@@ -141,7 +141,7 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
 
     if (blockindex->pprev)
         result.pushKV("previousblockhash", blockindex->pprev->GetBlockHash().GetHex());
-    CBlockIndex *pnext = chainActive.Next(blockindex);
+    CBlockIndex *pnext = ActiveChain().Next(blockindex);
     if (pnext)
         result.pushKV("nextblockhash", pnext->GetBlockHash().GetHex());
     return result;
@@ -153,8 +153,8 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.pushKV("hash", blockindex->GetBlockHash().GetHex());
     int confirmations = -1;
     // Only report confirmations if the block is on the main chain
-    if (chainActive.Contains(blockindex))
-        confirmations = chainActive.Height() - blockindex->nHeight + 1;
+    if (ActiveChain().Contains(blockindex))
+        confirmations = ActiveChain().Height() - blockindex->nHeight + 1;
     result.pushKV("confirmations", confirmations);
     result.pushKV("strippedsize", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS));
     result.pushKV("size", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION));
@@ -188,7 +188,7 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
 
     if (blockindex->pprev)
         result.pushKV("previousblockhash", blockindex->pprev->GetBlockHash().GetHex());
-    CBlockIndex *pnext = chainActive.Next(blockindex);
+    CBlockIndex *pnext = ActiveChain().Next(blockindex);
     if (pnext)
         result.pushKV("nextblockhash", pnext->GetBlockHash().GetHex());
     return result;
@@ -208,7 +208,7 @@ UniValue getblockcount(const JSONRPCRequest& request)
         );
 
     LOCK(cs_main);
-    return chainActive.Height();
+    return ActiveChain().Height();
 }
 
 UniValue getbestblockhash(const JSONRPCRequest& request)
@@ -225,7 +225,7 @@ UniValue getbestblockhash(const JSONRPCRequest& request)
         );
 
     LOCK(cs_main);
-    return chainActive.Tip()->GetBlockHash().GetHex();
+    return ActiveChain().Tip()->GetBlockHash().GetHex();
 }
 
 void RPCNotifyBlockChange(bool ibd, const CBlockIndex * pindex)
@@ -407,7 +407,7 @@ void entryToJSON(UniValue &info, const CTxMemPoolEntry &e)
     info.pushKV("time", e.GetTime());
     info.pushKV("height", (int)e.GetHeight());
     info.pushKV("startingpriority", e.GetPriority(e.GetHeight()));
-    info.pushKV("currentpriority", e.GetPriority(chainActive.Height()));
+    info.pushKV("currentpriority", e.GetPriority(ActiveChain().Height()));
     info.pushKV("descendantcount", e.GetCountWithDescendants());
     info.pushKV("descendantsize", e.GetSizeWithDescendants());
     info.pushKV("descendantfees", e.GetModFeesWithDescendants());
@@ -670,10 +670,10 @@ UniValue getblockhash(const JSONRPCRequest& request)
     LOCK(cs_main);
 
     int nHeight = request.params[0].get_int();
-    if (nHeight < 0 || nHeight > chainActive.Height())
+    if (nHeight < 0 || nHeight > ActiveChain().Height())
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
-    CBlockIndex* pblockindex = chainActive[nHeight];
+    CBlockIndex* pblockindex = ActiveChain()[nHeight];
     return pblockindex->GetBlockHash().GetHex();
 }
 
@@ -940,7 +940,7 @@ UniValue pruneblockchain(const JSONRPCRequest& request)
     // too low to be a block time (corresponds to timestamp from Sep 2001).
     if (heightParam > 1000000000) {
         // Add a 2 hour buffer to include blocks which might have had old timestamps
-        CBlockIndex* pindex = chainActive.FindEarliestAtLeast(heightParam - 7200);
+        CBlockIndex* pindex = ActiveChain().FindEarliestAtLeast(heightParam - 7200);
         if (!pindex) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Could not find block with at least the specified timestamp.");
         }
@@ -948,7 +948,7 @@ UniValue pruneblockchain(const JSONRPCRequest& request)
     }
 
     unsigned int height = (unsigned int) heightParam;
-    unsigned int chainHeight = (unsigned int) chainActive.Height();
+    unsigned int chainHeight = (unsigned int) ActiveChain().Height();
     if (chainHeight < Params().PruneAfterHeight())
         throw JSONRPCError(RPC_MISC_ERROR, "Blockchain is too short for pruning.");
     else if (height > chainHeight)
@@ -988,7 +988,7 @@ UniValue gettxoutsetinfo(const JSONRPCRequest& request)
 
     CCoinsStats stats;
     FlushStateToDisk();
-    if (GetUTXOStats(pcoinsTip, stats)) {
+    if (GetUTXOStats(ActiveCoinsTip(), stats)) {
         ret.pushKV("height", (int64_t)stats.nHeight);
         ret.pushKV("bestblock", stats.hashBlock.GetHex());
         ret.pushKV("transactions", (int64_t)stats.nTransactions);
@@ -1054,18 +1054,18 @@ UniValue gettxout(const JSONRPCRequest& request)
     CCoins coins;
     if (fMempool) {
         LOCK(mempool.cs);
-        CCoinsViewMemPool view(pcoinsTip, mempool);
+        CCoinsViewMemPool view(ActiveCoinsTip(), mempool);
         if (!view.GetCoins(hash, coins))
             return NullUniValue;
         mempool.pruneSpent(hash, coins); // TODO: this should be done by the CCoinsViewMemPool
     } else {
-        if (!pcoinsTip->GetCoins(hash, coins))
+        if (!ActiveCoinsTip()->GetCoins(hash, coins))
             return NullUniValue;
     }
     if (n<0 || (unsigned int)n>=coins.vout.size() || coins.vout[n].IsNull())
         return NullUniValue;
 
-    BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
+    BlockMap::iterator it = mapBlockIndex.find(ActiveCoinsTip()->GetBestBlock());
     CBlockIndex *pindex = it->second;
     ret.pushKV("bestblock", pindex->GetBlockHash().GetHex());
     if ((unsigned int)coins.nHeight == MEMPOOL_HEIGHT)
@@ -1112,7 +1112,7 @@ UniValue verifychain(const JSONRPCRequest& request)
     if (nCheckDepth < 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Error: nblocks must be >= 0");
 
-    return CVerifyDB().VerifyDB(Params(), pcoinsTip, nCheckLevel, nCheckDepth);
+    return CVerifyDB().VerifyDB(Params(), ActiveCoinsTip(), nCheckLevel, nCheckDepth);
 }
 
 /** Implementation of IsSuperMajority with better feedback */
@@ -1225,18 +1225,18 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
 
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("chain",                 Params().NetworkIDString());
-    obj.pushKV("blocks",                (int)chainActive.Height());
+    obj.pushKV("blocks",                (int)ActiveChain().Height());
     obj.pushKV("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1);
-    obj.pushKV("bestblockhash",         chainActive.Tip()->GetBlockHash().GetHex());
+    obj.pushKV("bestblockhash",         ActiveChain().Tip()->GetBlockHash().GetHex());
     obj.pushKV("difficulty",            (double)GetDifficulty());
-    obj.pushKV("mediantime",            (int64_t)chainActive.Tip()->GetMedianTimePast());
-    obj.pushKV("verificationprogress",  GuessVerificationProgress(Params().TxData(), chainActive.Tip()));
+    obj.pushKV("mediantime",            (int64_t)ActiveChain().Tip()->GetMedianTimePast());
+    obj.pushKV("verificationprogress",  GuessVerificationProgress(Params().TxData(), ActiveChain().Tip()));
     obj.pushKV("initialblockdownload",  IsInitialBlockDownload());
-    obj.pushKV("chainwork",             chainActive.Tip()->nChainWork.GetHex());
+    obj.pushKV("chainwork",             ActiveChain().Tip()->nChainWork.GetHex());
     obj.pushKV("size_on_disk",          CalculateCurrentUsage());
     obj.pushKV("pruned",                fPruneMode);
     if (fPruneMode) {
-        CBlockIndex* block = chainActive.Tip();
+        CBlockIndex* block = ActiveChain().Tip();
         assert(block);
         while (block->pprev && (block->pprev->nStatus & BLOCK_HAVE_DATA)) {
             block = block->pprev;
@@ -1253,7 +1253,7 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
     }
 
     const Consensus::Params& consensusParams = Params().GetConsensus(0);
-    CBlockIndex* tip = chainActive.Tip();
+    CBlockIndex* tip = ActiveChain().Tip();
     UniValue softforks(UniValue::VARR);
     UniValue bip9_softforks(UniValue::VOBJ);
     softforks.push_back(SoftForkDesc("bip34", 2, tip, consensusParams));
@@ -1330,7 +1330,7 @@ UniValue getchaintips(const JSONRPCRequest& request)
 
     BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
     {
-        if (!chainActive.Contains(item.second)) {
+        if (!ActiveChain().Contains(item.second)) {
             setOrphans.insert(item.second);
             setPrevs.insert(item.second->pprev);
         }
@@ -1344,7 +1344,7 @@ UniValue getchaintips(const JSONRPCRequest& request)
     }
 
     // Always report the currently active tip.
-    setTips.insert(chainActive.Tip());
+    setTips.insert(ActiveChain().Tip());
 
     /* Construct the output array.  */
     UniValue res(UniValue::VARR);
@@ -1354,11 +1354,11 @@ UniValue getchaintips(const JSONRPCRequest& request)
         obj.pushKV("height", block->nHeight);
         obj.pushKV("hash", block->phashBlock->GetHex());
 
-        const int branchLen = block->nHeight - chainActive.FindFork(block)->nHeight;
+        const int branchLen = block->nHeight - ActiveChain().FindFork(block)->nHeight;
         obj.pushKV("branchlen", branchLen);
 
         string status;
-        if (chainActive.Contains(block)) {
+        if (ActiveChain().Contains(block)) {
             // This block is part of the currently active chain.
             status = "active";
         } else if (block->nStatus & BLOCK_FAILED_MASK) {
@@ -1657,7 +1657,7 @@ static UniValue getblockstats(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
     pindex = mapBlockIndex[hash];
 
-    if (!chainActive.Contains(pindex)) {
+    if (!ActiveChain().Contains(pindex)) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Block is not in chain %s", Params().NetworkIDString()));
     }
 
@@ -1887,11 +1887,11 @@ UniValue getibdinfo(const JSONRPCRequest& request)
 
     UniValue obj(UniValue::VOBJ);
     obj.pushKV("initialblockdownload", IsInitialBlockDownload());
-    obj.pushKV("blocks", (int)chainActive.Height());
+    obj.pushKV("blocks", (int)ActiveChain().Height());
     obj.pushKV("headers", pindexBestHeader ? pindexBestHeader->nHeight : -1);
-    obj.pushKV("verificationprogress", GuessVerificationProgress(Params().TxData(), chainActive.Tip()));
-    if (pcoinsTip)
-        obj.pushKV("dbcache_bytes", (uint64_t)pcoinsTip->DynamicMemoryUsage());
+    obj.pushKV("verificationprogress", GuessVerificationProgress(Params().TxData(), ActiveChain().Tip()));
+    if (ActiveCoinsTip())
+        obj.pushKV("dbcache_bytes", (uint64_t)ActiveCoinsTip()->DynamicMemoryUsage());
     else
         obj.pushKV("dbcache_bytes", 0);
     obj.pushKV("dbcache_limit_bytes", (uint64_t)nCoinCacheUsage);
@@ -1915,8 +1915,7 @@ UniValue getchainstates(const JSONRPCRequest& request)
         throw runtime_error(
             "getchainstates\n"
             "\nReturn information about active chainstate(s).\n"
-            "Phase A of AssumeUTXO prep: only a single \"ibd\" chainstate exists,\n"
-            "wrapping the traditional chainActive / pcoinsTip globals.\n"
+            "AssumeUTXO Phase A: active chainstate wraps the traditional tip (A2: RPCs use ActiveChain()).\n"
             "\nResult:\n"
             "{\n"
             "  \"chainstates\": [ {\n"

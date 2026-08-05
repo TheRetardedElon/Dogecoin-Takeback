@@ -16,6 +16,7 @@
 #include "core_io.h"
 #include "init.h"
 #include "validation.h"
+#include "node/chainstate.h"
 #include "miner.h"
 #include "net.h"
 #include "pow.h"
@@ -40,10 +41,10 @@ using namespace std;
  * If 'height' is nonnegative, compute the estimate at the time when a given block was found.
  */
 UniValue GetNetworkHashPS(int lookup, int height) {
-    CBlockIndex *pb = chainActive.Tip();
+    CBlockIndex *pb = ActiveChain().Tip();
 
-    if (height >= 0 && height < chainActive.Height())
-        pb = chainActive[height];
+    if (height >= 0 && height < ActiveChain().Height())
+        pb = ActiveChain()[height];
 
     if (pb == NULL || !pb->nHeight)
         return 0;
@@ -109,7 +110,7 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
 
     {   // Don't keep cs_main locked
         LOCK(cs_main);
-        nHeightStart = chainActive.Height();
+        nHeightStart = ActiveChain().Height();
         nHeight = nHeightStart;
         nHeightEnd = nHeightStart+nGenerate;
     }
@@ -123,7 +124,7 @@ UniValue generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGen
         CBlock *pblock = &pblocktemplate->block;
         {
             LOCK(cs_main);
-            IncrementExtraNonce(pblock, chainActive.Tip(), nExtraNonce);
+            IncrementExtraNonce(pblock, ActiveChain().Tip(), nExtraNonce);
         }
         if (!nMineAuxPow) {
             while (nMaxTries > 0 && pblock->nNonce < nInnerLoopCount && !CheckProofOfWork(pblock->GetPoWHash(), pblock->nBits, Params().GetConsensus(nHeight))) {
@@ -279,7 +280,7 @@ UniValue getmininginfo(const JSONRPCRequest& request)
     LOCK(cs_main);
 
     UniValue obj(UniValue::VOBJ);
-    obj.pushKV("blocks",           (int)chainActive.Height());
+    obj.pushKV("blocks",           (int)ActiveChain().Height());
     obj.pushKV("currentblocksize", (uint64_t)nLastBlockSize);
     obj.pushKV("currentblockweight", (uint64_t)nLastBlockWeight);
     obj.pushKV("currentblocktx",   (uint64_t)nLastBlockTx);
@@ -474,7 +475,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
                 return "duplicate-inconclusive";
             }
 
-            CBlockIndex* const pindexPrev = chainActive.Tip();
+            CBlockIndex* const pindexPrev = ActiveChain().Tip();
             // TestBlockValidity only supports blocks built on the current Tip
             if (block.hashPrevBlock != pindexPrev->GetBlockHash())
                 return "inconclusive-not-best-prevblk";
@@ -530,7 +531,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
         else
         {
             // NOTE: Spec does not specify behaviour for non-string longpollid, but this makes testing easier
-            hashWatchedChain = chainActive.Tip()->GetBlockHash();
+            hashWatchedChain = ActiveChain().Tip()->GetBlockHash();
             nTransactionsUpdatedLastLP = nTransactionsUpdatedLast;
         }
 
@@ -540,7 +541,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
             checktxtime = boost::get_system_time() + boost::posix_time::minutes(1);
 
             boost::unique_lock<boost::mutex> lock(csBestBlock);
-            while (chainActive.Tip()->GetBlockHash() == hashWatchedChain && IsRPCRunning())
+            while (ActiveChain().Tip()->GetBlockHash() == hashWatchedChain && IsRPCRunning())
             {
                 if (!cvBlockChange.timed_wait(lock, checktxtime))
                 {
@@ -571,7 +572,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     // Cache whether the last invocation was with segwit support, to avoid returning
     // a segwit-block to a non-segwit caller.
     static bool fLastTemplateSupportsSegwit = true;
-    if (pindexPrev != chainActive.Tip() ||
+    if (pindexPrev != ActiveChain().Tip() ||
         (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 5) ||
         fLastTemplateSupportsSegwit != fSupportsSegwit)
     {
@@ -580,7 +581,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
 
         // Store the pindexBest used before CreateNewBlock, to avoid races
         nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
-        CBlockIndex* pindexPrevNew = chainActive.Tip();
+        CBlockIndex* pindexPrevNew = ActiveChain().Tip();
         nStart = GetTime();
         fLastTemplateSupportsSegwit = fSupportsSegwit;
 
@@ -717,7 +718,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     result.pushKV("transactions", transactions);
     result.pushKV("coinbaseaux", aux);
     result.pushKV("coinbasevalue", (int64_t)pblock->vtx[0]->vout[0].nValue);
-    result.pushKV("longpollid", chainActive.Tip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast));
+    result.pushKV("longpollid", ActiveChain().Tip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast));
     result.pushKV("target", hashTarget.GetHex());
     result.pushKV("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1);
     result.pushKV("mutable", aMutable);
@@ -803,7 +804,7 @@ UniValue submitblock(const JSONRPCRequest& request)
         LOCK(cs_main);
         BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
         if (mi != mapBlockIndex.end()) {
-            int nHeight = chainActive.Height() + 1;
+            int nHeight = ActiveChain().Height() + 1;
             UpdateUncommittedBlockStructures(block, mi->second, Params().GetConsensus(nHeight));
         }
     }

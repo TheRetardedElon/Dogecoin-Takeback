@@ -13,6 +13,7 @@
 #include "fs.h"
 #include "key.h"
 #include "validation.h"
+#include "node/chainstate.h"
 #include "miner.h"
 #include "net_processing.h"
 #include "pubkey.h"
@@ -76,6 +77,8 @@ TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(cha
         pcoinsdbview = new CCoinsViewDB(1 << 23, true);
         pcoinsTip = new CCoinsViewCache(pcoinsdbview);
         InitBlockIndex(chainparams);
+        // AssumeUTXO Phase A: bind ActiveChainstate() to test globals
+        InitializeActiveChainstate();
         {
             CValidationState state;
             bool ok = ActivateBestChain(state, chainparams);

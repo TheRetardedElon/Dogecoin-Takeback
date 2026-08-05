@@ -9,7 +9,7 @@
 | Slice | Status | Notes |
 |-------|--------|--------|
 | **A1** Active chainstate wrapper | **Done** | `src/node/chainstate.*`, `InitializeActiveChainstate()`, `getchainstates`, `getibdinfo` fields |
-| A2 Migrate hot paths to ActiveChain*() | Pending | wallet / net_processing / more RPCs |
+| **A2** Migrate hot paths to ActiveChain*() | **Done** | blockchain + mining RPCs, clientmodel; lazy init; TestingSetup hook |
 | A3 Dual CChainState storage (no snapshot yet) | Pending | background chain object exists but idle |
 | B Snapshot load | Pending | |
 | C Background validation | Pending | |
@@ -62,7 +62,8 @@ Suggested structure (names illustrative):
 | RPC `getchainstates` | **A1 done:** reports single active chainstate |
 
 **A1 exit criteria (met):** single-chainstate behavior bit-identical; accessors available; no AssumeUTXO yet.  
-**Phase A full exit:** dual storage + migration complete; still no snapshot.
+**A2 exit criteria (met):** high-traffic tip/UTXO reads go through ActiveChain*/ActiveCoinsTip*; tests bind chainstate.  
+**Phase A full exit:** dual storage + remaining migration; still no snapshot.
 
 ### Phase B — Snapshot file format + load
 
