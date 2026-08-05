@@ -1,6 +1,6 @@
 # AssumeUTXO for Dogecoin Core (1.14 DNA) — Design
 
-**Status:** design + **Phase B2 done (dev activation)**  
+**Status:** design + **Phase C1 background validation**  
 **Depends on:** P0/P0.1 IBD telemetry, ASMAP, healthy single-chainstate  
 **Consensus impact:** none if done like Bitcoin (background full validation to the assume height)
 
@@ -13,7 +13,8 @@
 | **A3** Dual CChainState storage (no snapshot yet) | **Done** | idle `background` owns empty `CChain`; no coins DB; `getchainstates` lists both |
 | **B1** Snapshot file format + dump/load | **Done** | `node/utxo_snapshot.*`, `dumptxoutset` / `loadtxoutset`; loads into `chainstate_snapshot/` on background |
 | **B2** Activate snapshot as tip (dev) | **Done** | `activatesnapshot` / `loadtxoutset … true`; `-assumeutxodev`; mirrors `chainActive`/`pcoinsTip`; parks IBD on background |
-| C Background validation | Pending | |
+| **C1** Background validation | **Done** | `StepBackgroundValidation` ConnectBlock loop; `hash_serialized` match; fail-closed shutdown; auto-step after ActivateBestChain; `stepbackgroundvalidation` RPC |
+| C2 | Pending | Persist validation across restarts; prune-safe block fetch; drop dual state after complete |
 
 ## 1. Goal
 
@@ -94,11 +95,16 @@ Suggested structure (names illustrative):
 
 | Piece | Role |
 |-------|------|
-| Second chainstate from genesis | Download/validate blocks 0…H |
-| Progress RPC / `getibdinfo` | `snapshot_height`, `background_synced`, `assumeutxo_validated` |
-| Completion | Compare coins hash to assume hash; on match, promote; on mismatch, abort/require reindex |
+| Parked IBD coins + chain | **C1:** after B2, background `"ibd"` continues from prior tip toward H |
+| `ConnectBlock` into background view | **C1:** does not move wallet tip; uses existing AuxPoW/script rules |
+| Expected hash | **C1:** `hash_serialized` frozen at `loadtxoutset` via `ComputeCoinsHashSerialized` |
+| Auto step | **C1:** after each `ActivateBestChain` (+ manual `stepbackgroundvalidation`) |
+| Progress RPC | **C1:** `getibdinfo` / `getchainstates`: status, height, target, `assumeutxo_validated` |
+| Completion | **C1:** match → `assumeutxo_validated=true`; mismatch → fail-closed + shutdown |
+| C2 | Persist progress, request missing blocks, collapse dual state after complete |
 
-**Exit criteria:** intentional bad snapshot fails closed; good snapshot validates and converges.
+**C1 exit criteria (met):** good snapshot reaches `completed`; bad UTXO hash fail-closes.  
+**C full exit (remaining):** restart-safe; missing block download; clean dual-state teardown.
 
 ### Phase D — Product polish
 
@@ -145,10 +151,10 @@ Suggested structure (names illustrative):
 
 ## 9. Suggested next engineering
 
-1. ~~Land P0.3 / Phase A / B1 / B2~~  
-2. **C:** background validation genesis→H + coins hash check; fail closed on mismatch  
+1. ~~Land P0.3 / Phase A / B / C1~~  
+2. **C2:** persist background progress across restart; fetch missing blocks; collapse dual state  
 3. Hardcoded mainnet/testnet AssumeutxoData + signed snapshot artifacts  
-4. Product polish: GUI progress, prune rules, drop `-assumeutxodev` requirement for attested heights  
+4. Product polish: GUI progress, prune rules, drop `-assumeutxodev` for attested heights  
 
 ## 10. Success metric
 

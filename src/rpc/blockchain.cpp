@@ -1909,6 +1909,11 @@ UniValue getibdinfo(const JSONRPCRequest& request)
     }
     obj.pushKV("background_present", HasBackgroundChainstate());
     obj.pushKV("snapshot_active", IsSnapshotChainstateActive());
+    obj.pushKV("background_validation_status", BackgroundValidationStatusString());
+    obj.pushKV("background_validation_height", GetBackgroundValidationHeight());
+    obj.pushKV("background_validation_target", GetBackgroundValidationTargetHeight());
+    obj.pushKV("assumeutxo_validated", IsAssumeUtxoValidated());
+    obj.pushKV("assumeutxo_failed", IsAssumeUtxoFailed());
     if (HasBackgroundChainstate() && BackgroundChainstate()) {
         obj.pushKV("background_chainstate", BackgroundChainstate()->GetName());
         obj.pushKV("background_idle", BackgroundChainstate()->IsIdle());
@@ -1922,6 +1927,9 @@ UniValue getibdinfo(const JSONRPCRequest& request)
     if (IsSnapshotChainstateActive() && ActiveChainstate().HasSnapshot()) {
         obj.pushKV("snapshot_basehash", ActiveChainstate().SnapshotBaseHash().GetHex());
         obj.pushKV("snapshot_coins", (uint64_t)ActiveChainstate().SnapshotCoinsCount());
+        if (ActiveChainstate().HasSnapshotCoinsHash()) {
+            obj.pushKV("snapshot_coins_hash", ActiveChainstate().SnapshotCoinsHash().GetHex());
+        }
     }
     obj.pushKV("stats", IBDStats::ToUniValue(IBDStats::GetSnapshot()));
     return obj;
@@ -2135,24 +2143,15 @@ UniValue getchainstates(const JSONRPCRequest& request)
         throw runtime_error(
             "getchainstates\n"
             "\nReturn information about chainstate(s).\n"
-            "AssumeUTXO Phase B2: active may be \"ibd\" or \"snapshot\"; background holds the other\n"
-            "role (loaded snapshot waiting for activatesnapshot, or parked IBD after activation).\n"
+            "AssumeUTXO Phase C1: active may be \"ibd\" or \"snapshot\"; background holds parked IBD\n"
+            "or a loaded snapshot. After activation, background_validation_* tracks genesis→H proof.\n"
             "\nResult:\n"
             "{\n"
-            "  \"chainstates\": [ {\n"
-            "    \"name\": \"ibd\"|\"background\"|\"snapshot\",\n"
-            "    \"blocks\": n,\n"
-            "    \"bestblockhash\": \"...\",\n"
-            "    \"coins_cache_bytes\": n,\n"
-            "    \"active\": true|false,\n"
-            "    \"idle\": true|false,\n"
-            "    \"owns_chain\": true|false,\n"
-            "    \"has_snapshot\": true|false\n"
-            "  }, ... ],\n"
-            "  \"background_present\": true,\n"
+            "  \"chainstates\": [ { ... } ],\n"
             "  \"snapshot_active\": true|false,\n"
-            "  \"assumeutxo_enabled\": true|false,\n"
-            "  \"phase\": \"B2-snapshot-activate\"\n"
+            "  \"background_validation_status\": \"none|running|waiting_blocks|completed|failed\",\n"
+            "  \"assumeutxo_validated\": true|false,\n"
+            "  \"phase\": \"C1-background-validation\"\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getchainstates", "")
@@ -2180,8 +2179,64 @@ UniValue getchainstates(const JSONRPCRequest& request)
     root.pushKV("background_present", HasBackgroundChainstate());
     root.pushKV("snapshot_active", IsSnapshotChainstateActive());
     root.pushKV("assumeutxo_enabled", snapshot_loaded || IsSnapshotChainstateActive());
-    root.pushKV("phase", "B2-snapshot-activate");
+    root.pushKV("background_validation_status", BackgroundValidationStatusString());
+    root.pushKV("background_validation_height", GetBackgroundValidationHeight());
+    root.pushKV("background_validation_target", GetBackgroundValidationTargetHeight());
+    root.pushKV("assumeutxo_validated", IsAssumeUtxoValidated());
+    root.pushKV("assumeutxo_failed", IsAssumeUtxoFailed());
+    root.pushKV("phase", "C1-background-validation");
     return root;
+}
+
+UniValue stepbackgroundvalidation(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() > 1)
+        throw runtime_error(
+            "stepbackgroundvalidation ( nblocks )\n"
+            "\nManually advance AssumeUTXO Phase C background validation by connecting up to\n"
+            "nblocks (default 100) from the parked IBD chainstate toward the snapshot base.\n"
+            "Normally this also runs automatically after ActivateBestChain.\n"
+            "On mismatch the node fail-closes (shutdown).\n"
+            "\nArguments:\n"
+            "1. nblocks    (numeric, optional, default=100) Max blocks to connect this call\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"blocks_connected\": n,\n"
+            "  \"status\": \"running|waiting_blocks|completed|failed|none\",\n"
+            "  \"height\": n,\n"
+            "  \"target\": n,\n"
+            "  \"assumeutxo_validated\": true|false\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("stepbackgroundvalidation", "50")
+            + HelpExampleRpc("stepbackgroundvalidation", "50")
+        );
+
+    if (!IsSnapshotChainstateActive()) {
+        throw JSONRPCError(RPC_MISC_ERROR, "Snapshot chainstate is not active; activate a snapshot first");
+    }
+
+    int nblocks = 100;
+    if (request.params.size() > 0 && !request.params[0].isNull())
+        nblocks = request.params[0].get_int();
+    if (nblocks < 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "nblocks must be non-negative");
+    if (nblocks > 10000)
+        nblocks = 10000;
+
+    std::string error;
+    int connected = StepBackgroundValidation(Params(), nblocks, error);
+
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("blocks_connected", connected);
+    result.pushKV("status", BackgroundValidationStatusString());
+    result.pushKV("height", GetBackgroundValidationHeight());
+    result.pushKV("target", GetBackgroundValidationTargetHeight());
+    result.pushKV("assumeutxo_validated", IsAssumeUtxoValidated());
+    result.pushKV("assumeutxo_failed", IsAssumeUtxoFailed());
+    if (!error.empty())
+        result.pushKV("message", error);
+    return result;
 }
 
 static const CRPCCommand commands[] =
@@ -2193,6 +2248,7 @@ static const CRPCCommand commands[] =
     { "blockchain",         "dumptxoutset",           &dumptxoutset,           true,  {"path"} },
     { "blockchain",         "loadtxoutset",           &loadtxoutset,           true,  {"path","activate"} },
     { "blockchain",         "activatesnapshot",       &activatesnapshot,       true,  {} },
+    { "blockchain",         "stepbackgroundvalidation", &stepbackgroundvalidation, true, {"nblocks"} },
     { "blockchain",         "getblockstats",          &getblockstats,          true,  {"hash", "stats"} },
     { "blockchain",         "getbestblockhash",       &getbestblockhash,       true,  {} },
     { "blockchain",         "getblockcount",          &getblockcount,          true,  {} },

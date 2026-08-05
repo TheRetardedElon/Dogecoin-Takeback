@@ -21,6 +21,13 @@ class CChainState;
 class CCoinsView;
 
 /**
+ * Hash the UTXO set the same way gettxoutsetinfo's hash_serialized does
+ * (hashBlock + per-tx outpoints). Used to prove background validation matches
+ * the assumed snapshot (Phase C).
+ */
+bool ComputeCoinsHashSerialized(CCoinsView* view, uint256& hash_out, std::string& error);
+
+/**
  * Dogecoin 1.14 AssumeUTXO snapshot format (Phase B).
  *
  * Wire layout (SER_DISK):

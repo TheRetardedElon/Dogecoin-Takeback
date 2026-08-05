@@ -41,6 +41,7 @@
 #include "versionbits.h"
 #include "warnings.h"
 #include "ibdstats.h"
+#include "node/chainstate.h"
 
 #include <atomic>
 #include <sstream>
@@ -2657,6 +2658,10 @@ bool ActivateBestChain(CValidationState &state, const CChainParams& chainparams,
     if (!FlushStateToDisk(state, FLUSH_STATE_PERIODIC)) {
         return false;
     }
+
+    // AssumeUTXO Phase C: while a snapshot is active, continue validating
+    // history on the parked IBD chainstate toward the snapshot base height.
+    MaybeStepBackgroundValidation(chainparams, /*max_blocks=*/32);
 
     return true;
 }

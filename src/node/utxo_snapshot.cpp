@@ -6,11 +6,13 @@
 
 #include "chainparams.h"
 #include "coins.h"
+#include "hash.h"
 #include "node/chainstate.h"
 #include "streams.h"
 #include "txdb.h"
 #include "util.h"
 #include "validation.h"
+#include "version.h"
 
 #include <boost/thread.hpp>
 
@@ -34,6 +36,46 @@ SnapshotMetadata::SnapshotMetadata(const CMessageHeader::MessageStartChars& netw
     : base_blockhash(baseBlockhashIn), coins_count(coinsCountIn)
 {
     memcpy(network_magic, networkMagicIn, CMessageHeader::MESSAGE_START_SIZE);
+}
+
+bool ComputeCoinsHashSerialized(CCoinsView* view, uint256& hash_out, std::string& error)
+{
+    hash_out.SetNull();
+    error.clear();
+    if (!view) {
+        error = "No coins view";
+        return false;
+    }
+    std::unique_ptr<CCoinsViewCursor> pcursor(view->Cursor());
+    if (!pcursor) {
+        error = "Unable to open coins cursor for hash";
+        return false;
+    }
+
+    CHashWriter ss(SER_GETHASH, PROTOCOL_VERSION);
+    const uint256 hashBlock = pcursor->GetBestBlock();
+    ss << hashBlock;
+    while (pcursor->Valid()) {
+        boost::this_thread::interruption_point();
+        uint256 key;
+        CCoins coins;
+        if (!pcursor->GetKey(key) || !pcursor->GetValue(coins)) {
+            error = "Unable to read coins while hashing UTXO set";
+            return false;
+        }
+        ss << key;
+        for (unsigned int i = 0; i < coins.vout.size(); i++) {
+            const CTxOut& out = coins.vout[i];
+            if (!out.IsNull()) {
+                ss << VARINT(i + 1);
+                ss << out;
+            }
+        }
+        ss << VARINT(0);
+        pcursor->Next();
+    }
+    hash_out = ss.GetHash();
+    return true;
 }
 
 static bool CountCoins(CCoinsView* view, uint64_t& count, std::string& error)
@@ -291,6 +333,25 @@ bool LoadUTXOSnapshot(const fs::path& path,
     }
 
     bg.SetSnapshotInfo(metadata.base_blockhash, loaded);
+
+    // Phase C: freeze expected UTXO hash of the assumed set at load time
+    // (before activation mutates active coins above H).
+    {
+        uint256 coins_hash;
+        std::string hash_err;
+        if (!cache->Flush()) {
+            error = "Failed to flush before hashing snapshot coins";
+            bg.ResetCoinsDB();
+            return false;
+        }
+        if (!ComputeCoinsHashSerialized(cache, coins_hash, hash_err)) {
+            error = strprintf("Failed to hash loaded snapshot coins: %s", hash_err);
+            bg.ResetCoinsDB();
+            return false;
+        }
+        bg.SetSnapshotCoinsHash(coins_hash);
+        LogPrintf("UTXO snapshot: coins hash_serialized=%s\n", coins_hash.ToString());
+    }
 
     coins_loaded = loaded;
     LogPrintf("UTXO snapshot: loaded %llu coins base=%s height=%d from %s into background chainstate\n",
