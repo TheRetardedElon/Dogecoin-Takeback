@@ -172,11 +172,31 @@ Process-global, not per-peer (keeps `CNode` / wire protocol clean).
 7. **`getibdinfo`** — prune / dbcache budget / size_on_disk / ibd_rescue fields.  
 8. **`-debug=ibd`** listed in help categories.
 
+### P0.2 ASMAP (implemented)
+
+Full Bitcoin-compatible **ASMap** peer bucketing:
+
+- Load with `-asmap` or `-asmap=/path/to/ip_asn.map` (default file: `<datadir>/ip_asn.map`)
+- Maps from [bitcoin-core/asmap-data](https://github.com/bitcoin-core/asmap-data) work as-is
+- When loaded, `CNetAddr::GetGroup()` returns ASN buckets → addrman + outbound diversity use ISP/operator, not just /16
+- `getnetworkinfo` exposes `asmap` + `asmap_bits`
+- Off by default (no map required for normal operation)
+
+```bash
+# Example: place map then enable
+# cp ip_asn.map ~/.dogecoin/
+dogecoind -asmap
+# or
+dogecoind -asmap=/absolute/path/ip_asn.map
+dogecoin-cli getnetworkinfo   # "asmap": true
+```
+
 ### Later
 
 1. Adaptive `MAX_BLOCKS_IN_TRANSIT_PER_PEER` under high RTT (data-driven).  
-2. Full **ASMAP** ASN maps (replaces /8 soft preference).  
-3. Design doc for AssumeUTXO **after** multi-node IBD telemetry samples.
+2. Embed or ship a default asmap artifact with releases.  
+3. Design doc for AssumeUTXO **after** multi-node IBD telemetry samples.  
+4. BIP 324, compact filters, Erlay.
 
 ## 6. Test plan
 

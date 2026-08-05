@@ -8,6 +8,7 @@
 #include "chainparams.h"
 #include "clientversion.h"
 #include "validation.h"
+#include "asmap.h"
 #include "net.h"
 #include "net_processing.h"
 #include "netbase.h"
@@ -458,6 +459,8 @@ UniValue getnetworkinfo(const JSONRPCRequest& request)
             "  \"timeoffset\": xxxxx,                   (numeric) the time offset\n"
             "  \"connections\": xxxxx,                  (numeric) the number of connections\n"
             "  \"networkactive\": true|false,           (bool) whether p2p networking is enabled\n"
+            "  \"asmap\": true|false,                   (bool) whether ASN peer bucketing (-asmap) is active\n"
+            "  \"asmap_bits\": n,                       (numeric) loaded asmap size in bits (0 if disabled)\n"
             "  \"networks\": [                          (array) information per network\n"
             "  {\n"
             "    \"name\": \"xxx\",                     (string) network (ipv4, ipv6 or onion)\n"
@@ -500,6 +503,8 @@ UniValue getnetworkinfo(const JSONRPCRequest& request)
         obj.pushKV("networkactive", g_connman->GetNetworkActive());
         obj.pushKV("connections",   (int)g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL));
     }
+    obj.pushKV("asmap", IsAsmapEnabled());
+    obj.pushKV("asmap_bits", (uint64_t)GetAsmapSize());
     obj.pushKV("networks",      GetNetworksInfo());
     obj.pushKV("relayfee",      ValueFromAmount(::minRelayTxFeeRate.GetFeePerK()));
     obj.pushKV("incrementalfee", ValueFromAmount(::incrementalRelayFee.GetFeePerK()));

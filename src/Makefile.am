@@ -79,6 +79,7 @@ DOGECOIN_CORE_H = \
   addrdb.h \
   addrman.h \
   attributes.h \
+  asmap.h \
   auxpow.h \
   base58.h \
   bloom.h \
@@ -341,6 +342,7 @@ libdogecoin_common_a_SOURCES = \
   compressor.cpp \
   core_read.cpp \
   core_write.cpp \
+  asmap.cpp \
   key.cpp \
   keystore.cpp \
   netaddress.cpp \

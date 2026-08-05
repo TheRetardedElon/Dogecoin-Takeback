@@ -4,6 +4,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "asmap.h"
+
 #ifdef HAVE_CONFIG_H
 #include "config/dogecoin-config.h"
 #endif
@@ -300,6 +302,18 @@ bool CNetAddr::GetIn6Addr(struct in6_addr* pipv6Addr) const
 // no two connections will be attempted to addresses with the same group
 std::vector<unsigned char> CNetAddr::GetGroup() const
 {
+    // Prefer ASN-based groups when -asmap is loaded (Bitcoin-compatible ASMap).
+    // IPv4 and IPv6 under the same ASN share a bucket for better eclipse resistance.
+    const uint32_t asn = GetMappedAS(*this);
+    if (asn != 0) {
+        std::vector<unsigned char> vchRet;
+        vchRet.push_back(NET_IPV6);
+        for (int i = 0; i < 4; i++) {
+            vchRet.push_back((asn >> (8 * i)) & 0xFF);
+        }
+        return vchRet;
+    }
+
     std::vector<unsigned char> vchRet;
     int nClass = NET_IPV6;
     int nStartByte = 0;

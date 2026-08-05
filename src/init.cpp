@@ -12,6 +12,7 @@
 
 #include "addrman.h"
 #include "amount.h"
+#include "asmap.h"
 #include "chain.h"
 #include "chainparams.h"
 #include "checkpoints.h"
@@ -369,6 +370,9 @@ std::string HelpMessage(HelpMessageMode mode)
 
     strUsage += HelpMessageGroup(_("Connection options:"));
     strUsage += HelpMessageOpt("-addnode=<ip>", _("Add a node to connect to and attempt to keep the connection open"));
+    strUsage += HelpMessageOpt("-asmap=<file>", _("Use autonomous system (AS) mapping for peer bucketing (ip_asn.map). "
+            "Improves eclipse resistance vs /16 IP groups. Default path: <datadir>/ip_asn.map when -asmap is set without a path. "
+            "Compatible with Bitcoin Core asmap files (see https://github.com/bitcoin-core/asmap-data). Off by default."));
     strUsage += HelpMessageOpt("-banscore=<n>", strprintf(_("Threshold for disconnecting misbehaving peers (default: %u)"), DEFAULT_BANSCORE_THRESHOLD));
     strUsage += HelpMessageOpt("-bantime=<n>", strprintf(_("Number of seconds to keep misbehaving peers from reconnecting (default: %u)"), DEFAULT_MISBEHAVING_BANTIME));
     strUsage += HelpMessageOpt("-bind=<addr>", _("Bind to given address and always listen on it. Use [host]:port notation for IPv6"));
@@ -1279,6 +1283,22 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
         return false;
 #endif
     // ********************************************************* Step 6: network initialization
+
+    // Optional ASMap for ASN-based peer bucketing (before connman starts using GetGroup).
+    if (IsArgSet("-asmap")) {
+        fs::path asmap_path = GetArg("-asmap", "");
+        if (asmap_path.empty() || asmap_path == "1" || asmap_path == "true") {
+            asmap_path = GetDataDir() / "ip_asn.map";
+        }
+        std::vector<bool> asmap = DecodeAsmap(asmap_path.string());
+        if (asmap.empty()) {
+            return InitError(strprintf(_("Could not parse or find asmap file \"%s\""), asmap_path.string()));
+        }
+        SetAsmap(std::move(asmap));
+        LogPrintf("ASMap enabled (%u bits) from %s — peer GetGroup() uses ASN when available\n",
+                  (unsigned)GetAsmapSize(), asmap_path.string());
+    }
+
     // Note that we absolutely cannot open any actual connections
     // until the very end ("start node") as the UTXO/block state
     // is not yet setup and may end up being set up twice if we
