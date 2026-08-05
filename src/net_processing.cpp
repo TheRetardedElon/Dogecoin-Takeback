@@ -644,6 +644,12 @@ bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats) {
     return true;
 }
 
+/** Max blocks to request from one peer (higher pipeline during IBD). Requires cs_main only if calling IBD. */
+static int MaxBlocksInTransitPerPeer()
+{
+    return IsInitialBlockDownload() ? MAX_BLOCKS_IN_TRANSIT_PER_PEER_IBD : MAX_BLOCKS_IN_TRANSIT_PER_PEER;
+}
+
 /**
  * During IBD, preferred (outbound) peers normally monopolize block download.
  * If they are stalling the window or fully saturated, allow non-preferred peers
@@ -669,7 +675,7 @@ static bool PreferredDownloadersNeedRescue()
             continue;
         if (st.nStallingSince != 0)
             anyPreferredStalling = true;
-        if (st.nBlocksInFlight < MAX_BLOCKS_IN_TRANSIT_PER_PEER)
+        if (st.nBlocksInFlight < MaxBlocksInTransitPerPeer())
             nPreferredWithCapacity++;
     }
 
@@ -2261,7 +2267,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         // We want to be a bit conservative just to be extra careful about DoS
         // possibilities in compact block processing...
         if (pindex->nHeight <= chainActive.Height() + 2) {
-            if ((!fAlreadyInFlight && nodestate->nBlocksInFlight < MAX_BLOCKS_IN_TRANSIT_PER_PEER) ||
+            if ((!fAlreadyInFlight && nodestate->nBlocksInFlight < MaxBlocksInTransitPerPeer()) ||
                  (fAlreadyInFlight && blockInFlightIt->second.first == pfrom->GetId())) {
                 std::list<QueuedBlock>::iterator* queuedBlockIt = NULL;
                 if (!MarkBlockAsInFlight(pfrom->GetId(), pindex->GetBlockHash(), chainparams.GetConsensus(pindex->nHeight), pindex, &queuedBlockIt)) {
@@ -2549,7 +2555,8 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             std::vector<const CBlockIndex*> vToFetch;
             const CBlockIndex *pindexWalk = pindexLast;
             // Calculate all the blocks we'd need to switch to pindexLast, up to a limit.
-            while (pindexWalk && !chainActive.Contains(pindexWalk) && vToFetch.size() <= MAX_BLOCKS_IN_TRANSIT_PER_PEER) {
+            const int nMaxInTransit = MaxBlocksInTransitPerPeer();
+            while (pindexWalk && !chainActive.Contains(pindexWalk) && (int)vToFetch.size() <= nMaxInTransit) {
                 if (!(pindexWalk->nStatus & BLOCK_HAVE_DATA) &&
                         !mapBlocksInFlight.count(pindexWalk->GetBlockHash()) &&
                         (!IsWitnessEnabled(pindexWalk->pprev, chainparams.GetConsensus(pindexWalk->pprev->nHeight)) || State(pfrom->GetId())->fHaveWitness)) {
@@ -2570,7 +2577,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                 std::vector<CInv> vGetData;
                 // Download as much as possible, from earliest to latest.
                 BOOST_REVERSE_FOREACH(const CBlockIndex *pindex, vToFetch) {
-                    if (nodestate->nBlocksInFlight >= MAX_BLOCKS_IN_TRANSIT_PER_PEER) {
+                    if (nodestate->nBlocksInFlight >= nMaxInTransit) {
                         // Can't download any more from this peer
                         break;
                     }
@@ -3116,8 +3123,10 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
             pindexBestHeader = chainActive.Tip();
         bool fFetch = state.fPreferredDownload || (nPreferredDownload == 0 && !pto->fClient && !pto->fOneShot); // Download if this is a nice peer, or we have no nice peers and this one might do.
         if (!state.fSyncStarted && !pto->fClient && !fImporting && !fReindex) {
-            // Only actively request headers from a single peer, unless we're close to today.
-            if ((nSyncStarted == 0 && fFetch) || pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60) {
+            // Headers sync: near tip, any peer; during IBD allow several preferred peers so one
+            // slow header source cannot stall the entire node.
+            const int nMaxHeaderSync = IsInitialBlockDownload() ? MAX_HEADER_SYNC_PEERS_IBD : 1;
+            if ((nSyncStarted < nMaxHeaderSync && fFetch) || pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60) {
                 state.fSyncStarted = true;
                 state.nHeadersSyncTimeout = GetTimeMicros() + HEADERS_DOWNLOAD_TIMEOUT_BASE + HEADERS_DOWNLOAD_TIMEOUT_PER_HEADER * (GetAdjustedTime() - pindexBestHeader->GetBlockTime())/(consensusParams.nPowTargetSpacing);
                 nSyncStarted++;
@@ -3456,12 +3465,10 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
         if (state.fSyncStarted && state.nHeadersSyncTimeout < std::numeric_limits<int64_t>::max()) {
             // Detect whether this is a stalling initial-headers-sync peer
             if (pindexBestHeader->GetBlockTime() <= GetAdjustedTime() - 24*60*60) {
-                if (nNow > state.nHeadersSyncTimeout && nSyncStarted == 1 && (nPreferredDownload - state.fPreferredDownload >= 1)) {
-                    // Disconnect a (non-whitelisted) peer if it is our only sync peer,
-                    // and we have others we could be using instead.
-                    // Note: If all our peers are inbound, then we won't
-                    // disconnect our sync peer for stalling; we have bigger
-                    // problems if we can't get any outbound peers.
+                // Disconnect / rotate if this header peer stalled and alternatives exist
+                // (other preferred peers, or other concurrent header-sync peers during IBD).
+                const bool fHaveAlternative = (nPreferredDownload - state.fPreferredDownload >= 1) || (nSyncStarted > 1);
+                if (nNow > state.nHeadersSyncTimeout && fHaveAlternative) {
                     if (!pto->fWhitelisted) {
                         LogPrintf("Timeout downloading headers from peer=%d, disconnecting\n", pto->GetId());
                         IBDStats::NoteHeadersTimeout(pto->GetId());
@@ -3499,10 +3506,11 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
             fCanDownloadBlocks = true;
             fRescueThisPeer = true;
         }
-        if (!pto->fClient && fCanDownloadBlocks && state.nBlocksInFlight < MAX_BLOCKS_IN_TRANSIT_PER_PEER) {
+        const int nMaxInTransit = MaxBlocksInTransitPerPeer();
+        if (!pto->fClient && fCanDownloadBlocks && state.nBlocksInFlight < nMaxInTransit) {
             std::vector<const CBlockIndex*> vToDownload;
             NodeId staller = -1;
-            FindNextBlocksToDownload(pto->GetId(), MAX_BLOCKS_IN_TRANSIT_PER_PEER - state.nBlocksInFlight, vToDownload, staller, consensusParams);
+            FindNextBlocksToDownload(pto->GetId(), nMaxInTransit - state.nBlocksInFlight, vToDownload, staller, consensusParams);
             if (!vToDownload.empty() && fRescueThisPeer)
                 IBDStats::NoteIbdRescueFetch(pto->id);
             BOOST_FOREACH(const CBlockIndex *pindex, vToDownload) {

@@ -191,12 +191,17 @@ dogecoind -asmap=/absolute/path/ip_asn.map
 dogecoin-cli getnetworkinfo   # "asmap": true
 ```
 
+### P0.3 IBD download parallelism (implemented)
+
+- During IBD: up to **32** blocks in flight per peer (16 near tip)
+- During IBD: up to **3** preferred peers concurrent **headers** sync (1 near tip)
+- Header stall rotation works with multiple header-sync peers
+
 ### Later
 
-1. Adaptive `MAX_BLOCKS_IN_TRANSIT_PER_PEER` under high RTT (data-driven).  
-2. Embed or ship a default asmap artifact with releases.  
-3. Design doc for AssumeUTXO **after** multi-node IBD telemetry samples.  
-4. BIP 324, compact filters, Erlay.
+1. Embed or ship a default asmap artifact with releases.  
+2. **AssumeUTXO** — see `doc/assumeutxo-dogecoin-1.14.md`  
+3. BIP 324, compact filters, Erlay.
 
 ## 6. Test plan
 
