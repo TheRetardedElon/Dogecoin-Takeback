@@ -1908,6 +1908,7 @@ UniValue getibdinfo(const JSONRPCRequest& request)
         obj.pushKV("active_chainstate_height", ActiveChainstate().Height());
     }
     obj.pushKV("background_present", HasBackgroundChainstate());
+    obj.pushKV("snapshot_active", IsSnapshotChainstateActive());
     if (HasBackgroundChainstate() && BackgroundChainstate()) {
         obj.pushKV("background_chainstate", BackgroundChainstate()->GetName());
         obj.pushKV("background_idle", BackgroundChainstate()->IsIdle());
@@ -1917,6 +1918,10 @@ UniValue getibdinfo(const JSONRPCRequest& request)
             obj.pushKV("snapshot_basehash", BackgroundChainstate()->SnapshotBaseHash().GetHex());
             obj.pushKV("snapshot_coins", (uint64_t)BackgroundChainstate()->SnapshotCoinsCount());
         }
+    }
+    if (IsSnapshotChainstateActive() && ActiveChainstate().HasSnapshot()) {
+        obj.pushKV("snapshot_basehash", ActiveChainstate().SnapshotBaseHash().GetHex());
+        obj.pushKV("snapshot_coins", (uint64_t)ActiveChainstate().SnapshotCoinsCount());
     }
     obj.pushKV("stats", IBDStats::ToUniValue(IBDStats::GetSnapshot()));
     return obj;
@@ -1940,6 +1945,24 @@ static UniValue ChainstateToJSON(CChainState& cs)
         o.pushKV("snapshot_coins", (uint64_t)cs.SnapshotCoinsCount());
     }
     return o;
+}
+
+static bool MaybeActivateSnapshot(bool activate, UniValue& result, std::string& error)
+{
+    if (!activate) {
+        result.pushKV("active_swapped", false);
+        return true;
+    }
+    if (!ActivateLoadedSnapshot(error)) {
+        return false;
+    }
+    result.pushKV("active_swapped", true);
+    result.pushKV("active_chainstate", ActiveChainstate().GetName());
+    result.pushKV("active_height", ActiveChainstate().Height());
+    if (ActiveChainstate().Tip()) {
+        result.pushKV("active_bestblockhash", ActiveChainstate().Tip()->GetBlockHash().GetHex());
+    }
+    return true;
 }
 
 UniValue dumptxoutset(const JSONRPCRequest& request)
@@ -2006,26 +2029,29 @@ UniValue dumptxoutset(const JSONRPCRequest& request)
 
 UniValue loadtxoutset(const JSONRPCRequest& request)
 {
-    if (request.fHelp || request.params.size() != 1)
+    if (request.fHelp || request.params.size() < 1 || request.params.size() > 2)
         throw runtime_error(
-            "loadtxoutset \"path\"\n"
-            "\nLoad a serialized UTXO snapshot into the background chainstate (AssumeUTXO Phase B1).\n"
-            "Coins are stored under chainstate_snapshot/ and do not replace the active tip yet.\n"
-            "Background validation (Phase C) and active promotion are not implemented.\n"
+            "loadtxoutset \"path\" ( activate )\n"
+            "\nLoad a serialized UTXO snapshot into the background chainstate (AssumeUTXO Phase B).\n"
+            "Coins are stored under chainstate_snapshot/.\n"
+            "With activate=true (or after activatesnapshot), the snapshot becomes the active tip\n"
+            "(Phase B2). Requires -assumeutxodev=1 except on regtest. No Phase C validation yet.\n"
             "Relative paths are under the datadir.\n"
             "\nArguments:\n"
-            "1. \"path\"    (string, required) Path to the snapshot file\n"
+            "1. \"path\"      (string, required) Path to the snapshot file\n"
+            "2. activate    (boolean, optional, default=false) Promote to active tip after load\n"
             "\nResult:\n"
             "{\n"
             "  \"coins_loaded\": n,\n"
             "  \"tip_hash\": \"hex\",\n"
             "  \"base_height\": n,   (or -1 if base block not in index)\n"
             "  \"path\": \"...\",\n"
-            "  \"active_swapped\": false\n"
+            "  \"active_swapped\": true|false\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("loadtxoutset", "utxo.dat")
-            + HelpExampleRpc("loadtxoutset", "\"utxo.dat\"")
+            + HelpExampleCli("loadtxoutset", "utxo.dat true")
+            + HelpExampleRpc("loadtxoutset", "\"utxo.dat\", true")
         );
 
     fs::path path = request.params[0].get_str();
@@ -2041,6 +2067,10 @@ UniValue loadtxoutset(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Background chainstate not initialized");
     }
 
+    bool activate = false;
+    if (request.params.size() > 1 && !request.params[1].isNull())
+        activate = request.params[1].get_bool();
+
     uint64_t coins_loaded = 0;
     uint256 base_hash;
     int base_height = -1;
@@ -2054,7 +2084,48 @@ UniValue loadtxoutset(const JSONRPCRequest& request)
     result.pushKV("tip_hash", base_hash.GetHex());
     result.pushKV("base_height", base_height);
     result.pushKV("path", path.string());
-    result.pushKV("active_swapped", false);
+    if (!MaybeActivateSnapshot(activate, result, error)) {
+        // Load succeeded but activation failed — report load + error.
+        result.pushKV("active_swapped", false);
+        result.pushKV("activate_error", error);
+        throw JSONRPCError(RPC_MISC_ERROR, error);
+    }
+    return result;
+}
+
+UniValue activatesnapshot(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+        throw runtime_error(
+            "activatesnapshot\n"
+            "\nPromote a previously loaded UTXO snapshot (loadtxoutset) to the active tip.\n"
+            "AssumeUTXO Phase B2 (dev): wallet and chainActive use the snapshot tip; former IBD\n"
+            "tip is parked on the background chainstate. No background validation (Phase C).\n"
+            "Requires -assumeutxodev=1 (always allowed on regtest).\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"active_swapped\": true,\n"
+            "  \"active_chainstate\": \"snapshot\",\n"
+            "  \"active_height\": n,\n"
+            "  \"active_bestblockhash\": \"hex\"\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("activatesnapshot", "")
+            + HelpExampleRpc("activatesnapshot", "")
+        );
+
+    if (IsSnapshotChainstateActive()) {
+        throw JSONRPCError(RPC_MISC_ERROR, "Snapshot chainstate is already active");
+    }
+    if (!HasBackgroundChainstate() || !BackgroundChainstate() || !BackgroundChainstate()->HasSnapshot()) {
+        throw JSONRPCError(RPC_MISC_ERROR, "No loaded snapshot; call loadtxoutset first");
+    }
+
+    UniValue result(UniValue::VOBJ);
+    std::string error;
+    if (!MaybeActivateSnapshot(true, result, error)) {
+        throw JSONRPCError(RPC_MISC_ERROR, error);
+    }
     return result;
 }
 
@@ -2064,12 +2135,12 @@ UniValue getchainstates(const JSONRPCRequest& request)
         throw runtime_error(
             "getchainstates\n"
             "\nReturn information about chainstate(s).\n"
-            "AssumeUTXO Phase B1: active \"ibd\" wraps the tip; \"background\" may hold a loaded\n"
-            "UTXO snapshot (coins in chainstate_snapshot/) without replacing the active tip.\n"
+            "AssumeUTXO Phase B2: active may be \"ibd\" or \"snapshot\"; background holds the other\n"
+            "role (loaded snapshot waiting for activatesnapshot, or parked IBD after activation).\n"
             "\nResult:\n"
             "{\n"
             "  \"chainstates\": [ {\n"
-            "    \"name\": \"ibd\"|\"background\",\n"
+            "    \"name\": \"ibd\"|\"background\"|\"snapshot\",\n"
             "    \"blocks\": n,\n"
             "    \"bestblockhash\": \"...\",\n"
             "    \"coins_cache_bytes\": n,\n"
@@ -2079,8 +2150,9 @@ UniValue getchainstates(const JSONRPCRequest& request)
             "    \"has_snapshot\": true|false\n"
             "  }, ... ],\n"
             "  \"background_present\": true,\n"
+            "  \"snapshot_active\": true|false,\n"
             "  \"assumeutxo_enabled\": true|false,\n"
-            "  \"phase\": \"B1-snapshot-dump-load\"\n"
+            "  \"phase\": \"B2-snapshot-activate\"\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getchainstates", "")
@@ -2100,11 +2172,15 @@ UniValue getchainstates(const JSONRPCRequest& request)
         arr.push_back(ChainstateToJSON(*BackgroundChainstate()));
         snapshot_loaded = BackgroundChainstate()->HasSnapshot();
     }
+    if (IsSnapshotChainstateActive() && ActiveChainstate().HasSnapshot()) {
+        snapshot_loaded = true;
+    }
 
     root.pushKV("chainstates", arr);
     root.pushKV("background_present", HasBackgroundChainstate());
-    root.pushKV("assumeutxo_enabled", snapshot_loaded);
-    root.pushKV("phase", "B1-snapshot-dump-load");
+    root.pushKV("snapshot_active", IsSnapshotChainstateActive());
+    root.pushKV("assumeutxo_enabled", snapshot_loaded || IsSnapshotChainstateActive());
+    root.pushKV("phase", "B2-snapshot-activate");
     return root;
 }
 
@@ -2115,7 +2191,8 @@ static const CRPCCommand commands[] =
     { "blockchain",         "getibdinfo",             &getibdinfo,             true,  {} },
     { "blockchain",         "getchainstates",         &getchainstates,         true,  {} },
     { "blockchain",         "dumptxoutset",           &dumptxoutset,           true,  {"path"} },
-    { "blockchain",         "loadtxoutset",           &loadtxoutset,           true,  {"path"} },
+    { "blockchain",         "loadtxoutset",           &loadtxoutset,           true,  {"path","activate"} },
+    { "blockchain",         "activatesnapshot",       &activatesnapshot,       true,  {} },
     { "blockchain",         "getblockstats",          &getblockstats,          true,  {"hash", "stats"} },
     { "blockchain",         "getbestblockhash",       &getbestblockhash,       true,  {} },
     { "blockchain",         "getblockcount",          &getblockcount,          true,  {} },

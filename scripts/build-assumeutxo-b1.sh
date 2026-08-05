@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Compile AssumeUTXO Phase B1 (utxo_snapshot + chainstate + RPCs) into dogecoind.exe
+# Compile AssumeUTXO Phase B1/B2 (utxo_snapshot + chainstate + RPCs) into dogecoind.exe
 set -euo pipefail
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 BUILD=/home/theretardedelon/dogedev-winbuild
@@ -12,7 +12,6 @@ cp -f "$SRC/src/node/utxo_snapshot.cpp" "$SRC/src/node/utxo_snapshot.h" node/
 cp -f "$SRC/src/init.cpp" .
 cp -f "$SRC/src/rpc/blockchain.cpp" rpc/
 cp -f "$SRC/src/txdb.cpp" "$SRC/src/txdb.h" .
-# Makefile.am change needs dependency — compile utxo_snapshot by hand if not in Makefile yet
 if ! grep -q 'utxo_snapshot.cpp' Makefile 2>/dev/null; then
   echo "Note: Makefile may not list utxo_snapshot yet; compiling object manually"
 fi
@@ -42,6 +41,6 @@ x86_64-w64-mingw32-ranlib libdogecoin_server.a
 rm -f dogecoind.exe
 make dogecoind.exe
 echo "=== strings ==="
-x86_64-w64-mingw32-strings dogecoind.exe | grep -E 'dumptxoutset|loadtxoutset|B1-snapshot|getchainstates' | head -20
+x86_64-w64-mingw32-strings dogecoind.exe | grep -E 'dumptxoutset|loadtxoutset|activatesnapshot|B2-snapshot|assumeutxodev|getchainstates' | head -25
 file dogecoind.exe
-echo ASSUMEUTXO_B1_OK
+echo ASSUMEUTXO_B2_OK

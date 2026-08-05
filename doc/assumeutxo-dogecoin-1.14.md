@@ -1,6 +1,6 @@
 # AssumeUTXO for Dogecoin Core (1.14 DNA) — Design
 
-**Status:** design + **Phase B1 in progress**  
+**Status:** design + **Phase B2 done (dev activation)**  
 **Depends on:** P0/P0.1 IBD telemetry, ASMAP, healthy single-chainstate  
 **Consensus impact:** none if done like Bitcoin (background full validation to the assume height)
 
@@ -11,8 +11,8 @@
 | **A1** Active chainstate wrapper | **Done** | `src/node/chainstate.*`, `InitializeActiveChainstate()`, `getchainstates`, `getibdinfo` fields |
 | **A2** Migrate hot paths to ActiveChain*() | **Done** | blockchain + mining RPCs, clientmodel; lazy init; TestingSetup hook |
 | **A3** Dual CChainState storage (no snapshot yet) | **Done** | idle `background` owns empty `CChain`; no coins DB; `getchainstates` lists both |
-| **B1** Snapshot file format + dump/load | **Done** | `node/utxo_snapshot.*`, `dumptxoutset` / `loadtxoutset`; loads into `chainstate_snapshot/` on background; **does not** swap active tip |
-| B2 Activate snapshot as tip (dev) | Pending | make wallet/net use snapshot tip without full Phase C |
+| **B1** Snapshot file format + dump/load | **Done** | `node/utxo_snapshot.*`, `dumptxoutset` / `loadtxoutset`; loads into `chainstate_snapshot/` on background |
+| **B2** Activate snapshot as tip (dev) | **Done** | `activatesnapshot` / `loadtxoutset … true`; `-assumeutxodev`; mirrors `chainActive`/`pcoinsTip`; parks IBD on background |
 | C Background validation | Pending | |
 
 ## 1. Goal
@@ -84,10 +84,11 @@ Suggested structure (names illustrative):
 | `src/node/utxo_snapshot.h/.cpp` | **B1 done:** metadata + write/load |
 | RPC `dumptxoutset` / `loadtxoutset` | **B1 done:** dump active tip; load into background |
 | `chainstate_snapshot/` LevelDB | **B1 done:** separate from live `chainstate/` |
-| `chainparams` AssumeutxoData | Pending (B2/C — hardcoded trusted height/hash) |
+| `chainparams` AssumeutxoData | Pending (Phase C — hardcoded trusted height/hash) |
+| `activatesnapshot` / `-assumeutxodev` | **B2 done:** promote loaded snapshot to active tip (dev) |
 
 **B1 exit criteria (met):** dump + load round-trip; background reports `has_snapshot`; active tip unchanged.  
-**B full exit criteria (remaining):** load snapshot on regtest; **activate** tip at H so wallet sees UTXOs; **without** background validation yet (dev-only flag).
+**B2 exit criteria (met):** with `-assumeutxodev` (or regtest), activate snapshot so `chainActive`/`pcoinsTip`/wallet tip = H; IBD tip parked; no Phase C yet.
 
 ### Phase C — Background validation
 
@@ -144,11 +145,10 @@ Suggested structure (names illustrative):
 
 ## 9. Suggested next engineering
 
-1. ~~Land P0.3 / Phase A~~  
-2. ~~B1 dump/load into background~~  
-3. **B2:** optional `-assumeutxodev` promote snapshot tip to active (wallet-usable)  
-4. **C:** background validation genesis→H + hash check  
-5. Hardcoded mainnet/testnet AssumeutxoData + signed snapshot artifacts  
+1. ~~Land P0.3 / Phase A / B1 / B2~~  
+2. **C:** background validation genesis→H + coins hash check; fail closed on mismatch  
+3. Hardcoded mainnet/testnet AssumeutxoData + signed snapshot artifacts  
+4. Product polish: GUI progress, prune rules, drop `-assumeutxodev` requirement for attested heights  
 
 ## 10. Success metric
 

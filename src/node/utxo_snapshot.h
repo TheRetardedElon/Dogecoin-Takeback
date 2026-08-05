@@ -114,10 +114,10 @@ bool WriteUTXOSnapshot(CCoinsView* view,
  *  - deserializes all CCoins
  *  - sets background tip if base hash is in mapBlockIndex
  *
- * Does not swap the active (wallet/net) chainstate. Phase C adds background validation
- * and promotion. Phase B exit for product "wallet at H" needs a later activation flag.
+ * Does not swap the active (wallet/net) chainstate. Call ActivateLoadedSnapshot()
+ * (RPC activatesnapshot / loadtxoutset activate=true) for Phase B2 tip promotion.
  *
- * Requires InitializeBackgroundChainstate() and cs_main held by caller for tip attach.
+ * Requires InitializeBackgroundChainstate().
  */
 bool LoadUTXOSnapshot(const fs::path& path,
                       uint64_t& coins_loaded,
