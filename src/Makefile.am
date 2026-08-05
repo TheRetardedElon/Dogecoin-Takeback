@@ -119,6 +119,7 @@ DOGECOIN_CORE_H = \
   miner.h \
   net.h \
   net_processing.h \
+  node/chainstate.h \
   netaddress.h \
   netbase.h \
   netmessagemaker.h \
@@ -210,6 +211,7 @@ libdogecoin_server_a_SOURCES = \
   miner.cpp \
   net.cpp \
   net_processing.cpp \
+  node/chainstate.cpp \
   noui.cpp \
   policy/fees.cpp \
   policy/policy.cpp \

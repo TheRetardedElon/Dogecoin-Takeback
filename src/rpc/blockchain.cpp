@@ -26,6 +26,7 @@
 #include "utilstrencodings.h"
 #include "hash.h"
 #include "ibdstats.h"
+#include "node/chainstate.h"
 
 #include <stdint.h>
 
@@ -1900,8 +1901,60 @@ UniValue getibdinfo(const JSONRPCRequest& request)
         obj.pushKV("prune_target_bytes", (uint64_t)nPruneTarget);
     }
     obj.pushKV("ibd_rescue", GetBoolArg("-ibdrescue", true));
+    if (IsActiveChainstateInitialized()) {
+        obj.pushKV("active_chainstate", ActiveChainstate().GetName());
+        obj.pushKV("active_chainstate_height", ActiveChainstate().Height());
+    }
     obj.pushKV("stats", IBDStats::ToUniValue(IBDStats::GetSnapshot()));
     return obj;
+}
+
+UniValue getchainstates(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+        throw runtime_error(
+            "getchainstates\n"
+            "\nReturn information about active chainstate(s).\n"
+            "Phase A of AssumeUTXO prep: only a single \"ibd\" chainstate exists,\n"
+            "wrapping the traditional chainActive / pcoinsTip globals.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"chainstates\": [ {\n"
+            "    \"name\": \"ibd\",\n"
+            "    \"blocks\": n,\n"
+            "    \"bestblockhash\": \"...\",\n"
+            "    \"bits_coins_cache\": n,\n"
+            "    \"active\": true\n"
+            "  }, ... ],\n"
+            "  \"assumeutxo_enabled\": false\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getchainstates", "")
+            + HelpExampleRpc("getchainstates", "")
+        );
+
+    LOCK(cs_main);
+
+    UniValue root(UniValue::VOBJ);
+    UniValue arr(UniValue::VARR);
+
+    if (IsActiveChainstateInitialized()) {
+        CChainState& cs = ActiveChainstate();
+        UniValue o(UniValue::VOBJ);
+        o.pushKV("name", cs.GetName());
+        o.pushKV("blocks", cs.Height());
+        if (cs.Tip())
+            o.pushKV("bestblockhash", cs.Tip()->GetBlockHash().GetHex());
+        if (cs.CoinsTip())
+            o.pushKV("coins_cache_bytes", (uint64_t)cs.CoinsTip()->DynamicMemoryUsage());
+        o.pushKV("active", true);
+        arr.push_back(o);
+    }
+
+    root.pushKV("chainstates", arr);
+    root.pushKV("assumeutxo_enabled", false);
+    root.pushKV("phase", "A1-single-wrapper");
+    return root;
 }
 
 static const CRPCCommand commands[] =
@@ -1909,6 +1962,7 @@ static const CRPCCommand commands[] =
   //  --------------------- ------------------------  -----------------------  ------ ----------
     { "blockchain",         "getblockchaininfo",      &getblockchaininfo,      true,  {} },
     { "blockchain",         "getibdinfo",             &getibdinfo,             true,  {} },
+    { "blockchain",         "getchainstates",         &getchainstates,         true,  {} },
     { "blockchain",         "getblockstats",          &getblockstats,          true,  {"hash", "stats"} },
     { "blockchain",         "getbestblockhash",       &getbestblockhash,       true,  {} },
     { "blockchain",         "getblockcount",          &getblockcount,          true,  {} },

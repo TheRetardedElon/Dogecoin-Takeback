@@ -1,8 +1,18 @@
 # AssumeUTXO for Dogecoin Core (1.14 DNA) — Design
 
-**Status:** design only (not implemented)  
+**Status:** design + **Phase A slice 1 in progress**  
 **Depends on:** P0/P0.1 IBD telemetry, ASMAP, healthy single-chainstate  
 **Consensus impact:** none if done like Bitcoin (background full validation to the assume height)
+
+### Implementation progress
+
+| Slice | Status | Notes |
+|-------|--------|--------|
+| **A1** Active chainstate wrapper | **Done** | `src/node/chainstate.*`, `InitializeActiveChainstate()`, `getchainstates`, `getibdinfo` fields |
+| A2 Migrate hot paths to ActiveChain*() | Pending | wallet / net_processing / more RPCs |
+| A3 Dual CChainState storage (no snapshot yet) | Pending | background chain object exists but idle |
+| B Snapshot load | Pending | |
+| C Background validation | Pending | |
 
 ## 1. Goal
 
@@ -45,12 +55,14 @@ Suggested structure (names illustrative):
 
 | New / changed | Role |
 |---------------|------|
-| `src/node/chainstate.h/.cpp` | Own `CChain`, coins tip, optional block index views |
-| `src/validation.cpp` | Move tip activation behind “active chainstate” pointer |
-| `src/init.cpp` | Construct manager; shutdown flush both |
-| Call sites | RPCs, wallet, net_processing use **active** chainstate |
+| `src/node/chainstate.h/.cpp` | **A1 done:** wraps `chainActive` / `pcoinsTip` as `CChainState` named `"ibd"` |
+| `src/validation.cpp` | Move tip activation behind “active chainstate” pointer (A2+) |
+| `src/init.cpp` | **A1:** `InitializeActiveChainstate()` after block index load |
+| Call sites | RPCs, wallet, net_processing use **active** chainstate (A2) |
+| RPC `getchainstates` | **A1 done:** reports single active chainstate |
 
-**Exit criteria:** single-chainstate behavior bit-identical; regtest + mainnet IBD green; no AssumeUTXO yet.
+**A1 exit criteria (met):** single-chainstate behavior bit-identical; accessors available; no AssumeUTXO yet.  
+**Phase A full exit:** dual storage + migration complete; still no snapshot.
 
 ### Phase B — Snapshot file format + load
 

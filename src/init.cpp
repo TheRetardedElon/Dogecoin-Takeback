@@ -14,6 +14,7 @@
 #include "amount.h"
 #include "asmap.h"
 #include "chain.h"
+#include "node/chainstate.h"
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "compat/sanity.h"
@@ -1624,6 +1625,10 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
             }
         }
     }
+
+    // AssumeUTXO Phase A: bind ActiveChainstate() to chainActive / pcoinsTip.
+    // Dual chainstate (snapshot + background) is not enabled yet.
+    InitializeActiveChainstate();
 
     // As LoadBlockIndex can take several minutes, it's possible the user
     // requested to kill the GUI during the last operation. If so, exit.
