@@ -11,21 +11,21 @@ graph TB
         DOGEAPP --> DOGETX["dogecoin-tx<br/>(Transaction Tool)"]
     end
 
-    %% GUI Layer
+    %% GUI Layer (Core Pro — names as of 1.14.101)
     subgraph "Qt GUI Layer"
-        QTMAIN["bitcoin.cpp<br/>(Main Qt App)"]
-        QTGUI["bitcoingui.h/cpp<br/>(Main Window)"]
+        QTMAIN["dogecoin.cpp<br/>(Main Qt App)"]
+        QTGUI["dogecoingui.h/cpp<br/>(Main Window)"]
         QTMODEL["clientmodel.h/cpp<br/>(Data Models)"]
         QTWALLET["walletmodel.h/cpp<br/>(Wallet Model)"]
         QTWALLETVIEW["walletview.h/cpp<br/>(Wallet View)"]
-        QTMODERN["modern*.h/cpp<br/>(Modern UI)"]
-        QTTHEMES["themes/<br/>(Theme System)"]
+        QTPRO["network / business / memestream / arcade"]
+        QTTHEMES["themes/ + ThemeManager"]
         
         QTMAIN --> QTGUI
         QTGUI --> QTMODEL
         QTGUI --> QTWALLET
         QTGUI --> QTWALLETVIEW
-        QTGUI --> QTMODERN
+        QTGUI --> QTPRO
         QTGUI --> QTTHEMES
     end
 
@@ -131,15 +131,19 @@ graph TB
         CRYPTO --> SCRIPT
     end
 
-    %% Storage Layer
+    %% Storage Layer (+ AssumeUTXO dual views)
     subgraph "Storage Layer"
-        LEVELDB["leveldb/<br/>(Database)"]
-        TXDB["txdb.h/cpp<br/>(Transaction DB)"]
-        COINS["coins.h/cpp<br/>(UTXO Set)"]
+        LEVELDB["leveldb/<br/>(KV engine)"]
+        TXDB["txdb.h/cpp<br/>(coins + block index)"]
+        COINS["coins.h/cpp<br/>(UTXO cache)"]
+        NODECS["node/chainstate<br/>(active + background)"]
+        SNAP["node/utxo_snapshot<br/>(dump/load + assumeutxo.dat)"]
         MEMPOOL["txmempool.h/cpp<br/>(Memory Pool)"]
         
         LEVELDB --> TXDB
         TXDB --> COINS
+        NODECS --> COINS
+        SNAP --> NODECS
         TXDB --> MEMPOOL
     end
 

@@ -13,29 +13,7 @@
         <h1>Ð Dogecoin Dev</h1>
         <p>Local project documentation</p>
       </div>
-      <nav>
-        <div class="nav-section">Start here</div>
-        <a href="../index.html">Dashboard</a>
-        <a href="recovery-status.html">Recovery status</a>
-        <a href="roadmap.html">Roadmap</a>
-        <div class="nav-section">Understanding</div>
-        <a href="architecture.html">Architecture</a>
-        <a href="module-map.html">Module map</a>
-        <a href="diagrams.html">Diagrams</a>
-        <a href="glossary.html">Glossary</a>
-        <div class="nav-section">Workstreams</div>
-        <a href="rebrand-audit.html">Rebrand audit</a>
-        <a href="modern-ui.html">Modern UI &amp; themes</a>
-        <a href="ui-reference-core-pro.html">Core Pro UI reference</a>
-        <a href="storage-stack.html">Storage stack</a>
-        <a href="sqlite-wallet-plan.html">SQLite wallet plan</a>
-        <a href="memestream-integration.html">MemeStream integration</a>
-        <a href="pure-doge-strategy.html">Pure DOGE strategy</a>
-        <a href="payment-layer.html">Payment layer</a>
-        <a href="build-and-run.html">Build &amp; run</a>
-        <div class="nav-section">Repo</div>
-        <a href="source-of-truth.html">Source of truth</a>
-      </nav>
+      <nav></nav>
     </aside>
 
     <main class="main">
@@ -92,6 +70,8 @@
         <li class="done">Network page: peers table + sync/traffic stats + console link</li>
         <li class="done">Network page: disconnect / ban / unban context menus (parity with console)</li>
         <li class="done">Options open crash fixed (ThemeSwitcher load no longer polishes mid-build dialog)</li>
+        <li class="done">Arcade tab — Retr-Doge Shibe Blaster (pure Qt)</li>
+        <li class="done">Release branding 1.14.101</li>
       </ul>
 
       <h2>Phase 4 — External features <span class="badge badge-partial">In client</span></h2>
@@ -119,7 +99,29 @@
         <li class="done">Abstract <code>DatabaseBatch</code> / cursor + Berkeley adapter; <code>CWalletDB</code> composition</li>
         <li class="todo">SQLite backend for new wallets</li>
         <li class="todo">migratewallet (BDB → SQLite) with archives</li>
-        <li class="todo">Optional RocksDB / libmdbx chainstate</li>
+        <li class="todo">Optional RocksDB / libmdbx chainstate (separate from AssumeUTXO dual <em>views</em>)</li>
+      </ul>
+
+      <h2>Phase 6 — Full-node performance (non-consensus) <span class="badge badge-done">Done core</span></h2>
+      <ul class="checklist">
+        <li class="done">P0 IBD telemetry (<code>getibdinfo</code> / <code>IBDStats</code>)</li>
+        <li class="done">P0 stall rescue (<code>-ibdrescue</code>)</li>
+        <li class="done">P0.1 IBD flush policy + prune tips + IPv4 /8 soft diversity</li>
+        <li class="done">ASMAP (<code>-asmap</code>, ASN-aware groups)</li>
+        <li class="done">P0.3 IBD download parallelism (32 blocks/peer, 3 header peers)</li>
+        <li class="done">Docs: <a href="ibd-and-p2p.html">IBD &amp; P2P</a></li>
+      </ul>
+
+      <h2>Phase 7 — AssumeUTXO (1.14 DNA) <span class="badge badge-partial">C2 done</span></h2>
+      <ul class="checklist">
+        <li class="done">A1–A3 dual chainstate foundation (<code>node/chainstate.*</code>)</li>
+        <li class="done">B1 snapshot dump/load (<code>dumptxoutset</code> / <code>loadtxoutset</code>)</li>
+        <li class="done">B2 activate tip (<code>activatesnapshot</code>, <code>-assumeutxodev</code>)</li>
+        <li class="done">C1 background ConnectBlock + hash fail-closed</li>
+        <li class="done">C2 <code>assumeutxo.dat</code> restore + historical fetch + dual collapse</li>
+        <li class="todo">Attested mainnet/testnet heights in chainparams</li>
+        <li class="todo">GUI validation progress + signed snapshot artifacts</li>
+        <li class="done">Docs: <a href="assumeutxo.html">AssumeUTXO</a> + <code>doc/assumeutxo-dogecoin-1.14.md</code></li>
       </ul>
 
       <h2>Working agreement</h2>
@@ -127,11 +129,12 @@
         <strong>Docs move with code</strong>
         When a phase completes, update the dashboard percentages, this checklist,
         and the relevant workstream page the same day. Documentation is part of
-        regaining control — not optional polish at the end.
+        regaining control — not optional polish at the end. Sidebar is generated
+        by <code>assets/nav.js</code>.
       </div>
 
       <div class="footer">
-        Next concrete step after docs: Git restore + build environment.
+        Next product focus: AssumeUTXO attested heights + GUI polish, or SQLite wallet backend.
       </div>
     </main>
   </div>

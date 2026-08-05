@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Arcade — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav></nav>
+    </aside>
+
+    <main class="main">
+      <h1>Arcade (Retr-Doge Shibe Blaster)</h1>
+      <p class="lead">
+        Pure-Qt mini-game tab in Dogecoin Core Pro — entertainment shell only.
+        No consensus impact, no EVM, no separate network protocol.
+      </p>
+      <div class="meta">
+        <span>Shipped with 1.14.101</span>
+        <span>Qt only</span>
+      </div>
+
+      <h2>What it is</h2>
+      <ul>
+        <li>Main-window tab: <strong>Arcade</strong></li>
+        <li>Game: Retr-Doge Shibe Blaster (local canvas / widget)</li>
+        <li>Assets e.g. title art under Qt resources</li>
+      </ul>
+
+      <h2>Code surface</h2>
+      <table>
+        <thead>
+          <tr><th>Area</th><th>Location</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Page / shell</td><td><code>src/qt/arcadepage.*</code></td></tr>
+          <tr><td>Game widget</td><td><code>src/qt/arcadegamewidget.*</code></td></tr>
+          <tr><td>GUI wiring</td><td><code>src/qt/dogecoingui.*</code> (tab registration)</td></tr>
+        </tbody>
+      </table>
+
+      <h2>What it is not</h2>
+      <ul>
+        <li>Not a consensus or mining change</li>
+        <li>Not a payment rail (see <a href="payment-layer.html">Payment layer</a>)</li>
+        <li>Not dependent on MemeStream or GPE</li>
+      </ul>
+
+      <div class="footer">
+        Product shell work sits beside <a href="ui-reference-core-pro.html">Core Pro UI</a>.
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

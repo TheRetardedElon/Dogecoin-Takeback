@@ -1,6 +1,6 @@
 # Dogecoin Dev — HTML documentation
 
-Living project documentation for the `C:\dogedev` worktree.
+Living project documentation for the `C:\dogedev` worktree (Dogecoin Core Pro, 1.14 DNA).
 
 ## Open the docs
 
@@ -10,7 +10,7 @@ Open **`index.html`** in a browser (double-click or “Open with”).
 html/docs/index.html
 ```
 
-No server required (`file://` works). Styles and diagrams are local under `assets/`.
+No server required (`file://` works). Styles, diagrams, and nav are local under `assets/`.
 
 ## Structure
 
@@ -18,19 +18,34 @@ No server required (`file://` works). Styles and diagrams are local under `asset
 |------|---------|
 | `index.html` | Dashboard / status at a glance |
 | `pages/` | Workstream and architecture pages |
-| `pages/payment-layer.html` | Public: native DOGE merchants / Core Pro vs optional GPE (no infra secrets) |
+| `pages/ibd-and-p2p.html` | IBD telemetry, stall rescue, ASMAP, parallelism |
+| `pages/assumeutxo.html` | AssumeUTXO dual chainstate A1–C2 |
+| `pages/arcade.html` | Arcade tab (pure Qt) |
+| `pages/payment-layer.html` | Native DOGE merchants / Core Pro vs optional GPE |
 | `pages/pure-doge-strategy.html` | North-star strategy (no EVM product path) |
-| `assets/styles.css` | Shared theme |
-| `assets/nav.js` | Active nav highlight |
-| `assets/diagrams/` | Flow diagrams copied from `-FlowDiagramLatest/` |
+| `pages/diagrams.html` | Flow diagrams + legacy post-migration art |
+| `assets/styles.css` | Shared theme + flow styles |
+| `assets/nav.js` | **Shared sidebar** (auto-injected on every page) |
+| `assets/diagrams/` | PNG/SVG assets |
+| `assets/ui-reference/` | Core Pro screenshots |
 
 Private operator planning for GPE deployment is intentionally **not** part of this public docs site (no infra secrets here).
 
+## Design notes in `doc/` (markdown)
+
+| File | Topic |
+|------|--------|
+| `doc/assumeutxo-dogecoin-1.14.md` | AssumeUTXO phased design + implementation table |
+| `doc/ibd-p0-peer-telemetry.md` | IBD P0 notes |
+
+Root **`DOGECOIN_CHANGELOG.md`** carries the heavy engineering changelog (2026 node + product).
+
 ## When to update
 
-- After rebrand scan tiers complete
-- After a successful or failed build
+- After a phase completes (roadmap + dashboard same day)
+- After a successful or failed build/release
 - When a feature is implemented or proven absent
 - When architecture understanding improves
+- New pages: add HTML under `pages/` **and** a link in `assets/nav.js`
 
 Code wins arguments; these pages capture what we know so recovery is not only chat memory.

@@ -13,184 +13,119 @@
         <h1>Ð Dogecoin Dev</h1>
         <p>Local project documentation</p>
       </div>
-      <nav>
-        <div class="nav-section">Start here</div>
-        <a href="index.html">Dashboard</a>
-        <a href="pages/recovery-status.html">Recovery status</a>
-        <a href="pages/roadmap.html">Roadmap</a>
-
-        <div class="nav-section">Understanding</div>
-        <a href="pages/architecture.html">Architecture</a>
-        <a href="pages/module-map.html">Module map</a>
-        <a href="pages/diagrams.html">Diagrams</a>
-        <a href="pages/security-hardening.html">Security hardening</a>
-        <a href="pages/security-audit-core.html">Core attack audit</a>
-        <a href="pages/security-changelog.html">Security changelog</a>
-        <a href="pages/glossary.html">Glossary</a>
-
-        <div class="nav-section">Workstreams</div>
-        <a href="pages/rebrand-audit.html">Rebrand audit</a>
-        <a href="pages/modern-ui.html">Modern UI &amp; themes</a>
-        <a href="pages/ui-reference-core-pro.html">Core Pro UI reference</a>
-        <a href="pages/storage-stack.html">Storage stack</a>
-        <a href="pages/sqlite-wallet-plan.html">SQLite wallet plan</a>
-        <a href="pages/memestream-integration.html">MemeStream integration</a>
-        <a href="pages/pure-doge-strategy.html">Pure DOGE strategy</a>
-        <a href="pages/payment-layer.html">Payment layer</a>
-        <a href="pages/build-and-run.html">Build &amp; run</a>
-
-        <div class="nav-section">Repo</div>
-        <a href="pages/source-of-truth.html">Source of truth</a>
-      </nav>
+      <nav></nav>
     </aside>
 
     <main class="main">
       <h1>Project control dashboard</h1>
       <p class="lead">
-        Ground-up documentation for the Dogecoin Core worktree at
-        <code>C:\dogedev</code>. Goal: regain full holistic understanding,
-        finish the Bitcoin→Dogecoin conversion cleanly, and resume development
-        from a known baseline.
+        Living documentation for Dogecoin Core Pro at <code>C:\dogedev</code>
+        (1.14 DNA). Pure DOGE client: full node + wallet + Qt shell — no EVM product path.
       </p>
       <div class="meta">
         <span>Workspace: <code>C:\dogedev</code></span>
-        <span>Docs root: <code>html/docs/</code></span>
-        <span>Audit snapshot: 2026-07-27</span>
-        <span>Git: <code>master</code> + tag <code>baseline-green-build</code></span>
-        <span>Build: green (WSL Ubuntu, C++17)</span>
+        <span>Client: <strong>1.14.101</strong></span>
+        <span>Docs: <code>html/docs/</code></span>
+        <span>Updated: 2026-08-05</span>
       </div>
 
       <div class="callout ok">
-        <strong>Pure DOGE payments</strong>
-        Core Pro ships local invoices, POS, and on-chain tips. Settlement is always
-        <strong>native DOGE</strong> — not wrap tokens or EVM “L2” product paths.
-        See <a href="pages/payment-layer.html">Payment layer</a> and
+        <strong>Pure DOGE</strong>
+        Settlement is always <strong>native DOGE</strong>. See
+        <a href="pages/payment-layer.html">Payment layer</a> and
         <a href="pages/pure-doge-strategy.html">Pure DOGE strategy</a>.
+        AuxPoW / subsidy / script consensus remain untouched in recent IBD and AssumeUTXO work.
       </div>
 
       <div class="callout ok">
-        <strong>Git recovered</strong>
-        The file <code>dogecoin-rebrand.bundle</code> <em>was</em> already in
-        this folder (you did not need a separate copy). Git is installed and
-        history is attached: two commits ending at rebrand + modern themes
-        (<code>975ef57</code>). HTML docs and some on-disk extras sit on top of that baseline.
+        <strong>Node workstream (2026)</strong>
+        IBD P0 telemetry + stall rescue + ASMAP + parallel download are in tree.
+        AssumeUTXO dual chainstate through <strong>Phase C2</strong> (load, activate,
+        background proof, persist/restore). Details:
+        <a href="pages/ibd-and-p2p.html">IBD &amp; P2P</a> ·
+        <a href="pages/assumeutxo.html">AssumeUTXO</a>.
       </div>
 
       <div class="callout warn">
-        <strong>Recovery context</strong>
-        Latest HDD work beyond this tree may still be gone. Rebrand + modern UI
-        are largely present; storage migrations and later client features
-        (meme stream, advanced network tools) are not implemented here.
-        These docs rebuild institutional memory as we go.
+        <strong>AssumeUTXO is still dev-gated</strong>
+        Snapshot tip activation needs <code>-assumeutxodev=1</code> (except regtest).
+        Do not trust un-attested snapshots with real funds until chainparams heights
+        and product polish land.
       </div>
 
       <h2>Status at a glance</h2>
       <div class="card-grid">
         <div class="card">
-          <h3>File renames</h3>
-          <div class="stat">~95%</div>
-          <p>Core binaries &amp; Qt entry points use dogecoin names</p>
-          <span class="badge badge-done">Strong</span>
+          <h3>Core Pro UI</h3>
+          <div class="stat">Live</div>
+          <p>Home, Network, Business, Meme Stream, Options, Arcade</p>
+          <span class="badge badge-done">1.14.101</span>
         </div>
         <div class="card">
-          <h3>User-facing branding</h3>
-          <div class="stat">~95%</div>
-          <p>T1 done: i18n context, RPC help, dialogs; copyrights kept</p>
-          <span class="badge badge-done">Strong</span>
+          <h3>IBD / P2P</h3>
+          <div class="stat">P0–P0.3</div>
+          <p>getibdinfo, rescue, ASMAP, 32 blocks/peer</p>
+          <span class="badge badge-done">Done</span>
         </div>
         <div class="card">
-          <h3>Internal identifiers</h3>
-          <div class="stat">~95%</div>
-          <p>T1+T3 done; copyrights / heritage URLs intentionally kept</p>
-          <span class="badge badge-done">Strong</span>
-        </div>
-        <div class="card">
-          <h3>Modern UI / themes</h3>
-          <div class="stat">Solidified</div>
-          <p>Single ThemeManager path; shell + status bar fixed</p>
-          <span class="badge badge-done">Strong</span>
+          <h3>AssumeUTXO</h3>
+          <div class="stat">C2</div>
+          <p>Dual chainstate, dump/load, bg proof, restore</p>
+          <span class="badge badge-done">Done</span>
         </div>
         <div class="card">
           <h3>Wallet DB</h3>
           <div class="stat">BDB</div>
-          <p>Still Berkeley DB; format detection + SQLite refuse landed</p>
-          <span class="badge badge-partial">Phase 5A</span>
+          <p>SQLite detection + batch abstraction; backend TODO</p>
+          <span class="badge badge-partial">Phase 5</span>
         </div>
         <div class="card">
-          <h3>Chainstate DB</h3>
+          <h3>Chainstate engine</h3>
           <div class="stat">LevelDB</div>
-          <p>CDBWrapper still LevelDB — RocksDB/libmdbx not started</p>
-          <span class="badge badge-todo">Legacy</span>
+          <p>Still LevelDB; dual <em>views</em> for AssumeUTXO only</p>
+          <span class="badge badge-partial">No RocksDB</span>
+        </div>
+        <div class="card">
+          <h3>Rebrand</h3>
+          <div class="stat">~95%</div>
+          <p>Dogecoin binaries/UI; heritage copyrights kept</p>
+          <span class="badge badge-done">Strong</span>
         </div>
       </div>
 
-      <h2>Rebrand residual (src, no vendor)</h2>
-      <p>
-        Automated scan of <code>src/**/*.cpp</code> and <code>*.h</code>
-        (excluding leveldb, secp256k1, univalue, moc/ui generated, locales):
-      </p>
-      <table>
-        <thead>
-          <tr><th>Category</th><th>Approx. hits</th><th>Meaning</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><code>BITCOIN_*</code> header guards</td>
-            <td>~563</td>
-            <td>Structural; safe to rename systematically later</td>
-          </tr>
-          <tr>
-            <td>Copyright “Bitcoin Core developers”</td>
-            <td>~414</td>
-            <td>Historical attribution — usually keep</td>
-          </tr>
-          <tr>
-            <td>String literals (incl. i18n context)</td>
-            <td>~264</td>
-            <td>User/i18n impact — high priority for conversion</td>
-          </tr>
-          <tr>
-            <td>Comments</td>
-            <td>~118</td>
-            <td>Docs/clarity — medium priority</td>
-          </tr>
-          <tr>
-            <td>Class / type / macro identifiers</td>
-            <td>~59</td>
-            <td>Real incomplete renames — highest priority</td>
-          </tr>
-        </tbody>
-      </table>
-      <p>See <a href="pages/rebrand-audit.html">Rebrand audit</a> for tiers and a completion plan.</p>
-
-      <h2>What exists on disk (high level)</h2>
+      <h2>Progress bars (honest)</h2>
       <div class="progress-row">
-        <span>Core node</span>
+        <span>Core node + RPC</span>
         <div class="progress-bar"><span style="width:95%"></span></div>
         <span>95%</span>
       </div>
       <div class="progress-row">
-        <span>Qt rebrand</span>
+        <span>Core Pro Qt shell</span>
+        <div class="progress-bar"><span style="width:90%"></span></div>
+        <span>90%</span>
+      </div>
+      <div class="progress-row">
+        <span>IBD / P2P robustness</span>
         <div class="progress-bar"><span style="width:85%"></span></div>
         <span>85%</span>
       </div>
       <div class="progress-row">
-        <span>Modern UI</span>
+        <span>AssumeUTXO (to product)</span>
+        <div class="progress-bar"><span style="width:70%"></span></div>
+        <span>70%</span>
+      </div>
+      <div class="progress-row">
+        <span>Living HTML docs</span>
         <div class="progress-bar"><span style="width:75%"></span></div>
         <span>75%</span>
       </div>
       <div class="progress-row">
-        <span>Docs (this site)</span>
-        <div class="progress-bar"><span style="width:30%"></span></div>
-        <span>30%</span>
+        <span>SQLite wallet backend</span>
+        <div class="progress-bar"><span style="width:25%"></span></div>
+        <span>25%</span>
       </div>
       <div class="progress-row">
-        <span>SQLite wallet</span>
-        <div class="progress-bar"><span style="width:0%"></span></div>
-        <span>0%</span>
-      </div>
-      <div class="progress-row">
-        <span>Chainstate swap</span>
+        <span>Chainstate engine swap</span>
         <div class="progress-bar"><span style="width:0%"></span></div>
         <span>0%</span>
       </div>
@@ -198,40 +133,40 @@
       <h2>Read next</h2>
       <div class="card-grid">
         <div class="card">
-          <h3>1. Recovery status</h3>
-          <p>What survived, what did not, risks</p>
-          <a class="card-link" href="pages/recovery-status.html">Open →</a>
+          <h3>AssumeUTXO</h3>
+          <p>Dual chainstate, RPCs, C2 restore</p>
+          <a class="card-link" href="pages/assumeutxo.html">Open →</a>
         </div>
         <div class="card">
-          <h3>2. Architecture</h3>
-          <p>How the node, wallet, GUI, and network fit</p>
-          <a class="card-link" href="pages/architecture.html">Open →</a>
+          <h3>IBD &amp; P2P</h3>
+          <p>Telemetry, rescue, ASMAP, parallelism</p>
+          <a class="card-link" href="pages/ibd-and-p2p.html">Open →</a>
         </div>
         <div class="card">
-          <h3>3. Rebrand audit</h3>
-          <p>Layered conversion plan with priorities</p>
-          <a class="card-link" href="pages/rebrand-audit.html">Open →</a>
-        </div>
-        <div class="card">
-          <h3>4. Roadmap</h3>
-          <p>Ordered work to regain full control</p>
+          <h3>Roadmap</h3>
+          <p>Phases through node bootstrap</p>
           <a class="card-link" href="pages/roadmap.html">Open →</a>
         </div>
         <div class="card">
-          <h3>5. Payment layer</h3>
-          <p>Native DOGE merchants, Core Pro vs optional GPE</p>
-          <a class="card-link" href="pages/payment-layer.html">Open →</a>
+          <h3>Diagrams</h3>
+          <p>Flows + post-migration art</p>
+          <a class="card-link" href="pages/diagrams.html">Open →</a>
         </div>
         <div class="card">
-          <h3>6. Pure DOGE strategy</h3>
-          <p>Why we refuse EVM / wrap as the product</p>
-          <a class="card-link" href="pages/pure-doge-strategy.html">Open →</a>
+          <h3>Architecture</h3>
+          <p>Layers and non-fork surfaces</p>
+          <a class="card-link" href="pages/architecture.html">Open →</a>
+        </div>
+        <div class="card">
+          <h3>Changelog</h3>
+          <p>Root <code>DOGECOIN_CHANGELOG.md</code> (heavy updates)</p>
+          <a class="card-link" href="pages/source-of-truth.html">Source of truth →</a>
         </div>
       </div>
 
       <div class="footer">
-        Living docs — update as we re-audit and implement.
-        Open <code>html/docs/index.html</code> in a browser (file:// is fine).
+        Open <code>html/docs/index.html</code> in a browser. Sidebar nav is generated by
+        <code>assets/nav.js</code> so every page stays in sync.
       </div>
     </main>
   </div>

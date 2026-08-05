@@ -36,6 +36,59 @@ body {
 a { color: var(--blue); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
+/* Flow / process diagrams (HTML, no external mermaid runtime required) */
+.flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: stretch;
+  margin: 1rem 0 1.5rem;
+}
+.flow-step {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  min-width: 9rem;
+  max-width: 14rem;
+  flex: 1 1 9rem;
+  font-size: 0.85rem;
+}
+.flow-step strong {
+  display: block;
+  color: var(--accent);
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.flow-arrow {
+  align-self: center;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  flex: 0 0 auto;
+  padding: 0 0.15rem;
+}
+.flow-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+}
+.flow-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1 1 100%;
+}
+@media (min-width: 800px) {
+  .flow-col { flex-direction: row; flex-wrap: wrap; }
+}
+.diagram-caption {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: -0.5rem 0 1.25rem;
+}
+
 /* Layout */
 .layout {
   display: grid;

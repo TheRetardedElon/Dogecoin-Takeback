@@ -13,25 +13,7 @@
         <h1>Ð Dogecoin Dev</h1>
         <p>Local project documentation</p>
       </div>
-      <nav>
-        <div class="nav-section">Start here</div>
-        <a href="../index.html">Dashboard</a>
-        <a href="recovery-status.html">Recovery status</a>
-        <a href="roadmap.html">Roadmap</a>
-        <div class="nav-section">Understanding</div>
-        <a href="architecture.html">Architecture</a>
-        <a href="module-map.html">Module map</a>
-        <a href="diagrams.html">Diagrams</a>
-        <a href="glossary.html">Glossary</a>
-        <div class="nav-section">Workstreams</div>
-        <a href="rebrand-audit.html">Rebrand audit</a>
-        <a href="modern-ui.html">Modern UI &amp; themes</a>
-        <a href="storage-stack.html">Storage stack</a>
-        <a href="payment-layer.html">Payment layer</a>
-        <a href="build-and-run.html">Build &amp; run</a>
-        <div class="nav-section">Repo</div>
-        <a href="source-of-truth.html">Source of truth</a>
-      </nav>
+      <nav></nav>
     </aside>
 
     <main class="main">
@@ -86,11 +68,23 @@
           </tr>
           <tr>
             <td>Flow diagrams</td>
-            <td><code>-FlowDiagramLatest/</code> + docs <code>assets/diagrams/</code></td>
+            <td><code>html/docs/pages/diagrams.html</code> + <code>assets/diagrams/</code> (+ legacy <code>-FlowDiagramLatest/</code>)</td>
+          </tr>
+          <tr>
+            <td>AssumeUTXO design</td>
+            <td><code>doc/assumeutxo-dogecoin-1.14.md</code> + <code>html/docs/pages/assumeutxo.html</code></td>
+          </tr>
+          <tr>
+            <td>IBD / P2P notes</td>
+            <td><code>doc/ibd-p0-peer-telemetry.md</code> + <code>html/docs/pages/ibd-and-p2p.html</code></td>
+          </tr>
+          <tr>
+            <td>Project changelog (heavy updates)</td>
+            <td><code>DOGECOIN_CHANGELOG.md</code> (root)</td>
           </tr>
           <tr>
             <td>Git history</td>
-            <td>Local <code>.git</code> restored from <code>dogecoin-rebrand.bundle</code> (keep bundle as offline backup; do not rely on one disk)</td>
+            <td>Local <code>.git</code> (master, many commits past rebrand baseline; keep remotes + offline backups)</td>
           </tr>
           <tr>
             <td>Upstream Dogecoin reference</td>
@@ -108,10 +102,11 @@
 
       <h2>How to update these docs</h2>
       <ul>
-        <li>Edit HTML under <code>html/docs/</code> (same look via <code>assets/styles.css</code>).</li>
-        <li>Keep the sidebar nav links in sync when adding a page.</li>
-        <li>Record dates on dashboard / build log when status changes.</li>
+        <li>Edit HTML under <code>html/docs/</code> (theme: <code>assets/styles.css</code>).</li>
+        <li>Add new pages under <code>pages/</code> and register them in <code>assets/nav.js</code> (sidebar is auto-injected).</li>
+        <li>Record dates on dashboard / roadmap when status changes.</li>
         <li>Prefer short factual updates over rewriting history.</li>
+        <li>Heavy product/engineering milestones also go in root <code>DOGECOIN_CHANGELOG.md</code>.</li>
       </ul>
 
       <div class="footer">

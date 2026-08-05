@@ -1,8 +1,8 @@
 # Dogecoin Core - Change Log
 
-**Project**: Dogecoin Core Client Rebranding & Modern UI Implementation  
-**Started**: September 27, 2024  
-**Purpose**: Transform Dogecoin Core from Bitcoin naming conventions to unique Dogecoin identity with modern theming system
+**Project**: Dogecoin Core / Core Pro (1.14 DNA)  
+**Started**: September 27, 2024 (rebrand + themes); continued 2025–2026 (product + full-node)  
+**Purpose**: Dogecoin identity, modern Qt shell, pure-DOGE product features, IBD/P2P robustness, and AssumeUTXO bootstrap — without changing consensus rules (AuxPoW / subsidy / script)
 
 ---
 
@@ -395,17 +395,109 @@
 - ✅ **10 beautiful themes** including original retro DRIP and new woodgrain
 - ✅ **All 4 executables building and running** successfully
 
-## 🚀 **Project Status: COMPLETE**
+## 🚀 **Project Status: REBRAND / THEME BASELINE COMPLETE**
 
-**The Dogecoin Core rebranding and modern theme system implementation is now 100% complete!**
-
-- **Total Files Modified**: 200+ files across entire codebase
-- **Total Bitcoin References Eliminated**: 500+ references systematically replaced
-- **Total Themes Implemented**: 10 beautiful themes with perfect synchronization
-- **Total Executables Built**: 4 (dogecoind, dogecoin-cli, dogecoin-tx, dogecoin-qt)
-- **Total Bugs Fixed**: 20+ critical issues resolved
-- **Project Duration**: September 27, 2024 - Complete
+**The Dogecoin Core rebranding and modern theme system baseline is complete** (see sections above).  
+Work continued in 2025–2026 as **Dogecoin Core Pro** on the 1.14 DNA line — product shell, payments, IBD/P2P, and AssumeUTXO. Residual “Bitcoin” strings may remain intentionally (copyrights, heritage URLs). Prefer live code + `html/docs/` for current status.
 
 ---
 
-*This changelog documents the complete transformation of Dogecoin Core from Bitcoin naming conventions to a unique Dogecoin identity with a modern, fully-functional theme system.*
+## 🐕 **2026 — Dogecoin Core Pro (1.14.101) heavy updates**
+
+**Product line:** pure DOGE full node + wallet + Qt (no EVM app layer).  
+**Consensus posture:** AuxPoW, DigiShield, subsidy, and script rules **not** modified in the slices below.  
+**Living docs:** `html/docs/` (dashboard, IBD, AssumeUTXO, diagrams).  
+**Design notes:** `doc/assumeutxo-dogecoin-1.14.md`, `doc/ibd-p0-peer-telemetry.md`.
+
+### **1. Core Pro product shell (Qt)**
+
+| Deliverable | Why |
+|-------------|-----|
+| Full **Options** (Main / Wallet / Network / Window / Display / Theme) | Operators need production settings, not a stub dialog |
+| **Network** page: peers, stats, disconnect/ban/unban, map UX | Console-only peer ops were insufficient for Pro |
+| **Doge Business**: dashboard, invoices, POS, QR, auto-mark paid | Local merchant tools; keys stay in Core wallet |
+| **Meme Stream** feed/publish/tip (wallet identity, hardened media) | Social rail without GPE as a hard dependency for tips |
+| **Arcade** — Retr-Doge Shibe Blaster | Pure-Qt entertainment tab; zero consensus surface |
+| Theme application across Pro shell | Visual consistency after multi-page expansion |
+| Windows SSL / invoice / network map fixes | Ship a usable Windows GUI release |
+
+**Reasoning:** Core Pro is a *product*, not only a rebrand. UI workstreams deliver merchant + social + network ops while remaining pure DOGE and non-consensus.
+
+### **2. Release 1.14.101**
+
+| Deliverable | Why |
+|-------------|-----|
+| Version stamp **1.14.101** (`CLIENT_VERSION_*`, release flag) | Distinguish Pro + IBD line from 1.14.100 packages |
+| Windows zip/setup packaging scripts under `scripts/` + `release/` | Reproducible operator artifacts |
+
+**Reasoning:** Operators and docs need a clear version boundary for “has IBD telemetry / Arcade / Pro shell.”
+
+### **3. IBD & P2P robustness (non-consensus)**
+
+| Slice | Deliverable | Why |
+|-------|-------------|-----|
+| **P0 telemetry** | `IBDStats`, RPC `getibdinfo`, `-debug=ibd` | Multi-hour IBD is opaque without metrics |
+| **P0 stall rescue** | `-ibdrescue` — non-preferred peers can fetch when preferred stall | One slow preferred peer was a single point of failure |
+| **P0.1 flush policy** | Gentler IBD LevelDB flush under large `-dbcache` | Flush thrash turns free RAM into disk waits |
+| **P0.1 diversity** | Soft IPv4 /8 peer concentration limit | Correlated peer failure / eclipse soft risk |
+| **ASMAP** | `-asmap`, ASN-aware `GetGroup` | Topology-aware diversity (Bitcoin-compatible path) |
+| **P0.3 parallelism** | 32 blocks in transit/peer; up to 3 header-sync peers in IBD | 1.14 defaults under-utilized home bandwidth |
+
+**Code:** `ibdstats.*`, `net_processing.cpp`, `validation.cpp` (flush), `asmap.*`, `netaddress.*`, `init.cpp`, `rpc/blockchain.cpp`.  
+**Docs:** `html/docs/pages/ibd-and-p2p.html`.
+
+**Reasoning (sequencing):** Measure and unstick IBD *before* AssumeUTXO. A snapshot path on a broken peer graph still fails operators.
+
+### **4. AssumeUTXO for 1.14 DNA (Phases A–C2)**
+
+1.14 has **global** `chainActive` / `pcoinsTip` — not Bitcoin’s modern `ChainstateManager`. Work is phased dual-state on that DNA.
+
+| Phase | Deliverable | Why |
+|-------|-------------|-----|
+| **A1** | `node/chainstate.*` wraps active tip; `getchainstates` | Named accessors without behavior change |
+| **A2** | Hot RPCs/Qt use `ActiveChain()` / `ActiveCoinsTip()` | Migrate call sites before dual tips |
+| **A3** | Idle background owns empty `CChain` | Dual *storage* slots without coins yet |
+| **B1** | `dumptxoutset` / `loadtxoutset`; per-txid `CCoins` snapshot format; `chainstate_snapshot/` | Create/load UTXO files on 1.14 serialization |
+| **B2** | `activatesnapshot`, `-assumeutxodev`; mirror globals for wallet | Instant tip at H; park IBD for later proof |
+| **C1** | Background `ConnectBlock` → H; freeze/compare `hash_serialized`; fail-closed shutdown | Temporary trust must be proven or rejected |
+| **C2** | `assumeutxo.dat` persist/restore; historical getdata for missing blk; dual collapse flag | Restart-safe sessions; prune-friendly fetch; stop dual work when proven |
+
+**Code:** `node/chainstate.*`, `node/utxo_snapshot.*`, `rpc/blockchain.cpp`, `validation.cpp` (auto-step), `net_processing.cpp` (historical fetch), `init.cpp`, `txdb` path ctor.  
+**Docs:** `html/docs/pages/assumeutxo.html`, `doc/assumeutxo-dogecoin-1.14.md`.
+
+**Reasoning:** Goal = wallet-usable tip in minutes without forking. Snapshot is **not** a soft fork; background validation must fail closed on hash mismatch. Dev flag keeps mainnet activation explicit until attested heights exist.
+
+**Still open (product):** chainparams `AssumeutxoData`, signed public artifacts, GUI progress modal, drop blanket `-assumeutxodev` for attested heights only.
+
+### **5. Storage (wallet) progress**
+
+| Deliverable | Why |
+|-------------|-----|
+| Wallet format detection + refuse unsupported SQLite | Safe future dual-stack without silent corruption |
+| `getwalletinfo.format` | Operators/scripts can see backend |
+| Abstract batch/cursor + BDB adapter | Prerequisite for SQLite backend |
+
+**Reasoning:** BDB remains the live engine; abstraction first reduces risk of a big-bang SQLite port.
+
+### **6. Documentation system**
+
+| Deliverable | Why |
+|-------------|-----|
+| `html/docs/` living site + `assets/nav.js` shared sidebar | Single nav source; no stale sidebars per page |
+| Pages: IBD, AssumeUTXO, Arcade; refreshed dashboard/roadmap/diagrams/recovery | Institutional memory for dual chainstate and Pro shell |
+| This changelog section | Heavy-update rationale in one place |
+
+---
+
+## 📝 **Final notes (ongoing project)**
+
+- ✅ Rebrand + theme **baseline** complete (historical section above)
+- ✅ Core Pro product shell + pure DOGE payments path
+- ✅ IBD P0–P0.3 and AssumeUTXO through **C2** on 1.14 DNA
+- ⏳ AssumeUTXO product attestation + GUI polish
+- ⏳ SQLite wallet backend; optional RocksDB/libmdbx engine (orthogonal to dual views)
+- ⚠️ Prefer `html/docs/` + code over outdated “100% Bitcoin eliminated” claims
+
+---
+
+*This changelog documents Dogecoin Core rebrand/theme history and the 2026 Core Pro / full-node performance / AssumeUTXO program.*

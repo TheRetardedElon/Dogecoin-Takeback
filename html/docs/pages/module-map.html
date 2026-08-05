@@ -13,25 +13,7 @@
         <h1>Ð Dogecoin Dev</h1>
         <p>Local project documentation</p>
       </div>
-      <nav>
-        <div class="nav-section">Start here</div>
-        <a href="../index.html">Dashboard</a>
-        <a href="recovery-status.html">Recovery status</a>
-        <a href="roadmap.html">Roadmap</a>
-        <div class="nav-section">Understanding</div>
-        <a href="architecture.html">Architecture</a>
-        <a href="module-map.html">Module map</a>
-        <a href="diagrams.html">Diagrams</a>
-        <a href="glossary.html">Glossary</a>
-        <div class="nav-section">Workstreams</div>
-        <a href="rebrand-audit.html">Rebrand audit</a>
-        <a href="modern-ui.html">Modern UI &amp; themes</a>
-        <a href="storage-stack.html">Storage stack</a>
-        <a href="payment-layer.html">Payment layer</a>
-        <a href="build-and-run.html">Build &amp; run</a>
-        <div class="nav-section">Repo</div>
-        <a href="source-of-truth.html">Source of truth</a>
-      </nav>
+      <nav></nav>
     </aside>
 
     <main class="main">
@@ -50,7 +32,12 @@
           <tr>
             <td><code>src/</code> (top-level)</td>
             <td>—</td>
-            <td>Net, validation, init, chain, coins, dbwrapper, dogecoin-specific logic</td>
+            <td>Net, validation, init, chain, coins, dbwrapper, dogecoin-specific logic, IBD stats, ASMAP</td>
+          </tr>
+          <tr>
+            <td><code>src/node/</code></td>
+            <td>4+</td>
+            <td>AssumeUTXO chainstate dual roles + UTXO snapshot I/O</td>
           </tr>
           <tr>
             <td><code>src/consensus/</code></td>
@@ -133,15 +120,19 @@
         <tbody>
           <tr><td>Node startup / shutdown</td><td><code>init.cpp</code>, <code>dogecoind.cpp</code></td></tr>
           <tr><td>P2P messages</td><td><code>protocol.*</code>, <code>net_processing.*</code>, <code>net.*</code></td></tr>
+          <tr><td>IBD telemetry / rescue</td><td><code>ibdstats.*</code>, <code>net_processing.*</code>, <code>getibdinfo</code></td></tr>
+          <tr><td>ASMAP peer groups</td><td><code>asmap.*</code>, <code>netaddress.*</code></td></tr>
           <tr><td>Block validation</td><td><code>validation.*</code>, <code>consensus/</code></td></tr>
           <tr><td>Dogecoin consensus rules</td><td><code>dogecoin.cpp</code>, <code>auxpow.*</code>, <code>pow.*</code></td></tr>
           <tr><td>UTXO / chainstate DB</td><td><code>txdb.*</code>, <code>dbwrapper.*</code>, <code>coins.*</code></td></tr>
+          <tr><td>AssumeUTXO dual tip</td><td><code>node/chainstate.*</code>, <code>node/utxo_snapshot.*</code></td></tr>
           <tr><td>Wallet keys &amp; spends</td><td><code>wallet/wallet.*</code>, <code>walletdb.*</code>, <code>db.*</code></td></tr>
-          <tr><td>Main window UI</td><td><code>qt/dogecoingui.*</code>, <code>qt/modernmainwindow.*</code></td></tr>
+          <tr><td>Main window UI</td><td><code>qt/dogecoingui.*</code> (live shell; ModernMainWindow not linked)</td></tr>
           <tr><td>Themes</td><td><code>qt/thememanager.*</code>, <code>qt/themes/</code></td></tr>
           <tr><td>Overview / balances UI</td><td><code>qt/modernoverviewpage.*</code>, <code>qt/overviewpage.*</code></td></tr>
-          <tr><td>Network traffic graph</td><td><code>qt/trafficgraphwidget.*</code>, <code>qt/rpcconsole.*</code></td></tr>
-          <tr><td>Peers table</td><td><code>qt/peertablemodel.*</code>, <code>qt/peerdialog.*</code></td></tr>
+          <tr><td>Network page / map</td><td><code>qt/networkpage.*</code>, peer table models</td></tr>
+          <tr><td>Arcade</td><td><code>qt/arcadepage.*</code>, <code>qt/arcadegamewidget.*</code></td></tr>
+          <tr><td>Meme Stream / Business</td><td><code>qt/memestreampage.*</code>, invoice/POS widgets</td></tr>
           <tr><td>Build Qt into binary</td><td><code>src/Makefile.qt.include</code>, <code>configure.ac</code></td></tr>
         </tbody>
       </table>

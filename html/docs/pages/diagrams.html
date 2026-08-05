@@ -13,38 +13,22 @@
         <h1>Ð Dogecoin Dev</h1>
         <p>Local project documentation</p>
       </div>
-      <nav>
-        <div class="nav-section">Start here</div>
-        <a href="../index.html">Dashboard</a>
-        <a href="recovery-status.html">Recovery status</a>
-        <a href="roadmap.html">Roadmap</a>
-        <div class="nav-section">Understanding</div>
-        <a href="architecture.html">Architecture</a>
-        <a href="module-map.html">Module map</a>
-        <a href="diagrams.html">Diagrams</a>
-        <a href="glossary.html">Glossary</a>
-        <div class="nav-section">Workstreams</div>
-        <a href="rebrand-audit.html">Rebrand audit</a>
-        <a href="modern-ui.html">Modern UI &amp; themes</a>
-        <a href="storage-stack.html">Storage stack</a>
-        <a href="payment-layer.html">Payment layer</a>
-        <a href="build-and-run.html">Build &amp; run</a>
-        <div class="nav-section">Repo</div>
-        <a href="source-of-truth.html">Source of truth</a>
-      </nav>
+      <nav></nav>
     </aside>
 
     <main class="main">
       <h1>Diagrams</h1>
       <p class="lead">
-        Visual artifacts recovered with the tree. Add new diagrams here as we
-        re-document subsystems.
+        Visual + HTML flow diagrams for Core Pro architecture and the node bootstrap path.
+        Prefer these over chat sketches when status is disputed.
       </p>
 
-      <h2>Post-migration flow diagram</h2>
+      <h2>Post-migration flow (legacy art)</h2>
       <p>
         Source: <code>-FlowDiagramLatest/dogecoin-post-migration-diagram</code>
-        (PNG + SVG). Copied into docs assets for stable linking.
+        (PNG + SVG). Historical rebrand / layering visual — still useful as a map of
+        subsystems, but it does <strong>not</strong> show AssumeUTXO dual chainstate
+        (that work is newer; see below).
       </p>
       <div class="diagram-frame">
         <img
@@ -58,27 +42,73 @@
         <a href="../assets/diagrams/dogecoin-post-migration-diagram.png">Open PNG</a>
       </p>
 
-      <h2>Text layer diagram</h2>
-      <p>See <a href="architecture.html">Architecture</a> for the ASCII layer stack.</p>
+      <h2>Layer stack (current)</h2>
+      <p>Authoritative ASCII stack lives on <a href="architecture.html">Architecture</a>.</p>
+      <pre><code>Qt (Core Pro shell, Arcade, Business, Meme Stream)
+Wallet (BDB today)
+RPC / ZMQ
+P2P + net_processing (IBD rescue, ASMAP, historical fetch)
+Validation + dual chainstate (AssumeUTXO active/background)
+Consensus (AuxPoW, DigiShield, subsidy) — UNTOUCHED in bootstrap work
+Storage: LevelDB chainstate + chainstate_snapshot + blk*.dat</code></pre>
 
-      <h2>Mermaid (from prior markdown)</h2>
+      <h2>IBD observe → rescue</h2>
+      <div class="flow">
+        <div class="flow-step"><strong>getibdinfo</strong> Measure stall / cache</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>Stall?</strong> Preferred peers stuck</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>-ibdrescue</strong> Non-preferred fetch</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>Pipeline</strong> 32 blocks/peer</div>
+      </div>
+      <p class="diagram-caption">Full write-up: <a href="ibd-and-p2p.html">IBD &amp; P2P</a>.</p>
+
+      <h2>AssumeUTXO dual path</h2>
+      <div class="flow">
+        <div class="flow-step"><strong>dumptxoutset</strong> Snapshot file</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>loadtxoutset</strong> chainstate_snapshot/</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>activatesnapshot</strong> Tip = H</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>Background</strong> ConnectBlock → H</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>Hash OK</strong> validated / collapse</div>
+      </div>
+      <pre><code>        [ peers / blk*.dat ]
+                 │
+     ┌───────────┴───────────┐
+     ▼                       ▼
+ ACTIVE snapshot          BACKGROUND ibd
+ tip H…tip               ConnectBlock 0…H
+ pcoinsTip snapshot      original chainstate/
+ wallet / net            hash_serialized prove
+     │                       │
+     └──────── assumeutxo.dat ┘
+              (restart restore)</code></pre>
+      <p class="diagram-caption">Full write-up: <a href="assumeutxo.html">AssumeUTXO</a>.</p>
+
+      <h2>Mermaid sources (repo root)</h2>
       <p>
-        Root file <code>DOGECOIN_ARCHITECTURE_MERMAID.md</code> contains Mermaid
-        source. When a Mermaid-capable viewer is available, render it and export
-        PNG into <code>assets/diagrams/</code>.
+        <code>DOGECOIN_ARCHITECTURE_MERMAID.md</code> — application graph (kept for export).
+        Render with any Mermaid viewer and drop PNG into <code>assets/diagrams/</code> if desired.
+        Prefer the HTML flows above for day-to-day accuracy (they track C2).
       </p>
 
-      <h2>Planned diagram backlog</h2>
+      <h2>Diagram backlog</h2>
       <ul class="checklist">
+        <li class="done">IBD stall/rescue path (this page + IBD doc)</li>
+        <li class="done">AssumeUTXO dual chainstate + prove path</li>
         <li class="todo">Wallet open / encrypt / spend sequence</li>
-        <li class="todo">IBD and chainstate write path through CDBWrapper</li>
-        <li class="todo">Qt signal flow: ClientModel → modern overview</li>
         <li class="todo">Theme application order at startup</li>
         <li class="todo">Future SQLite migratewallet flow</li>
+        <li class="todo">Export updated post-migration SVG including node/chainstate</li>
       </ul>
 
       <div class="footer">
-        Drop screenshots of the running client into <code>assets/screenshots/</code> when available.
+        Screenshots: Core Pro gallery under <code>assets/ui-reference/</code>
+        (<a href="ui-reference-core-pro.html">UI reference</a>).
       </div>
     </main>
   </div>

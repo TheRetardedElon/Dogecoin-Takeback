@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AssumeUTXO — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav></nav>
+    </aside>
+
+    <main class="main">
+      <h1>AssumeUTXO (1.14 DNA)</h1>
+      <p class="lead">
+        Make a full node <strong>wallet-usable in minutes</strong> by loading a
+        attested UTXO snapshot at height H, while fully validating genesis→H in
+        the background. Not a soft fork — temporary bootstrap trust until hash proof completes.
+      </p>
+      <div class="meta">
+        <span>Design: <code>doc/assumeutxo-dogecoin-1.14.md</code></span>
+        <span>Phase: <strong>C2 done</strong> (persist/restore)</span>
+        <span>Flag: <code>-assumeutxodev</code> (mainnet/testnet activate)</span>
+      </div>
+
+      <div class="callout warn">
+        <strong>Dev activation only (for now)</strong>
+        Promoting a snapshot to the active tip requires <code>-assumeutxodev=1</code>
+        except on regtest. Do not use untrusted snapshots with real funds until
+        Phase C completes and community-attested heights land in chainparams.
+      </div>
+
+      <h2>Goal vs today</h2>
+      <table>
+        <thead>
+          <tr><th>Today (1.14)</th><th>AssumeUTXO path</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Sequential IBD from genesis (or prune tip) before wallet tip is trustworthy</td>
+            <td>Load UTXO set at H → tip usable → prove history in background</td>
+          </tr>
+          <tr>
+            <td>Single global <code>chainActive</code> / <code>pcoinsTip</code></td>
+            <td>Dual chainstate: active snapshot + parked IBD for validation</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Implementation status</h2>
+      <table>
+        <thead>
+          <tr><th>Slice</th><th>Status</th><th>Deliverable</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>A1</td><td><span class="badge badge-done">Done</span></td><td><code>node/chainstate.*</code> wraps active tip; <code>getchainstates</code></td></tr>
+          <tr><td>A2</td><td><span class="badge badge-done">Done</span></td><td>Hot RPCs/Qt use <code>ActiveChain()</code> / <code>ActiveCoinsTip()</code></td></tr>
+          <tr><td>A3</td><td><span class="badge badge-done">Done</span></td><td>Idle background owns empty <code>CChain</code></td></tr>
+          <tr><td>B1</td><td><span class="badge badge-done">Done</span></td><td><code>dumptxoutset</code> / <code>loadtxoutset</code>; per-txid <code>CCoins</code> file format</td></tr>
+          <tr><td>B2</td><td><span class="badge badge-done">Done</span></td><td><code>activatesnapshot</code>; mirrors globals for wallet</td></tr>
+          <tr><td>C1</td><td><span class="badge badge-done">Done</span></td><td>Background <code>ConnectBlock</code> → H; <code>hash_serialized</code> match; fail-closed</td></tr>
+          <tr><td>C2</td><td><span class="badge badge-done">Done</span></td><td><code>assumeutxo.dat</code> restore; historical getdata; dual collapse flag</td></tr>
+          <tr><td>D</td><td><span class="badge badge-todo">Later</span></td><td>GUI modal, attested mainnet heights, signed artifacts</td></tr>
+        </tbody>
+      </table>
+
+      <h2>End-to-end operator flow</h2>
+      <div class="flow">
+        <div class="flow-step">
+          <strong>Dump</strong>
+          Synced node: <code>dumptxoutset utxo.dat</code>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+          <strong>Load</strong>
+          New node: <code>loadtxoutset utxo.dat</code>
+          <div class="flow-note">coins → chainstate_snapshot/</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+          <strong>Activate</strong>
+          <code>activatesnapshot</code> or load with <code>true</code>
+          <div class="flow-note">-assumeutxodev on mainnet</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+          <strong>Prove</strong>
+          Background ConnectBlock + hash check
+          <div class="flow-note">auto + stepbackgroundvalidation</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+          <strong>Done</strong>
+          <code>assumeutxo_validated</code> / dual collapsed
+        </div>
+      </div>
+
+      <h2>Dual chainstate (after B2 activate)</h2>
+      <pre><code>┌──────────────────────────────────────────────────────────────┐
+│  ACTIVE  "snapshot"                                          │
+│  · chainActive + pcoinsTip → chainstate_snapshot/            │
+│  · Wallet / net tip at H (then H+ as blocks arrive)          │
+└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  BACKGROUND  "ibd"                                           │
+│  · Parked former tip + original chainstate/ coins            │
+│  · ConnectBlock genesis…H; compare hash_serialized           │
+│  · Missing blk data → waiting_blocks → P2P historical fetch  │
+└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  PERSIST  assumeutxo.dat                                     │
+│  · base hash, coins hash, status, bg height                  │
+│  · Restart: MaybeRestoreAssumeUtxo() re-tips snapshot        │
+└──────────────────────────────────────────────────────────────┘</code></pre>
+
+      <h2>Snapshot file format (B1)</h2>
+      <p>
+        Dogecoin 1.14 still uses <strong>per-txid <code>CCoins</code></strong> (not modern Bitcoin
+        per-outpoint <code>Coin</code>). Version <code>1</code> marks that layout:
+      </p>
+      <pre><code>magic "utxo\xff" | uint16 version=1 | network magic[4]
+base_blockhash | coins_count
+repeat: txid | CCoins serialization</code></pre>
+
+      <h2>Background validation (C1/C2)</h2>
+      <ul>
+        <li>Expected UTXO hash frozen at <code>loadtxoutset</code> via <code>ComputeCoinsHashSerialized</code> (same idea as <code>gettxoutsetinfo.hash_serialized</code>).</li>
+        <li>Each <code>ActivateBestChain</code> steps up to 32 background blocks; RPC <code>stepbackgroundvalidation</code> for manual push.</li>
+        <li><strong>Match</strong> → <code>assumeutxo_validated</code> + dual collapsed.</li>
+        <li><strong>Mismatch / ConnectBlock fail</strong> → fail-closed (error UI + shutdown). Remove <code>assumeutxo.dat</code> + <code>chainstate_snapshot/</code> to recover.</li>
+        <li>C2: historical getdata even when blocks are ancestors of <code>chainActive</code> but lack <code>BLOCK_HAVE_DATA</code> (prune case).</li>
+      </ul>
+
+      <h2>RPC surface</h2>
+      <table>
+        <thead>
+          <tr><th>RPC</th><th>Role</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>getchainstates</code></td><td>List chainstates; phase string; validation status</td></tr>
+          <tr><td><code>getibdinfo</code></td><td>IBD + snapshot/background fields</td></tr>
+          <tr><td><code>dumptxoutset</code></td><td>Write snapshot file</td></tr>
+          <tr><td><code>loadtxoutset</code></td><td>Load into background (optional activate)</td></tr>
+          <tr><td><code>activatesnapshot</code></td><td>Promote loaded snapshot to tip</td></tr>
+          <tr><td><code>stepbackgroundvalidation</code></td><td>Manual Phase C progress</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Key code</h2>
+      <ul>
+        <li><code>src/node/chainstate.*</code> — dual roles, activate, restore, step, collapse</li>
+        <li><code>src/node/utxo_snapshot.*</code> — file format, hash, <code>assumeutxo.dat</code></li>
+        <li><code>src/rpc/blockchain.cpp</code> — RPCs</li>
+        <li><code>src/validation.cpp</code> — auto-step after tip connect</li>
+        <li><code>src/net_processing.cpp</code> — missing historical blocks</li>
+        <li><code>src/init.cpp</code> — init/restore/shutdown</li>
+      </ul>
+
+      <h2>Still open</h2>
+      <ul class="checklist">
+        <li class="todo">Hardcoded <code>AssumeutxoData</code> in chainparams (mainnet/testnet)</li>
+        <li class="todo">Drop blanket <code>-assumeutxodev</code> for attested heights only</li>
+        <li class="todo">GUI: “Using snapshot; historical validation N%”</li>
+        <li class="todo">Signed public snapshot artifacts + prune product rules</li>
+        <li class="todo">Optional hard delete of parked IBD DB after complete</li>
+      </ul>
+
+      <div class="footer">
+        Design authority: <code>doc/assumeutxo-dogecoin-1.14.md</code>.
+        IBD prerequisites: <a href="ibd-and-p2p.html">IBD &amp; P2P</a>.
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IBD &amp; P2P — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav></nav>
+    </aside>
+
+    <main class="main">
+      <h1>IBD &amp; P2P robustness</h1>
+      <p class="lead">
+        Non-consensus work on Dogecoin Core Pro <strong>1.14.101</strong> so full nodes
+        finish Initial Block Download faster and stall less — without touching AuxPoW,
+        subsidy, or script rules.
+      </p>
+      <div class="meta">
+        <span>Release line: 1.14.101</span>
+        <span>Docs: <code>doc/ibd-p0-peer-telemetry.md</code></span>
+        <span>Consensus: unchanged</span>
+      </div>
+
+      <div class="callout ok">
+        <strong>Why this came first</strong>
+        Gemini/Grok sequencing: measure and unstick IBD before assuming UTXO shortcuts.
+        A broken peer graph or flush thrash makes AssumeUTXO irrelevant.
+      </div>
+
+      <h2>Problem</h2>
+      <p>
+        1.14 DNA uses a single tip and LevelDB chainstate. Long IBD is normal, but
+        operators had little visibility when peers stalled, flushes hammered disk,
+        or all connections clustered on the same network.
+      </p>
+
+      <h2>Delivery slices</h2>
+      <table>
+        <thead>
+          <tr><th>Slice</th><th>What shipped</th><th>Why</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>P0 telemetry</strong></td>
+            <td>
+              <code>IBDStats</code>, RPC <code>getibdinfo</code>, debug category
+              <code>ibd</code>, progress logging
+            </td>
+            <td>You cannot fix what you cannot measure during multi-hour syncs.</td>
+          </tr>
+          <tr>
+            <td><strong>P0 stall rescue</strong></td>
+            <td>
+              Non-preferred peers can fetch blocks when preferred downloaders stall
+              (<code>-ibdrescue</code>, default on
+            </td>
+            <td>One slow “preferred” peer was a single point of failure for block fetch.</td>
+          </tr>
+          <tr>
+            <td><strong>P0.1 flush policy</strong></td>
+            <td>
+              Gentler IBD flush thresholds (less thrash under high <code>-dbcache</code>);
+              prune UX tips in init
+            </td>
+            <td>Flush storms convert free RAM into disk waits during IBD.</td>
+          </tr>
+          <tr>
+            <td><strong>P0.1 soft diversity</strong></td>
+            <td>Soft limit on many peers sharing the same IPv4 /8</td>
+            <td>Reduces correlated failure and eclipse-ish concentration without hard bans.</td>
+          </tr>
+          <tr>
+            <td><strong>ASMAP</strong></td>
+            <td>
+              Bitcoin-compatible <code>-asmap</code>; ASN-aware
+              <code>GetGroup</code> when a map is loaded
+            </td>
+            <td>Peer diversity by real network topology, not only /16 prefixes.</td>
+          </tr>
+          <tr>
+            <td><strong>P0.3 parallelism</strong></td>
+            <td>
+              IBD: 32 blocks in transit per peer; up to 3 header-sync peers
+            </td>
+            <td>1.14 defaults were conservative; more pipeline utilization on home links.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>IBD observe → rescue flow</h2>
+      <div class="flow">
+        <div class="flow-step">
+          <strong>1. Measure</strong>
+          <code>getibdinfo</code> / <code>-debug=ibd</code>
+          <div class="flow-note">heights, cache, stall flags</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+          <strong>2. Detect stall</strong>
+          Preferred peers saturated or idle while IBD
+          <div class="flow-note">net_processing path</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+          <strong>3. Rescue</strong>
+          Allow non-preferred fetch when <code>-ibdrescue</code>
+          <div class="flow-note">does not change consensus</div>
+        </div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step">
+          <strong>4. Pipeline</strong>
+          32 blocks/peer + multi header peers
+          <div class="flow-note">P0.3</div>
+        </div>
+      </div>
+      <p class="diagram-caption">
+        Operator loop: raise <code>-dbcache</code> if RAM allows, watch
+        <code>getibdinfo</code>, keep <code>-ibdrescue=1</code> unless debugging peer selection.
+      </p>
+
+      <h2>Key code</h2>
+      <table>
+        <thead>
+          <tr><th>Area</th><th>Files</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Telemetry</td><td><code>src/ibdstats.*</code>, <code>rpc/blockchain.cpp</code> (<code>getibdinfo</code>)</td></tr>
+          <tr><td>Stall / rescue / pipeline</td><td><code>src/net_processing.cpp</code></td></tr>
+          <tr><td>Flush policy</td><td><code>src/validation.cpp</code> (IBD flush thresholds)</td></tr>
+          <tr><td>ASMAP</td><td><code>src/asmap.*</code>, <code>src/netaddress.*</code></td></tr>
+          <tr><td>Init tips</td><td><code>src/init.cpp</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2>What we did <em>not</em> change</h2>
+      <ul>
+        <li>AuxPoW / merge-mining consensus</li>
+        <li>Subsidy epochs or DigiShield</li>
+        <li>Script interpreter rules</li>
+        <li>Default mainnet chainparams money constants</li>
+      </ul>
+
+      <div class="footer">
+        Next node path: <a href="assumeutxo.html">AssumeUTXO</a> (bootstrap after healthy IBD).
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

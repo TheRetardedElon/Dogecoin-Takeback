@@ -13,25 +13,7 @@
         <h1>Ð Dogecoin Dev</h1>
         <p>Local project documentation</p>
       </div>
-      <nav>
-        <div class="nav-section">Start here</div>
-        <a href="../index.html">Dashboard</a>
-        <a href="recovery-status.html">Recovery status</a>
-        <a href="roadmap.html">Roadmap</a>
-        <div class="nav-section">Understanding</div>
-        <a href="architecture.html">Architecture</a>
-        <a href="module-map.html">Module map</a>
-        <a href="diagrams.html">Diagrams</a>
-        <a href="glossary.html">Glossary</a>
-        <div class="nav-section">Workstreams</div>
-        <a href="rebrand-audit.html">Rebrand audit</a>
-        <a href="modern-ui.html">Modern UI &amp; themes</a>
-        <a href="storage-stack.html">Storage stack</a>
-        <a href="payment-layer.html">Payment layer</a>
-        <a href="build-and-run.html">Build &amp; run</a>
-        <div class="nav-section">Repo</div>
-        <a href="source-of-truth.html">Source of truth</a>
-      </nav>
+      <nav></nav>
     </aside>
 
     <main class="main">
@@ -43,8 +25,15 @@
       </p>
       <div class="meta">
         <span>Source tree: <code>C:\dogedev</code></span>
-        <span>Git: restored from local bundle (2026-07-27)</span>
-        <span>Baseline: <code>975ef57</code> rebrand + themes</span>
+        <span>Client line: <strong>1.14.101</strong></span>
+        <span>Docs refresh: 2026-08-05</span>
+        <span>Git: master (many commits past rebrand baseline)</span>
+      </div>
+
+      <div class="callout ok">
+        <strong>This page is historical inventory + current delta</strong>
+        Early rows describe post-HDD recovery. The “since recovered” section
+        lists major product/node work that is now <em>in the tree</em>.
       </div>
 
       <h2>Survived — use this as baseline</h2>
@@ -118,63 +107,81 @@
             <td>Chainstate still LSM/LevelDB</td>
           </tr>
           <tr>
-            <td>Advanced peer map / ASN / traffic-by-message UI</td>
-            <td>No matching sources found</td>
-            <td>Debug/network UX to rebuild</td>
+            <td>GigaWallet / DogeConnect <em>inside</em> Core</td>
+            <td>Still out of scope for Core Pro</td>
+            <td>Optional external GPE only</td>
           </tr>
           <tr>
-            <td>Meme Stream client ↔ gopastearth</td>
-            <td>No <code>memestream</code> code; API + UI reference docs landed</td>
-            <td><a href="memestream-integration.html">API</a> · <a href="ui-reference-core-pro.html">UI shots</a> — author=wallet, Home rail + full page</td>
+            <td>RocksDB / libmdbx chainstate engine</td>
+            <td>Not started</td>
+            <td>Orthogonal to AssumeUTXO dual LevelDB views</td>
           </tr>
           <tr>
-            <td>Doge Business Center (invoices / POS)</td>
-            <td>Not in tree (screenshots only)</td>
-            <td>Local wallet merchant tools; keys stay in Core — see UI reference</td>
-          </tr>
-          <tr>
-            <td>GigaWallet / DogeConnect in Core</td>
-            <td>Architecture discussion only</td>
-            <td>Belongs mostly outside Core (GPE)</td>
-          </tr>
-          <tr>
-            <td>Remote backup (GitHub/etc.)</td>
-            <td>Not configured yet</td>
-            <td>Push when remote exists — avoid single-disk risk</td>
-          </tr>
-          <tr>
-            <td>Post-bundle working-tree delta</td>
-            <td>Modified theme/UI files + untracked custom themes</td>
-            <td>On-disk work beyond <code>975ef57</code>; not all committed yet</td>
+            <td>Remote origin always in sync</td>
+            <td>May be ahead of origin locally</td>
+            <td>Push when ready — avoid single-disk risk</td>
           </tr>
         </tbody>
       </table>
 
-      <h2>Risks while regaining control</h2>
-      <div class="callout danger">
-        <strong>Do not treat the old changelog as absolute truth</strong>
-        <code>DOGECOIN_CHANGELOG.md</code> claims 100% Bitcoin elimination.
-        Live scan shows hundreds of residual references. Prefer code + this
-        audit over the changelog for conversion status.
+      <h2>Since recovery — now in the tree</h2>
+      <table>
+        <thead>
+          <tr><th>Area</th><th>Status</th><th>Docs</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Core Pro UI (Network, Business, Meme Stream, Options, Arcade)</td>
+            <td><span class="badge badge-done">Shipped</span></td>
+            <td><a href="ui-reference-core-pro.html">UI reference</a>, <a href="arcade.html">Arcade</a></td>
+          </tr>
+          <tr>
+            <td>IBD telemetry, rescue, ASMAP, parallel download</td>
+            <td><span class="badge badge-done">Shipped</span></td>
+            <td><a href="ibd-and-p2p.html">IBD &amp; P2P</a></td>
+          </tr>
+          <tr>
+            <td>AssumeUTXO A1–C2 (dual chainstate, prove, restore)</td>
+            <td><span class="badge badge-done">Shipped (dev-gated activate)</span></td>
+            <td><a href="assumeutxo.html">AssumeUTXO</a></td>
+          </tr>
+          <tr>
+            <td>Release 1.14.101 Windows packages</td>
+            <td><span class="badge badge-done">Built</span></td>
+            <td><code>release/</code></td>
+          </tr>
+          <tr>
+            <td>SQLite wallet backend</td>
+            <td><span class="badge badge-partial">Plan + detection</span></td>
+            <td><a href="sqlite-wallet-plan.html">SQLite plan</a></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Risks (updated)</h2>
+      <div class="callout warn">
+        <strong>Changelog + residual rebrand</strong>
+        Prefer code and living HTML docs for conversion status. Root
+        <code>DOGECOIN_CHANGELOG.md</code> now includes a 2026 heavy-update section;
+        older “100% Bitcoin eliminated” claims elsewhere may still overstate.
       </div>
       <ul>
-        <li><strong>WIP dual files</strong> — <code>*_fixed.h</code> next to originals; clarify which is canonical before building.</li>
-        <li><strong>Commented theme wiring</strong> — some enhanced theme manager paths are commented in <code>dogecoingui.cpp</code>.</li>
-        <li><strong>No version control on this copy</strong> — every change is one mistake away from loss again until Git + remote backup exists.</li>
-        <li><strong>Toolchain</strong> — Git was not on PATH when first assessed; install Git + build deps before compile claims.</li>
+        <li><strong>AssumeUTXO trust</strong> — activate only with <code>-assumeutxodev</code> / regtest until attested heights.</li>
+        <li><strong>Remote backup</strong> — local master can be many commits ahead of origin; push deliberately.</li>
+        <li><strong>Consensus untouched</strong> — keep AuxPoW/script changes out of bootstrap experiments.</li>
       </ul>
 
-      <h2>Immediate control checklist</h2>
+      <h2>Control checklist (updated)</h2>
       <ul class="checklist">
         <li class="done">Locate surviving tree at <code>C:\dogedev</code></li>
-        <li class="done">Create living HTML docs under <code>html/docs/</code></li>
-        <li class="done">Baseline rebrand residual scan (categories + counts)</li>
-        <li class="done">Install Git; restore history from <code>dogecoin-rebrand.bundle</code></li>
-        <li class="done">Branches: <code>master</code>, <code>baseline-rebrand</code> @ <code>975ef57</code></li>
-        <li class="todo">Configure remote + push backup</li>
-        <li class="todo">First clean configure + build of dogecoind / dogecoin-qt</li>
-        <li class="todo">Tag after green build + docs commit</li>
-        <li class="todo">Execute rebrand residual tiers (see audit)</li>
+        <li class="done">Living HTML docs under <code>html/docs/</code></li>
+        <li class="done">Git history restored; continued development on master</li>
+        <li class="done">Green Windows builds for 1.14.101 line</li>
+        <li class="done">Core Pro product tabs + pure DOGE payments</li>
+        <li class="done">IBD P0–P0.3 + AssumeUTXO through C2</li>
+        <li class="todo">Push / mirror remote backup of full history</li>
+        <li class="todo">AssumeUTXO product polish (attested heights, GUI)</li>
+        <li class="todo">SQLite wallet backend</li>
       </ul>
 
       <div class="footer">

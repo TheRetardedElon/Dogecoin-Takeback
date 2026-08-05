@@ -17,7 +17,10 @@ Based on Dogecoin Core (Bitcoin Core lineage). Development continues here as a p
 | **Doge Business** | Local invoices, POS keypad, payment QR, auto-watch paid |
 | **Meme Stream** | Feed / publish / tip creators on-chain (author = wallet address) |
 | **Network page** | Peers, bans, disconnect/ban/unban, activity toggle |
+| **Arcade** | In-client mini-game tab (pure Qt; no consensus) |
 | **Themes** | ThemeManager + Options → Theme (and full Options tabs restored) |
+| **IBD / P2P** | `getibdinfo`, stall rescue, ASMAP, parallel block fetch (1.14.101) |
+| **AssumeUTXO** | Dual chainstate A–C2: dump/load/activate, background prove, restore (`-assumeutxodev`) |
 
 **Settlement rule:** money that matters is **native DOGE on Dogecoin**. Optional external business platforms (e.g. GPE) are out of scope for this README; this repo ships the Core client.
 
@@ -26,7 +29,10 @@ More product detail: open **`html/docs/index.html`** in a browser (local docs, n
 - [Pure DOGE strategy](html/docs/pages/pure-doge-strategy.html)
 - [Payment layer](html/docs/pages/payment-layer.html)
 - [Core Pro UI reference](html/docs/pages/ui-reference-core-pro.html)
+- [IBD & P2P](html/docs/pages/ibd-and-p2p.html)
+- [AssumeUTXO](html/docs/pages/assumeutxo.html)
 - [Roadmap](html/docs/pages/roadmap.html)
+- [Changelog (heavy updates)](DOGECOIN_CHANGELOG.md)
 
 ---
 

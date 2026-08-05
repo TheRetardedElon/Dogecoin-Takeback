@@ -13,24 +13,7 @@
         <h1>Ð Dogecoin Dev</h1>
         <p>Local project documentation</p>
       </div>
-      <nav>
-        <div class="nav-section">Start here</div>
-        <a href="../index.html">Dashboard</a>
-        <a href="recovery-status.html">Recovery status</a>
-        <a href="roadmap.html">Roadmap</a>
-        <div class="nav-section">Understanding</div>
-        <a href="architecture.html">Architecture</a>
-        <a href="module-map.html">Module map</a>
-        <a href="diagrams.html">Diagrams</a>
-        <a href="glossary.html">Glossary</a>
-        <div class="nav-section">Workstreams</div>
-        <a href="rebrand-audit.html">Rebrand audit</a>
-        <a href="modern-ui.html">Modern UI &amp; themes</a>
-        <a href="storage-stack.html">Storage stack</a>
-        <a href="build-and-run.html">Build &amp; run</a>
-        <div class="nav-section">Repo</div>
-        <a href="source-of-truth.html">Source of truth</a>
-      </nav>
+      <nav></nav>
     </aside>
 
     <main class="main">
@@ -75,8 +58,36 @@
             <td>Initial Block Download — syncing the chain from peers.</td>
           </tr>
           <tr>
+            <td><strong>IBD rescue</strong></td>
+            <td>Allow non-preferred peers to fetch blocks when preferred downloaders stall (<code>-ibdrescue</code>).</td>
+          </tr>
+          <tr>
+            <td><strong>ASMAP</strong></td>
+            <td>ASN map for peer bucketing (<code>-asmap</code>); better network diversity than raw IP prefixes alone.</td>
+          </tr>
+          <tr>
+            <td><strong>AssumeUTXO</strong></td>
+            <td>Bootstrap by loading a UTXO snapshot at height H, then fully validating history in the background. Not a soft fork.</td>
+          </tr>
+          <tr>
+            <td><strong>Dual chainstate</strong></td>
+            <td>Active tip (often snapshot) + background IBD coins used to prove the assume hash (<code>node/chainstate</code>).</td>
+          </tr>
+          <tr>
+            <td><strong>hash_serialized</strong></td>
+            <td>Deterministic hash of the UTXO set (same family as <code>gettxoutsetinfo</code>); used to match snapshot vs background.</td>
+          </tr>
+          <tr>
+            <td><strong>assumeutxo.dat</strong></td>
+            <td>Datadir file persisting AssumeUTXO session (base hash, coins hash, status) for restart restore (Phase C2).</td>
+          </tr>
+          <tr>
             <td><strong>AuxPoW</strong></td>
-            <td>Auxiliary Proof of Work; enables merge mining.</td>
+            <td>Auxiliary Proof of Work; enables merge mining. Untouched by IBD/AssumeUTXO workstreams.</td>
+          </tr>
+          <tr>
+            <td><strong>Core Pro</strong></td>
+            <td>This product shell: pure DOGE node + wallet + Qt (Business, Meme Stream, Network, Arcade) on 1.14 DNA.</td>
           </tr>
           <tr>
             <td><strong>DigiShield</strong></td>

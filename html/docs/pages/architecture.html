@@ -13,25 +13,7 @@
         <h1>Ð Dogecoin Dev</h1>
         <p>Local project documentation</p>
       </div>
-      <nav>
-        <div class="nav-section">Start here</div>
-        <a href="../index.html">Dashboard</a>
-        <a href="recovery-status.html">Recovery status</a>
-        <a href="roadmap.html">Roadmap</a>
-        <div class="nav-section">Understanding</div>
-        <a href="architecture.html">Architecture</a>
-        <a href="module-map.html">Module map</a>
-        <a href="diagrams.html">Diagrams</a>
-        <a href="glossary.html">Glossary</a>
-        <div class="nav-section">Workstreams</div>
-        <a href="rebrand-audit.html">Rebrand audit</a>
-        <a href="modern-ui.html">Modern UI &amp; themes</a>
-        <a href="storage-stack.html">Storage stack</a>
-        <a href="payment-layer.html">Payment layer</a>
-        <a href="build-and-run.html">Build &amp; run</a>
-        <div class="nav-section">Repo</div>
-        <a href="source-of-truth.html">Source of truth</a>
-      </nav>
+      <nav></nav>
     </aside>
 
     <main class="main">
@@ -79,21 +61,27 @@
 
       <h2>Layer stack</h2>
       <pre><code>┌─────────────────────────────────────────────────────────┐
-│  Qt GUI  (DogecoinGUI, modern*, themes, RPC console)    │
+│  Qt GUI  Core Pro: Home, Network, Business, Meme Stream,│
+│          Options, Arcade + themes + RPC console         │
 ├─────────────────────────────────────────────────────────┤
 │  Wallet  (keys, txs, coin control)  ← still BDB         │
 ├─────────────────────────────────────────────────────────┤
-│  RPC / HTTP / ZMQ  (external automation surface)        │
+│  RPC / HTTP / ZMQ  (getibdinfo, getchainstates, …)      │
 ├─────────────────────────────────────────────────────────┤
-│  Net processing + P2P  (peers, inv, blocks, mempool)    │
+│  Net processing + P2P  (IBD rescue, ASMAP, hist. fetch) │
 ├─────────────────────────────────────────────────────────┤
-│  Validation + mempool + miner  (policy + consensus use) │
+│  Validation + dual chainstate (AssumeUTXO active/bg)    │
 ├─────────────────────────────────────────────────────────┤
 │  Consensus  (script, pow/DigiShield, AuxPoW, subsidy)   │
 ├─────────────────────────────────────────────────────────┤
-│  Storage  chainstate/index ← LevelDB via CDBWrapper     │
-│           blocks/*.dat on filesystem                    │
+│  Storage  chainstate/ + chainstate_snapshot/ (LevelDB)  │
+│           assumeutxo.dat · blocks/*.dat                 │
 └─────────────────────────────────────────────────────────┘</code></pre>
+      <p>
+        Bootstrap path: <a href="ibd-and-p2p.html">IBD &amp; P2P</a> ·
+        <a href="assumeutxo.html">AssumeUTXO</a>. Consensus box is intentionally
+        unchanged by those workstreams.
+      </p>
 
       <h2>Dogecoin-specific consensus pieces</h2>
       <table>
@@ -135,6 +123,9 @@
         Blocks land as raw data under the blocks directory. Indexes and UTXO
         (chainstate) are key-value data behind <code>CDBWrapper</code>
         (currently LevelDB). Validation updates coins views; reorgs use undo data.
+        With AssumeUTXO active, the wallet tip may use <code>chainstate_snapshot/</code>
+        while background validation continues on the original <code>chainstate/</code>
+        (<code>src/node/chainstate.*</code>).
       </p>
       <h3>Wallet</h3>
       <p>
