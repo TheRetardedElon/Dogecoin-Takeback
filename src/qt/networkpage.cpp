@@ -25,6 +25,13 @@ NetworkPage::NetworkPage(const PlatformStyle* _platformStyle, QWidget* parent)
     : QWidget(parent),
       platformStyle(_platformStyle),
       clientModel(0),
+      connectionsLabel(0),
+      blocksLabel(0),
+      headersLabel(0),
+      ibdLabel(0),
+      ibdDetailLabel(0),
+      trafficLabel(0),
+      warningsLabel(0),
       peerMap(0),
       pollTimer(0),
       updatingNetworkToggle(false),
@@ -92,6 +99,16 @@ void NetworkPage::setupUi()
     stats->addStretch();
     root->addLayout(stats);
 
+    ibdDetailLabel = new QLabel();
+    ibdDetailLabel->setObjectName(QStringLiteral("mutedLabel"));
+    ibdDetailLabel->setWordWrap(true);
+    ibdDetailLabel->setToolTip(tr("IBD peer-delivery telemetry (see getibdinfo RPC). "
+                                  "stall = peers disconnected for blocking download; "
+                                  "rescue = blocks fetched via non-preferred peers; "
+                                  "dl-to = per-block download timeouts; "
+                                  "flush = chainstate flushes."));
+    root->addWidget(ibdDetailLabel);
+
     warningsLabel = new QLabel();
     warningsLabel->setObjectName(QStringLiteral("mutedLabel"));
     warningsLabel->setWordWrap(true);
@@ -145,6 +162,8 @@ void NetworkPage::updateStats()
         blocksLabel->setText(QStringLiteral("—"));
         headersLabel->setText(QStringLiteral("—"));
         ibdLabel->setText(tr("No client model"));
+        if (ibdDetailLabel)
+            ibdDetailLabel->clear();
         trafficLabel->setText(QStringLiteral("—"));
         warningsLabel->clear();
         return;
@@ -159,8 +178,14 @@ void NetworkPage::updateStats()
     if (clientModel->inInitialBlockDownload()) {
         const double prog = clientModel->getVerificationProgress(0) * 100.0;
         ibdLabel->setText(tr("Syncing (~%1%)").arg(prog, 0, 'f', 1));
+        if (ibdDetailLabel)
+            ibdDetailLabel->setText(tr("IBD telemetry: %1").arg(clientModel->getIbdStatsSummary()));
     } else {
         ibdLabel->setText(tr("Synced"));
+        if (ibdDetailLabel) {
+            // Still show lifetime counters — useful after a long sync.
+            ibdDetailLabel->setText(tr("Session delivery: %1").arg(clientModel->getIbdStatsSummary()));
+        }
     }
 
     const quint64 recv = clientModel->getTotalBytesRecv();

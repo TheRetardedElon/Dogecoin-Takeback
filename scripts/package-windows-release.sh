@@ -6,8 +6,8 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 BUILD_ROOT="${BUILD_ROOT:-$HOME/dogedev-winbuild}"
 SRC_WIN="/mnt/c/dogedev"
 OUT_WIN="${SRC_WIN}/release"
-REL_NAME="dogecoin-1.14.100-win64"
-VERSION="1.14.100"
+REL_NAME="dogecoin-1.14.101-win64"
+VERSION="1.14.101"
 
 HOST="x86_64-w64-mingw32"
 log() { echo "[package $(date +%H:%M:%S)] $*"; }
@@ -128,11 +128,16 @@ ${REL_NAME}/
 1. Extract the zip
 2. Run \`dogecoin-qt.exe\`
 
+## What's new in ${VERSION}
+- **IBD P0:** \`getibdinfo\`, peer stall telemetry, IBD rescue fetch (\`-ibdrescue\`, default on), Network page IBD line
+- **Arcade:** Retr-Doge Shibe Blaster (client-only mini-game)
+- Pure DOGE — no consensus / AuxPoW changes
+
 ## Notes
 - First sync downloads the full Dogecoin chain (or enable pruned mode in Options).
 - Windows SmartScreen may warn on **unsigned** builds — expected until code-signed.
-- Pure DOGE client (no EVM). Pro features: Home, Meme Stream, Business, Network, Options, Arcade.
-- Arcade: Retr-Doge Shibe Blaster — retro client-side mini-game (no wallet/network).
+- Pure DOGE client (no EVM). Pro: Home, Meme Stream, Business, Network, Options, Arcade.
+- Ops: \`dogecoin-cli getibdinfo\` · \`-debug=ibd\` · \`-ibdrescue=0\` to disable rescue fetch.
 
 ## Verify
 \`\`\`

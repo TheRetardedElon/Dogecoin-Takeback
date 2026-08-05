@@ -59,6 +59,7 @@ private:
     QLabel* blocksLabel;
     QLabel* headersLabel;
     QLabel* ibdLabel;
+    QLabel* ibdDetailLabel;
     QLabel* trafficLabel;
     QLabel* warningsLabel;
     PeerMapWidget* peerMap;

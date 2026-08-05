@@ -60,6 +60,14 @@ struct CNodeStateStats {
     int nSyncHeight;
     int nCommonHeight;
     std::vector<int> vHeightInFlight;
+    /** Blocks currently requested from this peer (download pipeline). */
+    int nBlocksInFlight;
+    /** Outbound/whitelist preferred download peer during IBD. */
+    bool fPreferredDownload;
+    /** True if this peer is currently stalling the block download window. */
+    bool fStalling;
+    /** Seconds since stall started (0 if not stalling). */
+    int nStallingSeconds;
 };
 
 /** Get statistics from node state */

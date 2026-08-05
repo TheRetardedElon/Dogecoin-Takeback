@@ -18,6 +18,7 @@
 #include "txmempool.h"
 #include "ui_interface.h"
 #include "util.h"
+#include "ibdstats.h"
 
 #include <stdint.h>
 
@@ -173,6 +174,17 @@ void ClientModel::updateAlert()
 bool ClientModel::inInitialBlockDownload() const
 {
     return IsInitialBlockDownload();
+}
+
+QString ClientModel::getIbdStatsSummary() const
+{
+    const IBDStats::Snapshot s = IBDStats::GetSnapshot();
+    // Atomic snapshot — no cs_main. Safe for GUI poll timer.
+    return QString("stall %1 · rescue %2 · dl-to %3 · flush %4")
+        .arg(s.stall_disconnects)
+        .arg(s.ibd_rescue_fetches)
+        .arg(s.download_timeouts)
+        .arg(s.flushes);
 }
 
 enum BlockSource ClientModel::getBlockSource() const

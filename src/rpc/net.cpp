@@ -136,6 +136,10 @@ UniValue getpeerinfo(const JSONRPCRequest& request)
             "       n,                        (numeric) The heights of blocks we're currently asking from this peer\n"
             "       ...\n"
             "    ],\n"
+            "    \"blocks_in_flight\": n,     (numeric) Count of blocks currently requested from this peer\n"
+            "    \"preferred_download\": bool,(boolean) Whether this is a preferred IBD download peer\n"
+            "    \"stalling\": bool,          (boolean) Whether this peer is stalling the download window\n"
+            "    \"stalling_seconds\": n,     (numeric) Seconds since stall started (0 if not stalling)\n"
             "    \"addr_processed\": n,       (numeric) The total number of addresses processed, excluding those dropped due to rate limiting\n"
             "    \"addr_rate_limited\": n,    (numeric) The total number of addresses dropped due to rate limiting\n"
             "    \"whitelisted\": true|false, (boolean) Whether the peer is whitelisted\n"
@@ -203,6 +207,10 @@ UniValue getpeerinfo(const JSONRPCRequest& request)
                 heights.push_back(height);
             }
             obj.pushKV("inflight", heights);
+            obj.pushKV("blocks_in_flight", statestats.nBlocksInFlight);
+            obj.pushKV("preferred_download", statestats.fPreferredDownload);
+            obj.pushKV("stalling", statestats.fStalling);
+            obj.pushKV("stalling_seconds", statestats.nStallingSeconds);
         }
         obj.pushKV("addr_processed", stats.nProcessedAddrs);
         obj.pushKV("addr_rate_limited", stats.nRatelimitedAddrs);

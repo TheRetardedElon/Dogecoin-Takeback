@@ -107,6 +107,7 @@ DOGECOIN_CORE_H = \
   fs.h \
   httprpc.h \
   httpserver.h \
+  ibdstats.h \
   indirectmap.h \
   init.h \
   key.h \
@@ -201,6 +202,7 @@ libdogecoin_server_a_SOURCES = \
   checkpoints.cpp \
   httprpc.cpp \
   httpserver.cpp \
+  ibdstats.cpp \
   init.cpp \
   dbwrapper.cpp \
   merkleblock.cpp \

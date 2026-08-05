@@ -69,6 +69,8 @@ public:
 
     //! Return true if core is doing initial block download
     bool inInitialBlockDownload() const;
+    /** Compact IBD telemetry line for Network page (stall/rescue/flush counters). */
+    QString getIbdStatsSummary() const;
     //! Returns enum BlockSource of the current importing/syncing state
     enum BlockSource getBlockSource() const;
     //! Return true if network activity in core is enabled

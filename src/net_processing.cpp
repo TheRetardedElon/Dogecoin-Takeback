@@ -31,6 +31,7 @@
 #include "utilmoneystr.h"
 #include "utilstrencodings.h"
 #include "validationinterface.h"
+#include "ibdstats.h"
 
 #include <array>
 #include <boost/thread.hpp>
@@ -339,8 +340,9 @@ void FinalizeNode(NodeId nodeid, bool& fUpdateConnectionTime) {
 
 // Requires cs_main.
 // Returns a bool indicating whether we requested this block.
-// Also used if a block was /not/ received and timed out or started with another peer
-bool MarkBlockAsReceived(const uint256& hash) {
+// Also used if a block was /not/ received and timed out or started with another peer.
+// fCountReceive: set true only when a real BLOCK/CMPCT payload arrived (not reassignment).
+bool MarkBlockAsReceived(const uint256& hash, bool fCountReceive = false) {
     std::map<uint256, std::pair<NodeId, std::list<QueuedBlock>::iterator> >::iterator itInFlight = mapBlocksInFlight.find(hash);
     if (itInFlight != mapBlocksInFlight.end()) {
         CNodeState *state = State(itInFlight->second.first);
@@ -357,6 +359,8 @@ bool MarkBlockAsReceived(const uint256& hash) {
         state->nBlocksInFlight--;
         state->nStallingSince = 0;
         mapBlocksInFlight.erase(itInFlight);
+        if (fCountReceive)
+            IBDStats::NoteBlockReceived();
         return true;
     }
     return false;
@@ -393,6 +397,7 @@ bool MarkBlockAsInFlight(NodeId nodeid, const uint256& hash, const Consensus::Pa
     itInFlight = mapBlocksInFlight.insert(std::make_pair(hash, std::make_pair(nodeid, it))).first;
     if (pit)
         *pit = &itInFlight->second.second;
+    IBDStats::NoteBlockRequested();
     return true;
 }
 
@@ -624,11 +629,58 @@ bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats) {
     stats.nMisbehavior = state->nMisbehavior;
     stats.nSyncHeight = state->pindexBestKnownBlock ? state->pindexBestKnownBlock->nHeight : -1;
     stats.nCommonHeight = state->pindexLastCommonBlock ? state->pindexLastCommonBlock->nHeight : -1;
+    stats.nBlocksInFlight = state->nBlocksInFlight;
+    stats.fPreferredDownload = state->fPreferredDownload;
+    stats.fStalling = state->nStallingSince != 0;
+    stats.nStallingSeconds = 0;
+    if (state->nStallingSince != 0) {
+        const int64_t stalled_us = GetTimeMicros() - state->nStallingSince;
+        stats.nStallingSeconds = stalled_us > 0 ? (int)(stalled_us / 1000000) : 0;
+    }
     BOOST_FOREACH(const QueuedBlock& queue, state->vBlocksInFlight) {
         if (queue.pindex)
             stats.vHeightInFlight.push_back(queue.pindex->nHeight);
     }
     return true;
+}
+
+/**
+ * During IBD, preferred (outbound) peers normally monopolize block download.
+ * If they are stalling the window or fully saturated, allow non-preferred peers
+ * to participate so a single slow outbound cannot pin sync at ~87%.
+ * Requires cs_main.
+ *
+ * Disable with -ibdrescue=0 for strict preferred-only download (legacy behavior).
+ */
+static bool PreferredDownloadersNeedRescue()
+{
+    if (!GetBoolArg("-ibdrescue", true))
+        return false;
+
+    if (nPreferredDownload <= 0)
+        return false;
+
+    int nPreferredWithCapacity = 0;
+    bool anyPreferredStalling = false;
+
+    for (std::map<NodeId, CNodeState>::iterator it = mapNodeState.begin(); it != mapNodeState.end(); ++it) {
+        CNodeState& st = it->second;
+        if (!st.fPreferredDownload)
+            continue;
+        if (st.nStallingSince != 0)
+            anyPreferredStalling = true;
+        if (st.nBlocksInFlight < MAX_BLOCKS_IN_TRANSIT_PER_PEER)
+            nPreferredWithCapacity++;
+    }
+
+    if (anyPreferredStalling)
+        return true;
+
+    // Preferred peers exist but none can take more work while something is already in flight.
+    if (nPreferredWithCapacity == 0 && !mapBlocksInFlight.empty())
+        return true;
+
+    return false;
 }
 
 void RegisterNodeSignals(CNodeSignals& nodeSignals)
@@ -2313,7 +2365,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                 // process from some other peer.  We do this after calling
                 // ProcessNewBlock so that a malleated cmpctblock announcement
                 // can't be used to interfere with block relay.
-                MarkBlockAsReceived(pblock->GetHash());
+                MarkBlockAsReceived(pblock->GetHash(), true /* count receive */);
             }
         }
 
@@ -2366,7 +2418,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                 // though the block was successfully read, and rely on the
                 // handling in ProcessNewBlock to ensure the block index is
                 // updated, reject messages go out, etc.
-                MarkBlockAsReceived(resp.blockhash); // it is now an empty pointer
+                MarkBlockAsReceived(resp.blockhash, true /* count receive */); // it is now an empty pointer
                 fBlockRead = true;
                 // mapBlockSource is only used for sending reject messages and DoS scores,
                 // so the race between here and cs_main in ProcessNewBlock is fine.
@@ -2561,7 +2613,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             LOCK(cs_main);
             // Also always process if we requested the block explicitly, as we may
             // need it even though it is not a candidate for a new best tip.
-            forceProcessing |= MarkBlockAsReceived(hash);
+            forceProcessing |= MarkBlockAsReceived(hash, true /* count receive */);
             // mapBlockSource is only used for sending reject messages and DoS scores,
             // so the race between here and cs_main in ProcessNewBlock is fine.
             mapBlockSource.emplace(hash, std::make_pair(pfrom->GetId(), true));
@@ -3376,6 +3428,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
             // the download window should be much larger than the to-be-downloaded set of blocks, so disconnection
             // should only happen during initial block download.
             LogPrintf("Peer=%d is stalling block download, disconnecting\n", pto->id);
+            IBDStats::NoteStallDisconnect(pto->id);
             pto->fDisconnect = true;
             return true;
         }
@@ -3394,6 +3447,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                     nCalculatedDlWindow, state.vBlocksInFlight.size(),
                     state.nBlocksInFlightValidHeaders, nOtherPeersWithValidatedDownloads);
                 LogPrintf("Timeout downloading block %s from peer=%d, disconnecting\n", queuedBlock.hash.ToString(), pto->id);
+                IBDStats::NoteDownloadTimeout(pto->id);
                 pto->fDisconnect = true;
                 return true;
             }
@@ -3410,6 +3464,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                     // problems if we can't get any outbound peers.
                     if (!pto->fWhitelisted) {
                         LogPrintf("Timeout downloading headers from peer=%d, disconnecting\n", pto->GetId());
+                        IBDStats::NoteHeadersTimeout(pto->GetId());
                         pto->fDisconnect = true;
                         return true;
                     } else {
@@ -3433,11 +3488,23 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
         //
         // Message: getdata (blocks)
         //
+        // During IBD, only preferred download peers fetch by default (fFetch).
+        // If those preferred peers are stalling or saturated, rescue-fetch from
+        // other non-client peers so the download window can move.
         std::vector<CInv> vGetData;
-        if (!pto->fClient && (fFetch || !IsInitialBlockDownload()) && state.nBlocksInFlight < MAX_BLOCKS_IN_TRANSIT_PER_PEER) {
+        const bool fIbd = IsInitialBlockDownload();
+        bool fCanDownloadBlocks = fFetch || !fIbd;
+        bool fRescueThisPeer = false;
+        if (!fCanDownloadBlocks && fIbd && !pto->fClient && !pto->fOneShot && PreferredDownloadersNeedRescue()) {
+            fCanDownloadBlocks = true;
+            fRescueThisPeer = true;
+        }
+        if (!pto->fClient && fCanDownloadBlocks && state.nBlocksInFlight < MAX_BLOCKS_IN_TRANSIT_PER_PEER) {
             std::vector<const CBlockIndex*> vToDownload;
             NodeId staller = -1;
             FindNextBlocksToDownload(pto->GetId(), MAX_BLOCKS_IN_TRANSIT_PER_PEER - state.nBlocksInFlight, vToDownload, staller, consensusParams);
+            if (!vToDownload.empty() && fRescueThisPeer)
+                IBDStats::NoteIbdRescueFetch(pto->id);
             BOOST_FOREACH(const CBlockIndex *pindex, vToDownload) {
                 uint32_t nFetchFlags = GetFetchFlags(pto, pindex->pprev, consensusParams);
                 vGetData.push_back(CInv(MSG_BLOCK | nFetchFlags, pindex->GetBlockHash()));
@@ -3449,8 +3516,19 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                 if (State(staller)->nStallingSince == 0) {
                     State(staller)->nStallingSince = nNow;
                     LogPrint("net", "Stall started peer=%d\n", staller);
+                    IBDStats::NoteStallStarted(staller);
                 }
             }
+        }
+
+        // Rate-limited IBD progress line (-debug=ibd)
+        if (fIbd && pindexBestHeader) {
+            IBDStats::MaybeLogProgress(
+                chainActive.Height(),
+                pindexBestHeader->nHeight,
+                mapBlocksInFlight.size(),
+                nPreferredDownload,
+                nPeersWithValidatedDownloads);
         }
 
         //

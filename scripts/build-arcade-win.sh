@@ -70,10 +70,10 @@ x86_64-w64-mingw32-strings qt/dogecoin-qt.exe | grep -E 'Arcade|SHIBE|Shibe Blas
 
 bash /mnt/c/dogedev/scripts/package-windows-release.sh || true
 OUT=/mnt/c/dogedev/release
-cp -f /home/theretardedelon/dogedev-winbuild/dogecoin-1.14.100-win64-setup.exe "$OUT/" 2>/dev/null || true
+cp -f /home/theretardedelon/dogedev-winbuild/dogecoin-1.14.101-win64-setup.exe "$OUT/" 2>/dev/null || true
 (
   cd "$OUT"
-  sha256sum dogecoin-1.14.100-win64.zip dogecoin-1.14.100-win64-setup.exe 2>/dev/null | tee SHA256SUMS-win64.txt
-  ls -lah dogecoin-1.14.100-win64*
+  sha256sum dogecoin-1.14.101-win64.zip dogecoin-1.14.101-win64-setup.exe 2>/dev/null | tee SHA256SUMS-win64.txt
+  ls -lah dogecoin-1.14.101-win64*
 )
 echo ARCADE_DONE

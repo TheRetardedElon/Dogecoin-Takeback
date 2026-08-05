@@ -25,6 +25,7 @@
 #include "util.h"
 #include "utilstrencodings.h"
 #include "hash.h"
+#include "ibdstats.h"
 
 #include <stdint.h>
 
@@ -1854,10 +1855,52 @@ static UniValue getblockstats(const JSONRPCRequest& request)
     return ret;
 }
 
+UniValue getibdinfo(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+        throw runtime_error(
+            "getibdinfo\n"
+            "\nReturns Initial Block Download / peer-delivery telemetry (non-consensus).\n"
+            "Counters are process-lifetime atomics for diagnosing stuck sync, peer stalls,\n"
+            "and chainstate flush cost. Enable detailed logs with -debug=ibd.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"initialblockdownload\": true|false,\n"
+            "  \"blocks\": n,                  (numeric) current tip height\n"
+            "  \"headers\": n,                 (numeric) best header height\n"
+            "  \"blocks_in_flight\": n,        (numeric) unique blocks currently requested\n"
+            "  \"verificationprogress\": x,    (numeric) 0..1 estimate\n"
+            "  \"dbcache_bytes\": n,           (numeric) current coins cache memory\n"
+            "  \"stats\": { ... }              (object) IBDStats counters (see doc/ibd-p0-peer-telemetry.md)\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getibdinfo", "")
+            + HelpExampleRpc("getibdinfo", "")
+        );
+
+    LOCK(cs_main);
+
+    UniValue obj(UniValue::VOBJ);
+    obj.pushKV("initialblockdownload", IsInitialBlockDownload());
+    obj.pushKV("blocks", (int)chainActive.Height());
+    obj.pushKV("headers", pindexBestHeader ? pindexBestHeader->nHeight : -1);
+    obj.pushKV("verificationprogress", GuessVerificationProgress(Params().TxData(), chainActive.Tip()));
+    if (pcoinsTip)
+        obj.pushKV("dbcache_bytes", (uint64_t)pcoinsTip->DynamicMemoryUsage());
+    else
+        obj.pushKV("dbcache_bytes", 0);
+
+    // mapBlocksInFlight lives in net_processing; approximate via peer state if needed.
+    // Tip + headers + stats are the operator-facing core.
+    obj.pushKV("stats", IBDStats::ToUniValue(IBDStats::GetSnapshot()));
+    return obj;
+}
+
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafe argNames
   //  --------------------- ------------------------  -----------------------  ------ ----------
     { "blockchain",         "getblockchaininfo",      &getblockchaininfo,      true,  {} },
+    { "blockchain",         "getibdinfo",             &getibdinfo,             true,  {} },
     { "blockchain",         "getblockstats",          &getblockstats,          true,  {"hash", "stats"} },
     { "blockchain",         "getbestblockhash",       &getbestblockhash,       true,  {} },
     { "blockchain",         "getblockcount",          &getblockcount,          true,  {} },

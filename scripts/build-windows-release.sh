@@ -90,7 +90,7 @@ package_release() {
   # Strip + install layout similar to gitian-win
   VERSION="$(grep -E '^#define CLIENT_VERSION_(MAJOR|MINOR|REVISION)' src/clientversion.h 2>/dev/null || true)"
   # Prefer configure-derived version from setup.nsi if present
-  REL_NAME="dogecoin-1.14.100-win64"
+  REL_NAME="dogecoin-1.14.101-win64"
   if [[ -f share/setup.nsi ]]; then
     # OutFile may encode version; still use stable naming for Takeback/Pro
     :
@@ -162,7 +162,7 @@ package_release() {
   fi
 
   if [[ -n "$SETUP_SRC" && -f "$SETUP_SRC" ]]; then
-    SETUP_DST="$OUT_WIN/dogecoin-1.14.100-win64-setup.exe"
+    SETUP_DST="$OUT_WIN/dogecoin-1.14.101-win64-setup.exe"
     cp -f "$SETUP_SRC" "$SETUP_DST"
     log "Wrote $SETUP_DST ($(du -h "$SETUP_DST" | awk '{print $1}'))"
   else
@@ -172,7 +172,7 @@ package_release() {
   # SHA256 sums for release notes
   (
     cd "$OUT_WIN"
-    sha256sum dogecoin-1.14.100-win64.zip dogecoin-1.14.100-win64-setup.exe 2>/dev/null \
+    sha256sum dogecoin-1.14.101-win64.zip dogecoin-1.14.101-win64-setup.exe 2>/dev/null \
       | tee SHA256SUMS-win64.txt || true
   )
 
@@ -181,22 +181,22 @@ package_release() {
 # Dogecoin Core Pro / Takeback — Windows x64
 
 ## Artifacts
-- `dogecoin-1.14.100-win64.zip` — portable binaries
-- `dogecoin-1.14.100-win64-setup.exe` — NSIS installer (if present)
+- `dogecoin-1.14.101-win64.zip` — portable binaries
+- `dogecoin-1.14.101-win64-setup.exe` — NSIS installer (if present)
 
 ## Version
-- Client: **1.14.100** (Pro / Takeback tree)
+- Client: **1.14.101** (Pro / Takeback tree)
 - Target: Windows 64-bit (x86_64)
 - Built via WSL2 cross-compile (depends + MinGW-w64 posix)
 
 ## Install
 ### Installer
-1. Download `dogecoin-1.14.100-win64-setup.exe`
+1. Download `dogecoin-1.14.101-win64-setup.exe`
 2. Run and follow the wizard
 3. Launch **Dogecoin Core** from Start Menu
 
 ### Portable zip
-1. Extract `dogecoin-1.14.100-win64.zip`
+1. Extract `dogecoin-1.14.101-win64.zip`
 2. Run `bin/dogecoin-qt.exe` (or the packaged layout path)
 
 ## Notes

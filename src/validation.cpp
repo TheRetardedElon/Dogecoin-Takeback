@@ -40,6 +40,7 @@
 #include "validationinterface.h"
 #include "versionbits.h"
 #include "warnings.h"
+#include "ibdstats.h"
 
 #include <atomic>
 #include <sstream>
@@ -2152,8 +2153,23 @@ bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode, int n
         if (!CheckDiskSpace(128 * 2 * 2 * pcoinsTip->GetCacheSize()))
             return state.Error("out of disk space");
         // Flush the chainstate (which may refer to block index entries).
+        const size_t cacheBytes = pcoinsTip->DynamicMemoryUsage();
+        const int64_t flushStart = GetTimeMicros();
         if (!pcoinsTip->Flush())
             return AbortNode(state, "Failed to write to coin database");
+        const int64_t flushUs = GetTimeMicros() - flushStart;
+        IBDStats::FlushReason reason = IBDStats::FLUSH_OTHER;
+        if (mode == FLUSH_STATE_ALWAYS)
+            reason = IBDStats::FLUSH_ALWAYS;
+        else if (fFlushForPrune)
+            reason = IBDStats::FLUSH_PRUNE;
+        else if (fCacheCritical)
+            reason = IBDStats::FLUSH_CACHE_CRITICAL;
+        else if (fCacheLarge)
+            reason = IBDStats::FLUSH_CACHE_LARGE;
+        else if (fPeriodicFlush)
+            reason = IBDStats::FLUSH_PERIODIC;
+        IBDStats::NoteFlush(flushUs, cacheBytes, reason);
         nLastFlush = nNow;
     }
     if (fDoFullFlush || ((mode == FLUSH_STATE_ALWAYS || mode == FLUSH_STATE_PERIODIC) && nNow > nLastSetChain + (int64_t)DATABASE_WRITE_INTERVAL * 1000000)) {
@@ -2346,6 +2362,7 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
         }
         nTime3 = GetTimeMicros(); nTimeConnectTotal += nTime3 - nTime2;
         LogPrint("bench", "  - Connect total: %.2fms [%.2fs]\n", (nTime3 - nTime2) * 0.001, nTimeConnectTotal * 0.000001);
+        IBDStats::NoteBlockConnected(nTime3 - nTime2, pindexNew->nHeight);
         bool flushed = view.Flush();
         assert(flushed);
     }

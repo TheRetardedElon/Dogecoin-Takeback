@@ -1,40 +1,58 @@
 # Dogecoin Core Pro / Takeback — Windows x64
 
 ## Version
-- Client: **1.14.100** (Pro / Takeback tree)
+- Client: **1.14.101** (release)
 - Target: Windows 64-bit (x86_64)
 - Built: WSL2 cross-compile (depends + MinGW-w64 posix, Qt 5.7.1)
-- Date: 2026-08-02
+- Date: 2026-08-05
 
 ## Artifacts
-- `dogecoin-1.14.100-win64.zip` — portable package
-- `dogecoin-1.14.100-win64-setup.exe` — NSIS installer
+- `dogecoin-1.14.101-win64.zip` — portable package
+- `dogecoin-1.14.101-win64-setup.exe` — NSIS installer
 - `SHA256SUMS-win64.txt` — checksums
 
-## What's new in this build
-- **Arcade tab** — client-only retro mini-games shelf
-- **Retr-Doge Shibe Blaster** — pure Qt shooter (QPainter + QTimer)
-  - Title art: your Retr-Doge artwork
-  - Controls: Left/Right (or A/D) move, SPACE shoot, P pause, R restart
-  - Blast HATERS and FUD blobs for MUCH SCORE
-  - High score saved locally (no wallet/network)
+## What's new in 1.14.101
 
-## Nav order
-Home → Meme Stream → Business → Network → Options → **Arcade**
+### IBD P0 — performance & operability (non-consensus)
+- **`getibdinfo` RPC** — stall disconnects, rescue fetches, download timeouts, chainstate flush cost
+- **IBD rescue fetch** — when preferred download peers stall/saturate, other peers can fetch blocks
+- **`-ibdrescue`** — default **on**; `-ibdrescue=0` restores preferred-only download
+- **`-debug=ibd`** — detailed IBD / flush / stall logs
+- **Network page** — live “IBD telemetry: stall · rescue · dl-to · flush”
+- **`getpeerinfo`** fields: `preferred_download`, `stalling`, `stalling_seconds`, `blocks_in_flight`
+
+Design notes: `doc/ibd-p0-peer-telemetry.md`
+
+### Arcade (client only; from 1.14.100 line)
+- **Arcade** left-nav tab
+- **Retr-Doge Shibe Blaster** — pure Qt retro shooter
+
+### Safety
+- Pure DOGE client — **no consensus / AuxPoW / PoW changes**
+
+## Nav
+Home → Send/Receive/Transactions → Network → Doge Business → Meme Stream → Arcade → Console
 
 ## Install
 ### Installer
-1. Run `dogecoin-1.14.100-win64-setup.exe`
+1. Run `dogecoin-1.14.101-win64-setup.exe`
 2. Launch Dogecoin Core from the Start Menu
 
 ### Portable
 1. Extract the zip
 2. Run `dogecoin-qt.exe`
 
+## Ops (IBD)
+```
+dogecoin-cli getibdinfo
+dogecoin-cli getpeerinfo
+dogecoind -debug=ibd
+dogecoind -ibdrescue=0
+```
+
 ## Notes
-- First sync downloads the full Dogecoin chain (or enable pruned mode in Options).
-- Windows SmartScreen may warn on unsigned builds — expected until code-signed.
-- Pure DOGE client (no EVM). Arcade does not touch wallet or settlement node.
+- First sync downloads the full chain (or use prune mode in Options).
+- Windows SmartScreen may warn on unsigned builds.
 
 ## Verify
 ```
