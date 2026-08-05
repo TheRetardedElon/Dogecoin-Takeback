@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 class CBlockIndex;
 class CChainParams;
@@ -21,12 +22,10 @@ class CCoinsViewDB;
  * A chainstate is a tip (CChain) plus optional UTXO cache for that tip.
  *
  * AssumeUTXO progression:
- *  - A1/A2: active "ibd" wraps globals chainActive / pcoinsTip
- *  - A3: idle "background" owns an empty CChain
- *  - B1: background loads a UTXO snapshot into chainstate_snapshot/
- *  - B2: ActivateLoadedSnapshot() promotes snapshot to active tip
- *  - C1: StepBackgroundValidation() connects genesis→H on parked IBD coins
- *        and proves hash_serialized matches the assumed snapshot
+ *  - A1–A3: dual chainstate foundation
+ *  - B1/B2: load + activate snapshot tip
+ *  - C1: background ConnectBlock + hash check
+ *  - C2: persist/restore across restarts; fetch missing history; collapse after validated
  */
 class CChainState
 {
@@ -64,6 +63,8 @@ public:
     void ClearSnapshotInfo();
 
     bool AllocateCoinsDB(const fs::path& db_path, bool fMemory, bool fWipe);
+    /** Open existing coins DB without wiping (C2 restore). */
+    bool OpenCoinsDB(const fs::path& db_path, bool fMemory);
     void ResetCoinsDB();
     void AttachExternalCoins(CCoinsViewCache* coins);
     void UseExternalChain(CChain& chain);
@@ -83,15 +84,15 @@ private:
     bool has_snapshot;
     uint256 snapshot_base_hash;
     uint64_t snapshot_coins_count;
-    uint256 snapshot_coins_hash; // hash_serialized of assumed UTXO set
+    uint256 snapshot_coins_hash;
 };
 
 enum class BackgroundValidationStatus {
-    NONE = 0,       // no snapshot activation
-    RUNNING,        // connecting blocks toward H
-    WAITING_BLOCKS, // next block not on disk yet
-    COMPLETED,      // hash matched
-    FAILED          // hash mismatch or connect error (fail closed)
+    NONE = 0,
+    RUNNING,
+    WAITING_BLOCKS,
+    COMPLETED,
+    FAILED
 };
 
 void InitializeActiveChainstate();
@@ -111,23 +112,34 @@ CCoinsViewCache* ActiveCoinsTip();
 bool ActivateLoadedSnapshot(std::string& error);
 bool AssumeUtxoDevActivationAllowed();
 
-/** Phase C status / progress (cs_main not required for reads of atomics-like ints after set). */
+/**
+ * Phase C2: if assumeutxo.dat + chainstate_snapshot/ exist after normal init,
+ * re-activate the snapshot tip and resume (or complete) background validation.
+ * Call after InitializeActiveChainstate/InitializeBackgroundChainstate.
+ */
+bool MaybeRestoreAssumeUtxo(std::string& error);
+
+/** Persist assumeutxo.dat (activate / progress / complete / fail). */
+bool PersistAssumeUtxoState(std::string& error);
+
 BackgroundValidationStatus GetBackgroundValidationStatus();
 int GetBackgroundValidationHeight();
 int GetBackgroundValidationTargetHeight();
 std::string BackgroundValidationStatusString();
 
-/**
- * Connect up to max_blocks from the parked IBD chainstate toward the snapshot base.
- * Call with cs_main held (or it will lock). Returns blocks connected this call.
- * On reaching H, hashes background UTXO set and compares to assumed snapshot hash.
- */
 int StepBackgroundValidation(const CChainParams& params, int max_blocks, std::string& error);
-
-/** Convenience: step without error string (logs on failure). */
 int MaybeStepBackgroundValidation(const CChainParams& params, int max_blocks = 16);
 
 bool IsAssumeUtxoValidated();
 bool IsAssumeUtxoFailed();
+/** True after successful validation (dual-work finished for this process/datadir). */
+bool IsAssumeUtxoDualCollapsed();
+
+/**
+ * Append up to max_count historical blocks on the path to the snapshot base
+ * that are missing BLOCK_HAVE_DATA (even if they are in chainActive).
+ * Used by net_processing to fetch pruned/missing history for Phase C.
+ */
+void GetBackgroundValidationMissingBlocks(std::vector<const CBlockIndex*>& out, unsigned int max_count);
 
 #endif // DOGECOIN_NODE_CHAINSTATE_H

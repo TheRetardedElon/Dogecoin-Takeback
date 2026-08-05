@@ -1914,6 +1914,7 @@ UniValue getibdinfo(const JSONRPCRequest& request)
     obj.pushKV("background_validation_target", GetBackgroundValidationTargetHeight());
     obj.pushKV("assumeutxo_validated", IsAssumeUtxoValidated());
     obj.pushKV("assumeutxo_failed", IsAssumeUtxoFailed());
+    obj.pushKV("assumeutxo_dual_collapsed", IsAssumeUtxoDualCollapsed());
     if (HasBackgroundChainstate() && BackgroundChainstate()) {
         obj.pushKV("background_chainstate", BackgroundChainstate()->GetName());
         obj.pushKV("background_idle", BackgroundChainstate()->IsIdle());
@@ -2184,7 +2185,8 @@ UniValue getchainstates(const JSONRPCRequest& request)
     root.pushKV("background_validation_target", GetBackgroundValidationTargetHeight());
     root.pushKV("assumeutxo_validated", IsAssumeUtxoValidated());
     root.pushKV("assumeutxo_failed", IsAssumeUtxoFailed());
-    root.pushKV("phase", "C1-background-validation");
+    root.pushKV("assumeutxo_dual_collapsed", IsAssumeUtxoDualCollapsed());
+    root.pushKV("phase", "C2-persist-restore");
     return root;
 }
 
@@ -2205,7 +2207,8 @@ UniValue stepbackgroundvalidation(const JSONRPCRequest& request)
             "  \"status\": \"running|waiting_blocks|completed|failed|none\",\n"
             "  \"height\": n,\n"
             "  \"target\": n,\n"
-            "  \"assumeutxo_validated\": true|false\n"
+            "  \"assumeutxo_validated\": true|false,\n"
+            "  \"assumeutxo_dual_collapsed\": true|false\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("stepbackgroundvalidation", "50")
@@ -2234,6 +2237,7 @@ UniValue stepbackgroundvalidation(const JSONRPCRequest& request)
     result.pushKV("target", GetBackgroundValidationTargetHeight());
     result.pushKV("assumeutxo_validated", IsAssumeUtxoValidated());
     result.pushKV("assumeutxo_failed", IsAssumeUtxoFailed());
+    result.pushKV("assumeutxo_dual_collapsed", IsAssumeUtxoDualCollapsed());
     if (!error.empty())
         result.pushKV("message", error);
     return result;

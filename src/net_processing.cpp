@@ -32,6 +32,7 @@
 #include "utilstrencodings.h"
 #include "validationinterface.h"
 #include "ibdstats.h"
+#include "node/chainstate.h"
 
 #include <array>
 #include <boost/thread.hpp>
@@ -3510,7 +3511,25 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
         if (!pto->fClient && fCanDownloadBlocks && state.nBlocksInFlight < nMaxInTransit) {
             std::vector<const CBlockIndex*> vToDownload;
             NodeId staller = -1;
-            FindNextBlocksToDownload(pto->GetId(), nMaxInTransit - state.nBlocksInFlight, vToDownload, staller, consensusParams);
+            const unsigned int nSlots = nMaxInTransit - state.nBlocksInFlight;
+            // AssumeUTXO Phase C2: prefer historical blocks needed for background
+            // validation (may be on chainActive but pruned / never downloaded).
+            if (IsSnapshotChainstateActive() &&
+                (GetBackgroundValidationStatus() == BackgroundValidationStatus::WAITING_BLOCKS ||
+                 GetBackgroundValidationStatus() == BackgroundValidationStatus::RUNNING)) {
+                std::vector<const CBlockIndex*> bgNeed;
+                GetBackgroundValidationMissingBlocks(bgNeed, nSlots);
+                BOOST_FOREACH(const CBlockIndex* pindex, bgNeed) {
+                    if (mapBlocksInFlight.count(pindex->GetBlockHash()) != 0)
+                        continue;
+                    vToDownload.push_back(pindex);
+                    if (vToDownload.size() >= nSlots)
+                        break;
+                }
+            }
+            if (vToDownload.size() < nSlots) {
+                FindNextBlocksToDownload(pto->GetId(), nSlots - vToDownload.size(), vToDownload, staller, consensusParams);
+            }
             if (!vToDownload.empty() && fRescueThisPeer)
                 IBDStats::NoteIbdRescueFetch(pto->id);
             BOOST_FOREACH(const CBlockIndex *pindex, vToDownload) {

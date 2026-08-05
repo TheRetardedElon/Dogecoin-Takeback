@@ -1631,8 +1631,15 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // AssumeUTXO: bind active chainstate to chainActive / pcoinsTip,
     // then create background slot (idle until loadtxoutset / Phase B).
+    // C2: restore snapshot tip from chainstate_snapshot/ + assumeutxo.dat if present.
     InitializeActiveChainstate();
     InitializeBackgroundChainstate();
+    {
+        std::string assumeErr;
+        if (!MaybeRestoreAssumeUtxo(assumeErr)) {
+            return InitError(strprintf(_("AssumeUTXO restore failed: %s"), assumeErr));
+        }
+    }
 
     // As LoadBlockIndex can take several minutes, it's possible the user
     // requested to kill the GUI during the last operation. If so, exit.

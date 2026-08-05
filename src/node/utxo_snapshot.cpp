@@ -361,3 +361,87 @@ bool LoadUTXOSnapshot(const fs::path& path,
               path.string());
     return true;
 }
+
+bool AssumeUtxoDiskStateExists()
+{
+    return fs::exists(GetDataDir() / ASSUMEUTXO_STATE_FILENAME);
+}
+
+void RemoveAssumeUtxoDiskState()
+{
+    try {
+        fs::remove(GetDataDir() / ASSUMEUTXO_STATE_FILENAME);
+    } catch (...) {
+    }
+}
+
+bool WriteAssumeUtxoDiskState(const AssumeUtxoDiskState& st, std::string& error)
+{
+    error.clear();
+    fs::path path = GetDataDir() / ASSUMEUTXO_STATE_FILENAME;
+    fs::path path_tmp = path;
+    path_tmp += ".tmp";
+
+    FILE* file = fsbridge::fopen(path_tmp, "wb");
+    if (!file) {
+        error = strprintf("Could not open %s for writing", path_tmp.string());
+        return false;
+    }
+    CAutoFile afile(file, SER_DISK, CLIENT_VERSION);
+    try {
+        uint32_t version = 1;
+        afile << version;
+        afile << st.base_blockhash;
+        afile << st.coins_hash;
+        afile << st.coins_count;
+        afile << st.status;
+        afile << st.bg_height;
+    } catch (const std::exception& e) {
+        error = strprintf("Failed writing assumeutxo.dat: %s", e.what());
+        return false;
+    }
+    FILE* raw = afile.release();
+    if (raw && fclose(raw) != 0) {
+        error = "Error closing assumeutxo.dat.tmp";
+        return false;
+    }
+    if (fs::exists(path)) {
+        fs::remove(path);
+    }
+    try {
+        fs::rename(path_tmp, path);
+    } catch (const fs::filesystem_error& e) {
+        error = strprintf("Failed to rename assumeutxo.dat into place: %s", e.what());
+        return false;
+    }
+    return true;
+}
+
+bool ReadAssumeUtxoDiskState(AssumeUtxoDiskState& st, std::string& error)
+{
+    error.clear();
+    fs::path path = GetDataDir() / ASSUMEUTXO_STATE_FILENAME;
+    FILE* file = fsbridge::fopen(path, "rb");
+    if (!file) {
+        error = strprintf("Could not open %s", path.string());
+        return false;
+    }
+    CAutoFile afile(file, SER_DISK, CLIENT_VERSION);
+    try {
+        uint32_t version = 0;
+        afile >> version;
+        if (version != 1) {
+            error = strprintf("Unsupported assumeutxo.dat version %u", version);
+            return false;
+        }
+        afile >> st.base_blockhash;
+        afile >> st.coins_hash;
+        afile >> st.coins_count;
+        afile >> st.status;
+        afile >> st.bg_height;
+    } catch (const std::exception& e) {
+        error = strprintf("Failed reading assumeutxo.dat: %s", e.what());
+        return false;
+    }
+    return true;
+}

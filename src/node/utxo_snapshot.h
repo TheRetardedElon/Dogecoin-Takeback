@@ -132,7 +132,33 @@ bool LoadUTXOSnapshot(const fs::path& path,
                       int& base_height,
                       std::string& error);
 
-/** Directory name under datadir for the background snapshot coins DB. */
+/** Directory name under datadir for the snapshot coins DB (active after B2). */
 static const char* const SNAPSHOT_CHAINSTATE_DIR = "chainstate_snapshot";
+/** Process-level assumeutxo status file under datadir (Phase C2). */
+static const char* const ASSUMEUTXO_STATE_FILENAME = "assumeutxo.dat";
+
+/** On-disk status codes for assumeutxo.dat */
+enum AssumeUtxoDiskStatus : uint8_t {
+    ASSUMEUTXO_DISK_NONE = 0,
+    ASSUMEUTXO_DISK_RUNNING = 1,
+    ASSUMEUTXO_DISK_WAITING = 2,
+    ASSUMEUTXO_DISK_COMPLETED = 3,
+    ASSUMEUTXO_DISK_FAILED = 4,
+};
+
+struct AssumeUtxoDiskState {
+    uint256 base_blockhash;
+    uint256 coins_hash;
+    uint64_t coins_count;
+    uint8_t status;
+    int32_t bg_height;
+
+    AssumeUtxoDiskState() : coins_count(0), status(ASSUMEUTXO_DISK_NONE), bg_height(-1) {}
+};
+
+bool WriteAssumeUtxoDiskState(const AssumeUtxoDiskState& st, std::string& error);
+bool ReadAssumeUtxoDiskState(AssumeUtxoDiskState& st, std::string& error);
+bool AssumeUtxoDiskStateExists();
+void RemoveAssumeUtxoDiskState();
 
 #endif // DOGECOIN_NODE_UTXO_SNAPSHOT_H
