@@ -236,6 +236,8 @@ void Shutdown()
         if (pcoinsTip != NULL) {
             FlushStateToDisk();
         }
+        // Drop dual chainstate wrappers before freeing global coins views.
+        ShutdownChainstates();
         delete pcoinsTip;
         pcoinsTip = NULL;
         delete pcoinscatcher;
@@ -1626,9 +1628,10 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
     }
 
-    // AssumeUTXO Phase A: bind ActiveChainstate() to chainActive / pcoinsTip.
-    // Dual chainstate (snapshot + background) is not enabled yet.
+    // AssumeUTXO: bind active chainstate to chainActive / pcoinsTip,
+    // then create background slot (idle until loadtxoutset / Phase B).
     InitializeActiveChainstate();
+    InitializeBackgroundChainstate();
 
     // As LoadBlockIndex can take several minutes, it's possible the user
     // requested to kill the GUI during the last operation. If so, exit.

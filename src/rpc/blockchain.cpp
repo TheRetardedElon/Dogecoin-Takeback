@@ -26,7 +26,9 @@
 #include "utilstrencodings.h"
 #include "hash.h"
 #include "ibdstats.h"
+#include "fs.h"
 #include "node/chainstate.h"
+#include "node/utxo_snapshot.h"
 
 #include <stdint.h>
 
@@ -1905,8 +1907,155 @@ UniValue getibdinfo(const JSONRPCRequest& request)
         obj.pushKV("active_chainstate", ActiveChainstate().GetName());
         obj.pushKV("active_chainstate_height", ActiveChainstate().Height());
     }
+    obj.pushKV("background_present", HasBackgroundChainstate());
+    if (HasBackgroundChainstate() && BackgroundChainstate()) {
+        obj.pushKV("background_chainstate", BackgroundChainstate()->GetName());
+        obj.pushKV("background_idle", BackgroundChainstate()->IsIdle());
+        obj.pushKV("background_height", BackgroundChainstate()->Height());
+        obj.pushKV("background_has_snapshot", BackgroundChainstate()->HasSnapshot());
+        if (BackgroundChainstate()->HasSnapshot()) {
+            obj.pushKV("snapshot_basehash", BackgroundChainstate()->SnapshotBaseHash().GetHex());
+            obj.pushKV("snapshot_coins", (uint64_t)BackgroundChainstate()->SnapshotCoinsCount());
+        }
+    }
     obj.pushKV("stats", IBDStats::ToUniValue(IBDStats::GetSnapshot()));
     return obj;
+}
+
+static UniValue ChainstateToJSON(CChainState& cs)
+{
+    UniValue o(UniValue::VOBJ);
+    o.pushKV("name", cs.GetName());
+    o.pushKV("blocks", cs.Height());
+    if (cs.Tip())
+        o.pushKV("bestblockhash", cs.Tip()->GetBlockHash().GetHex());
+    if (cs.CoinsTip())
+        o.pushKV("coins_cache_bytes", (uint64_t)cs.CoinsTip()->DynamicMemoryUsage());
+    o.pushKV("active", cs.IsActiveRole());
+    o.pushKV("idle", cs.IsIdle());
+    o.pushKV("owns_chain", cs.OwnsChain());
+    o.pushKV("has_snapshot", cs.HasSnapshot());
+    if (cs.HasSnapshot()) {
+        o.pushKV("snapshot_basehash", cs.SnapshotBaseHash().GetHex());
+        o.pushKV("snapshot_coins", (uint64_t)cs.SnapshotCoinsCount());
+    }
+    return o;
+}
+
+UniValue dumptxoutset(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 1)
+        throw runtime_error(
+            "dumptxoutset \"path\"\n"
+            "\nWrite the serialized UTXO set to a file (AssumeUTXO Phase B snapshot format).\n"
+            "Flush the coins cache first. Relative paths are under the datadir.\n"
+            "\nArguments:\n"
+            "1. \"path\"    (string, required) Path to write the snapshot file\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"coins_written\": n,\n"
+            "  \"base_hash\": \"hex\",\n"
+            "  \"base_height\": n,\n"
+            "  \"path\": \"...\"\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("dumptxoutset", "utxo.dat")
+            + HelpExampleRpc("dumptxoutset", "\"utxo.dat\"")
+        );
+
+    fs::path path = request.params[0].get_str();
+    if (path.is_relative())
+        path = GetDataDir() / path;
+
+    if (fs::exists(path)) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER,
+                           strprintf("%s already exists. You must remove it first.", path.string()));
+    }
+
+    FlushStateToDisk();
+
+    uint256 base_hash;
+    int base_height = -1;
+    {
+        LOCK(cs_main);
+        if (!ActiveCoinsTip())
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Coins tip not available");
+        base_hash = ActiveCoinsTip()->GetBestBlock();
+        if (base_hash.IsNull())
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Coins tip has null best block");
+        BlockMap::iterator it = mapBlockIndex.find(base_hash);
+        if (it == mapBlockIndex.end() || !it->second)
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Best block not found in block index");
+        base_height = it->second->nHeight;
+    }
+
+    // Cursor iterates the LevelDB backend of the active tip after flush.
+    uint64_t coins_written = 0;
+    std::string error;
+    if (!WriteUTXOSnapshot(ActiveCoinsTip(), base_hash, base_height, path, coins_written, error)) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, error);
+    }
+
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("coins_written", (uint64_t)coins_written);
+    result.pushKV("base_hash", base_hash.GetHex());
+    result.pushKV("base_height", base_height);
+    result.pushKV("path", path.string());
+    return result;
+}
+
+UniValue loadtxoutset(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 1)
+        throw runtime_error(
+            "loadtxoutset \"path\"\n"
+            "\nLoad a serialized UTXO snapshot into the background chainstate (AssumeUTXO Phase B1).\n"
+            "Coins are stored under chainstate_snapshot/ and do not replace the active tip yet.\n"
+            "Background validation (Phase C) and active promotion are not implemented.\n"
+            "Relative paths are under the datadir.\n"
+            "\nArguments:\n"
+            "1. \"path\"    (string, required) Path to the snapshot file\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"coins_loaded\": n,\n"
+            "  \"tip_hash\": \"hex\",\n"
+            "  \"base_height\": n,   (or -1 if base block not in index)\n"
+            "  \"path\": \"...\",\n"
+            "  \"active_swapped\": false\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("loadtxoutset", "utxo.dat")
+            + HelpExampleRpc("loadtxoutset", "\"utxo.dat\"")
+        );
+
+    fs::path path = request.params[0].get_str();
+    if (path.is_relative())
+        path = GetDataDir() / path;
+
+    if (!fs::exists(path)) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER,
+                           strprintf("Snapshot file does not exist: %s", path.string()));
+    }
+
+    if (!HasBackgroundChainstate()) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Background chainstate not initialized");
+    }
+
+    uint64_t coins_loaded = 0;
+    uint256 base_hash;
+    int base_height = -1;
+    std::string error;
+    if (!LoadUTXOSnapshot(path, coins_loaded, base_hash, base_height, error)) {
+        throw JSONRPCError(RPC_INTERNAL_ERROR, error);
+    }
+
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("coins_loaded", (uint64_t)coins_loaded);
+    result.pushKV("tip_hash", base_hash.GetHex());
+    result.pushKV("base_height", base_height);
+    result.pushKV("path", path.string());
+    result.pushKV("active_swapped", false);
+    return result;
 }
 
 UniValue getchainstates(const JSONRPCRequest& request)
@@ -1914,18 +2063,24 @@ UniValue getchainstates(const JSONRPCRequest& request)
     if (request.fHelp || request.params.size() != 0)
         throw runtime_error(
             "getchainstates\n"
-            "\nReturn information about active chainstate(s).\n"
-            "AssumeUTXO Phase A: active chainstate wraps the traditional tip (A2: RPCs use ActiveChain()).\n"
+            "\nReturn information about chainstate(s).\n"
+            "AssumeUTXO Phase B1: active \"ibd\" wraps the tip; \"background\" may hold a loaded\n"
+            "UTXO snapshot (coins in chainstate_snapshot/) without replacing the active tip.\n"
             "\nResult:\n"
             "{\n"
             "  \"chainstates\": [ {\n"
-            "    \"name\": \"ibd\",\n"
+            "    \"name\": \"ibd\"|\"background\",\n"
             "    \"blocks\": n,\n"
             "    \"bestblockhash\": \"...\",\n"
-            "    \"bits_coins_cache\": n,\n"
-            "    \"active\": true\n"
+            "    \"coins_cache_bytes\": n,\n"
+            "    \"active\": true|false,\n"
+            "    \"idle\": true|false,\n"
+            "    \"owns_chain\": true|false,\n"
+            "    \"has_snapshot\": true|false\n"
             "  }, ... ],\n"
-            "  \"assumeutxo_enabled\": false\n"
+            "  \"background_present\": true,\n"
+            "  \"assumeutxo_enabled\": true|false,\n"
+            "  \"phase\": \"B1-snapshot-dump-load\"\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getchainstates", "")
@@ -1938,21 +2093,18 @@ UniValue getchainstates(const JSONRPCRequest& request)
     UniValue arr(UniValue::VARR);
 
     if (IsActiveChainstateInitialized()) {
-        CChainState& cs = ActiveChainstate();
-        UniValue o(UniValue::VOBJ);
-        o.pushKV("name", cs.GetName());
-        o.pushKV("blocks", cs.Height());
-        if (cs.Tip())
-            o.pushKV("bestblockhash", cs.Tip()->GetBlockHash().GetHex());
-        if (cs.CoinsTip())
-            o.pushKV("coins_cache_bytes", (uint64_t)cs.CoinsTip()->DynamicMemoryUsage());
-        o.pushKV("active", true);
-        arr.push_back(o);
+        arr.push_back(ChainstateToJSON(ActiveChainstate()));
+    }
+    bool snapshot_loaded = false;
+    if (HasBackgroundChainstate() && BackgroundChainstate()) {
+        arr.push_back(ChainstateToJSON(*BackgroundChainstate()));
+        snapshot_loaded = BackgroundChainstate()->HasSnapshot();
     }
 
     root.pushKV("chainstates", arr);
-    root.pushKV("assumeutxo_enabled", false);
-    root.pushKV("phase", "A1-single-wrapper");
+    root.pushKV("background_present", HasBackgroundChainstate());
+    root.pushKV("assumeutxo_enabled", snapshot_loaded);
+    root.pushKV("phase", "B1-snapshot-dump-load");
     return root;
 }
 
@@ -1962,6 +2114,8 @@ static const CRPCCommand commands[] =
     { "blockchain",         "getblockchaininfo",      &getblockchaininfo,      true,  {} },
     { "blockchain",         "getibdinfo",             &getibdinfo,             true,  {} },
     { "blockchain",         "getchainstates",         &getchainstates,         true,  {} },
+    { "blockchain",         "dumptxoutset",           &dumptxoutset,           true,  {"path"} },
+    { "blockchain",         "loadtxoutset",           &loadtxoutset,           true,  {"path"} },
     { "blockchain",         "getblockstats",          &getblockstats,          true,  {"hash", "stats"} },
     { "blockchain",         "getbestblockhash",       &getbestblockhash,       true,  {} },
     { "blockchain",         "getblockcount",          &getblockcount,          true,  {} },

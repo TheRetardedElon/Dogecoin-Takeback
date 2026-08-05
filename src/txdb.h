@@ -9,6 +9,7 @@
 #include "coins.h"
 #include "dbwrapper.h"
 #include "chain.h"
+#include "fs.h"
 
 #include <map>
 #include <string>
@@ -66,13 +67,16 @@ struct CDiskTxPos : public CDiskBlockPos
     }
 };
 
-/** CCoinsView backed by the coin database (chainstate/) */
+/** CCoinsView backed by the coin database (chainstate/ or custom path) */
 class CCoinsViewDB : public CCoinsView
 {
 protected:
     CDBWrapper db;
 public:
+    /** Default: GetDataDir()/chainstate */
     CCoinsViewDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
+    /** Explicit path (AssumeUTXO snapshot DB: chainstate_snapshot/). */
+    CCoinsViewDB(const fs::path& db_path, size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;

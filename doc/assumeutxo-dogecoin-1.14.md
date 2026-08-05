@@ -1,6 +1,6 @@
 # AssumeUTXO for Dogecoin Core (1.14 DNA) — Design
 
-**Status:** design + **Phase A slice 1 in progress**  
+**Status:** design + **Phase B1 in progress**  
 **Depends on:** P0/P0.1 IBD telemetry, ASMAP, healthy single-chainstate  
 **Consensus impact:** none if done like Bitcoin (background full validation to the assume height)
 
@@ -10,8 +10,9 @@
 |-------|--------|--------|
 | **A1** Active chainstate wrapper | **Done** | `src/node/chainstate.*`, `InitializeActiveChainstate()`, `getchainstates`, `getibdinfo` fields |
 | **A2** Migrate hot paths to ActiveChain*() | **Done** | blockchain + mining RPCs, clientmodel; lazy init; TestingSetup hook |
-| A3 Dual CChainState storage (no snapshot yet) | Pending | background chain object exists but idle |
-| B Snapshot load | Pending | |
+| **A3** Dual CChainState storage (no snapshot yet) | **Done** | idle `background` owns empty `CChain`; no coins DB; `getchainstates` lists both |
+| **B1** Snapshot file format + dump/load | **Done** | `node/utxo_snapshot.*`, `dumptxoutset` / `loadtxoutset`; loads into `chainstate_snapshot/` on background; **does not** swap active tip |
+| B2 Activate snapshot as tip (dev) | Pending | make wallet/net use snapshot tip without full Phase C |
 | C Background validation | Pending | |
 
 ## 1. Goal
@@ -63,28 +64,30 @@ Suggested structure (names illustrative):
 
 **A1 exit criteria (met):** single-chainstate behavior bit-identical; accessors available; no AssumeUTXO yet.  
 **A2 exit criteria (met):** high-traffic tip/UTXO reads go through ActiveChain*/ActiveCoinsTip*; tests bind chainstate.  
-**Phase A full exit:** dual storage + remaining migration; still no snapshot.
+**A3 exit criteria (met):** dual slots exist; background idle (owns chain, no coins); tip behavior unchanged; RPCs report both.  
+**Phase A full exit (met):** dual storage done; further A2-style migrations optional.
 
 ### Phase B — Snapshot file format + load
 
-**Format (align with Bitcoin where practical):**
+**Format (Dogecoin 1.14 / Phase B1 — per-txid `CCoins`, not Bitcoin’s per-outpoint `Coin`):**
 
-- Magic + version  
-- Network magic / chain  
-- Base block hash + height  
-- Coins count  
-- LevelDB-style or custom coin serialization stream  
-- Trailing hash of contents (must match hardcoded assume hash)
+- Magic `utxo\xff` + version `1`  
+- Network magic (`MessageStart`)  
+- Base block hash  
+- Coins count (number of non-pruned `CCoins` records)  
+- Repeated: `txid` + `CCoins` serialization  
 
 **Code:**
 
 | Piece | Role |
 |-------|------|
-| `src/node/utxo_snapshot.h/.cpp` | Serialize/deserialize |
-| RPC `loadtxoutset` (or dogecoin name) | Operator loads snapshot file |
-| `chainparams` | `AssumeutxoData { height, hash_serialized }` |
+| `src/node/utxo_snapshot.h/.cpp` | **B1 done:** metadata + write/load |
+| RPC `dumptxoutset` / `loadtxoutset` | **B1 done:** dump active tip; load into background |
+| `chainstate_snapshot/` LevelDB | **B1 done:** separate from live `chainstate/` |
+| `chainparams` AssumeutxoData | Pending (B2/C — hardcoded trusted height/hash) |
 
-**Exit criteria:** load snapshot on regtest; tip at H; wallet sees UTXOs; **without** background validation yet (dev-only flag).
+**B1 exit criteria (met):** dump + load round-trip; background reports `has_snapshot`; active tip unchanged.  
+**B full exit criteria (remaining):** load snapshot on regtest; **activate** tip at H so wallet sees UTXOs; **without** background validation yet (dev-only flag).
 
 ### Phase C — Background validation
 
@@ -137,14 +140,15 @@ Suggested structure (names illustrative):
 | Peer stall + rescue | Done |
 | IBD flush policy | Done |
 | ASMAP peer diversity | Done |
-| IBD parallel download (P0.3) | In progress alongside this doc |
+| IBD parallel download (P0.3) | Done |
 
-## 9. Suggested next engineering after this doc is accepted
+## 9. Suggested next engineering
 
-1. Land P0.3 download parallelism  
-2. Spike branch: extract minimal “active chainstate” pointer (Phase A slice 1)  
-3. Regtest dual tip smoke test  
-4. Only then snapshot load (Phase B)  
+1. ~~Land P0.3 / Phase A~~  
+2. ~~B1 dump/load into background~~  
+3. **B2:** optional `-assumeutxodev` promote snapshot tip to active (wallet-usable)  
+4. **C:** background validation genesis→H + hash check  
+5. Hardcoded mainnet/testnet AssumeutxoData + signed snapshot artifacts  
 
 ## 10. Success metric
 

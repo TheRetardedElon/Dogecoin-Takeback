@@ -77,8 +77,9 @@ TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(cha
         pcoinsdbview = new CCoinsViewDB(1 << 23, true);
         pcoinsTip = new CCoinsViewCache(pcoinsdbview);
         InitBlockIndex(chainparams);
-        // AssumeUTXO Phase A: bind ActiveChainstate() to test globals
+        // AssumeUTXO Phase A: bind active + idle background chainstates
         InitializeActiveChainstate();
+        InitializeBackgroundChainstate();
         {
             CValidationState state;
             bool ok = ActivateBestChain(state, chainparams);
