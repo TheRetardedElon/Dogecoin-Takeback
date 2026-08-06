@@ -22,20 +22,21 @@ MemeStreamRail::MemeStreamRail(const PlatformStyle* _platformStyle, QWidget* par
     : QWidget(parent),
       platformStyle(_platformStyle),
       walletModel(0),
-      client(new MemeStreamClient(this))
+      client(0)
 {
     setObjectName(QStringLiteral("memeStreamRail"));
     setMinimumWidth(260);
     setMaximumWidth(340);
     setupUi();
 
-    connect(client, &MemeStreamClient::feedReceived, this, &MemeStreamRail::onFeedReceived);
-    connect(client, &MemeStreamClient::feedFailed, this, &MemeStreamRail::onFeedFailed);
-
+    // Defer MemeStreamClient (QNetworkAccessManager / SSL) until first refresh.
+    // Eager construction + HTTPS at wallet open was tied to Windows heap corruption
+    // (0xc0000374) on mingw-Qt builds.
     autoRefresh = new QTimer(this);
     autoRefresh->setInterval(60 * 1000);
     connect(autoRefresh, SIGNAL(timeout()), this, SLOT(onRefreshClicked()));
-    autoRefresh->start();
+    // Do not auto-start: first fetch is manual or after a short idle delay once UI is up.
+    autoRefresh->setSingleShot(false);
 }
 
 void MemeStreamRail::setupUi()
@@ -59,7 +60,7 @@ void MemeStreamRail::setupUi()
     head->addWidget(refreshBtn);
     root->addLayout(head);
 
-    headerStatus = new QLabel(tr("Loading…"));
+    headerStatus = new QLabel(tr("Click ↻ to load feed"));
     headerStatus->setObjectName(QStringLiteral("mutedLabel"));
     headerStatus->setWordWrap(true);
     root->addWidget(headerStatus);
@@ -87,6 +88,8 @@ void MemeStreamRail::setupUi()
 void MemeStreamRail::setWalletModel(WalletModel* model)
 {
     walletModel = model;
+    if (headerStatus && headerStatus->text().isEmpty())
+        headerStatus->setText(tr("Click ↻ to load feed"));
 }
 
 void MemeStreamRail::refresh()
@@ -94,10 +97,22 @@ void MemeStreamRail::refresh()
     onRefreshClicked();
 }
 
+void MemeStreamRail::ensureClient()
+{
+    if (client)
+        return;
+    client = new MemeStreamClient(this);
+    connect(client, &MemeStreamClient::feedReceived, this, &MemeStreamRail::onFeedReceived);
+    connect(client, &MemeStreamClient::feedFailed, this, &MemeStreamRail::onFeedFailed);
+}
+
 void MemeStreamRail::onRefreshClicked()
 {
+    ensureClient();
     headerStatus->setText(tr("Refreshing…"));
     client->fetchFeed(RAIL_MAX_ITEMS + 4);
+    if (!autoRefresh->isActive())
+        autoRefresh->start();
 }
 
 void MemeStreamRail::onOpenFullClicked()
@@ -184,7 +199,8 @@ QWidget* MemeStreamRail::buildCard(const MemeStreamItem& item)
         img->setMaximumHeight(160);
         img->setAlignment(Qt::AlignCenter);
         lay->addWidget(img);
-        client->loadImageInto(img, item.imageUrl, QSize(280, 150));
+        if (client)
+            client->loadImageInto(img, item.imageUrl, QSize(280, 150));
     }
 
     if (!item.body.isEmpty()) {

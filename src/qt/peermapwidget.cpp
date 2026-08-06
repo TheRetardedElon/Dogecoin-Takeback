@@ -22,51 +22,20 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QSettings>
+#include <QShowEvent>
 #include <QSizePolicy>
-#include <QSslCertificate>
-#include <QSslSocket>
 #include <QTimer>
 #include <QToolTip>
 #include <QVBoxLayout>
 #include <QUrl>
 
-#ifdef Q_OS_WIN
-#include <windows.h>
-#include <wincrypt.h>
-#endif
-
 #include <cmath>
 
-static void ensureMapSsl()
-{
-    static bool done = false;
-    if (done)
-        return;
-    done = true;
-#ifndef QT_NO_SSL
-    if (!QSslSocket::supportsSsl())
-        return;
-#ifdef Q_OS_WIN
-    QList<QSslCertificate> cas = QSslSocket::defaultCaCertificates();
-    const DWORD stores[] = { CERT_SYSTEM_STORE_CURRENT_USER, CERT_SYSTEM_STORE_LOCAL_MACHINE };
-    for (unsigned si = 0; si < sizeof(stores) / sizeof(stores[0]); ++si) {
-        HCERTSTORE hStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, 0,
-                                          stores[si] | CERT_STORE_READONLY_FLAG, "ROOT");
-        if (!hStore)
-            continue;
-        PCCERT_CONTEXT ctx = 0;
-        while ((ctx = CertEnumCertificatesInStore(hStore, ctx)) != 0) {
-            QByteArray der(reinterpret_cast<const char*>(ctx->pbCertEncoded),
-                           static_cast<int>(ctx->cbCertEncoded));
-            cas.append(QSslCertificate::fromData(der, QSsl::Der));
-        }
-        CertCloseStore(hStore, 0);
-    }
-    if (!cas.isEmpty())
-        QSslSocket::setDefaultCaCertificates(cas);
-#endif
-#endif
-}
+// Note: do not mutate the process-wide QSslSocket CA store from here.
+// Injecting system ROOT certs via CertEnumCertificatesInStore +
+// setDefaultCaCertificates has been associated with heap corruption
+// (STATUS_HEAP_CORRUPTION / 0xc0000374) on some Windows + mingw-Qt builds.
+// Geo lookups use plain HTTP (ip-api.com), so extra SSL setup is unnecessary.
 
 PeerMapWidget::PeerMapWidget(QWidget* parent)
     : QWidget(parent),
@@ -91,8 +60,9 @@ PeerMapWidget::PeerMapWidget(QWidget* parent)
         mapPixmap.fill(QColor(20, 24, 32));
     }
 
-    ensureMapSsl();
-    nam = new QNetworkAccessManager(this);
+    // Lazy: create NAM only when a lookup is requested (avoids Qt network
+    // stack init during wallet page construction at startup).
+    nam = 0;
     loadGeoCache();
 
     // Floating card (child of this widget, raised above map)
@@ -139,12 +109,20 @@ void PeerMapWidget::setClientModel(ClientModel* model)
                 this, SLOT(onPeerModelReset()));
         connect(clientModel->getPeerTableModel(), SIGNAL(modelReset()),
                 this, SLOT(onPeerModelReset()));
-        clientModel->getPeerTableModel()->startAutoRefresh();
-        refreshTimer->start();
+        // Do not start peer-table auto-refresh or map timer until this widget is shown.
+        // Network page is constructed at wallet open but not visible yet — starting
+        // timers/QNAM here raced with startup and contributed to Windows heap faults.
+        if (isVisible()) {
+            clientModel->getPeerTableModel()->startAutoRefresh();
+            if (refreshTimer)
+                refreshTimer->start();
+            refreshFromPeers();
+        }
     } else {
-        refreshTimer->stop();
+        if (refreshTimer)
+            refreshTimer->stop();
+        refreshFromPeers();
     }
-    refreshFromPeers();
 }
 
 void PeerMapWidget::onPeerModelReset()
@@ -312,8 +290,10 @@ void PeerMapWidget::scheduleLookups()
 
 void PeerMapWidget::lookupIp(const QString& ip)
 {
-    if (!nam || ip.isEmpty())
+    if (ip.isEmpty())
         return;
+    if (!nam)
+        nam = new QNetworkAccessManager(this);
     pendingLookup.insert(ip, true);
 
     // ip-api.com free HTTP endpoint (no key). HTTPS also available.
@@ -323,6 +303,10 @@ void PeerMapWidget::lookupIp(const QString& ip)
     QNetworkRequest req(url);
     req.setRawHeader("User-Agent", "DogecoinCorePro-PeerMap/1.0");
     QNetworkReply* reply = nam->get(req);
+    if (!reply) {
+        pendingLookup.remove(ip);
+        return;
+    }
     reply->setProperty("lookupIp", ip);
     connect(reply, SIGNAL(finished()), this, SLOT(onGeoFinished()));
 }
@@ -610,4 +594,15 @@ void PeerMapWidget::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);
     update();
+}
+
+void PeerMapWidget::showEvent(QShowEvent* event)
+{
+    QWidget::showEvent(event);
+    if (clientModel && clientModel->getPeerTableModel()) {
+        clientModel->getPeerTableModel()->startAutoRefresh();
+        if (refreshTimer && !refreshTimer->isActive())
+            refreshTimer->start();
+        refreshFromPeers();
+    }
 }

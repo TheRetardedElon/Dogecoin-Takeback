@@ -19,6 +19,8 @@ class QTimer;
 class QCheckBox;
 class QMenu;
 class QPoint;
+class QVBoxLayout;
+class QShowEvent;
 QT_END_NAMESPACE
 
 /**
@@ -48,9 +50,14 @@ private Q_SLOTS:
     void banSelectedPeer(int bantime);
     void unbanSelectedPeer();
 
+protected:
+    void showEvent(QShowEvent* event);
+
 private:
     void setupUi();
     void setupContextMenus();
+    /** Create PeerMap on first show — avoids QNetwork/geo init during wallet open. */
+    void ensurePeerMap();
 
     const PlatformStyle* platformStyle;
     ClientModel* clientModel;
@@ -63,6 +70,7 @@ private:
     QLabel* trafficLabel;
     QLabel* warningsLabel;
     PeerMapWidget* peerMap;
+    QVBoxLayout* mapHostLayout;
     QTableView* peerView;
     QTableView* banView;
     QPushButton* consoleBtn;

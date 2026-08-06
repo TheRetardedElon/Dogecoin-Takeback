@@ -1777,9 +1777,11 @@ void DogecoinGUI::setClientModel(ClientModel *_clientModel)
     {
         // Create system tray menu (or setup the dock menu) that late to prevent users from calling actions,
         // while the client has not yet fully loaded
+        qWarning("DogecoinGUI::setClientModel: tray menu");
         createTrayIconMenu();
 
         // Keep up to date with client
+        qWarning("DogecoinGUI::setClientModel: updateNetworkState");
         updateNetworkState();
         connect(_clientModel, SIGNAL(numConnectionsChanged(int)), this, SLOT(setNumConnections(int)));
         connect(_clientModel, SIGNAL(networkActiveChanged(bool)), this, SLOT(setNetworkActive(bool)));
@@ -1787,6 +1789,7 @@ void DogecoinGUI::setClientModel(ClientModel *_clientModel)
         if (modalOverlay) {
         modalOverlay->setKnownBestHeight(_clientModel->getHeaderTipHeight(), QDateTime::fromTime_t(_clientModel->getHeaderTipTime()));
         }
+        qWarning("DogecoinGUI::setClientModel: setNumBlocks");
         setNumBlocks(_clientModel->getNumBlocks(), _clientModel->getLastBlockDate(), _clientModel->getVerificationProgress(NULL), false);
         connect(_clientModel, SIGNAL(numBlocksChanged(int,QDateTime,double,bool)), this, SLOT(setNumBlocks(int,QDateTime,double,bool)));
 
@@ -1796,10 +1799,12 @@ void DogecoinGUI::setClientModel(ClientModel *_clientModel)
         // Show progress dialog
         connect(_clientModel, SIGNAL(showProgress(QString,int)), this, SLOT(showProgress(QString,int)));
 
+        qWarning("DogecoinGUI::setClientModel: rpcConsole");
         rpcConsole->setClientModel(_clientModel);
 #ifdef ENABLE_WALLET
         if(walletFrame)
         {
+            qWarning("DogecoinGUI::setClientModel: walletFrame");
             walletFrame->setClientModel(_clientModel);
         }
 #endif // ENABLE_WALLET
@@ -1816,6 +1821,7 @@ void DogecoinGUI::setClientModel(ClientModel *_clientModel)
             // initialize the disable state of the tray icon with the current value in the model.
             setTrayIconVisible(optionsModel->getHideTrayIcon());
         }
+        qWarning("DogecoinGUI::setClientModel: done");
     } else {
         // Disable possibility to show main window via action
         if (toggleHideAction) {

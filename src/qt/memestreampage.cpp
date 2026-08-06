@@ -32,17 +32,12 @@ MemeStreamPage::MemeStreamPage(const PlatformStyle* _platformStyle, QWidget* par
     : QWidget(parent),
       platformStyle(_platformStyle),
       walletModel(0),
-      client(new MemeStreamClient(this)),
+      client(0),
       pendingImage(),
       pendingImageName()
 {
     setupUi();
-    connect(client, &MemeStreamClient::feedReceived, this, &MemeStreamPage::onFeedReceived);
-    connect(client, &MemeStreamClient::feedFailed, this, &MemeStreamPage::onFeedFailed);
-    connect(client, &MemeStreamClient::publishSucceeded, this, &MemeStreamPage::onPublishSucceeded);
-    connect(client, &MemeStreamClient::publishFailed, this, &MemeStreamPage::onPublishFailed);
-    connect(client, &MemeStreamClient::likeSucceeded, this, &MemeStreamPage::onLikeSucceeded);
-    connect(client, &MemeStreamClient::likeFailed, this, &MemeStreamPage::onLikeFailed);
+    // Defer MemeStreamClient until first feed/publish (avoids QNAM/SSL at wallet open).
 }
 
 MemeStreamPage::~MemeStreamPage()
@@ -187,8 +182,22 @@ QString MemeStreamPage::ensureAuthorAddress()
     return atm->addRow(AddressTableModel::Receive, tr("Meme Stream author"), QString());
 }
 
+void MemeStreamPage::ensureClient()
+{
+    if (client)
+        return;
+    client = new MemeStreamClient(this);
+    connect(client, &MemeStreamClient::feedReceived, this, &MemeStreamPage::onFeedReceived);
+    connect(client, &MemeStreamClient::feedFailed, this, &MemeStreamPage::onFeedFailed);
+    connect(client, &MemeStreamClient::publishSucceeded, this, &MemeStreamPage::onPublishSucceeded);
+    connect(client, &MemeStreamClient::publishFailed, this, &MemeStreamPage::onPublishFailed);
+    connect(client, &MemeStreamClient::likeSucceeded, this, &MemeStreamPage::onLikeSucceeded);
+    connect(client, &MemeStreamClient::likeFailed, this, &MemeStreamPage::onLikeFailed);
+}
+
 void MemeStreamPage::onRefreshClicked()
 {
+    ensureClient();
     statusLabel->setText(tr("Loading feed…"));
     client->fetchFeed(30);
 }
@@ -231,6 +240,7 @@ void MemeStreamPage::onPublishClicked()
         statusLabel->setText(tr("Need a receiving address (unlock wallet if encrypted)."));
         return;
     }
+    ensureClient();
     if (!client->hasPublishKey()) {
         statusLabel->setText(tr("Set publish key: dogecoin-qt -memestreamkey=<key>"));
         Q_EMIT message(tr("Meme Stream"),
@@ -340,7 +350,8 @@ QWidget* MemeStreamPage::buildItemCard(const MemeStreamItem& item)
         img->setAlignment(Qt::AlignCenter);
         img->setScaledContents(false);
         lay->addWidget(img);
-        client->loadImageInto(img, item.imageUrl, QSize(520, 340));
+        if (client)
+            client->loadImageInto(img, item.imageUrl, QSize(520, 340));
     }
 
     if (!item.body.isEmpty()) {
@@ -375,6 +386,7 @@ QWidget* MemeStreamPage::buildItemCard(const MemeStreamItem& item)
     const QString itemId = item.id;
     const QString tipAddr = tip;
     connect(likeBtn, &QPushButton::clicked, [this, itemId]() {
+        ensureClient();
         client->likeItem(itemId, currentAuthorAddress());
     });
     connect(tipBtn, &QPushButton::clicked, [this, tipAddr]() {

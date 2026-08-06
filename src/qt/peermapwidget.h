@@ -66,6 +66,7 @@ protected:
     void mouseMoveEvent(QMouseEvent* event);
     void leaveEvent(QEvent* event);
     void resizeEvent(QResizeEvent* event);
+    void showEvent(QShowEvent* event);
 
 private Q_SLOTS:
     void onPeerModelReset();
@@ -73,7 +74,6 @@ private Q_SLOTS:
     void hidePopup();
 
 private:
-    void ensureSsl();
     void scheduleLookups();
     void lookupIp(const QString& ip);
     void showPopupFor(const PeerPin& pin, const QPoint& globalPos);

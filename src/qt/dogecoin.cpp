@@ -446,20 +446,27 @@ void DogecoinApplication::initializeResult(int retval)
         // Log this only after AppInit2 finishes, as then logging setup is guaranteed complete
         qWarning() << "Platform customization:" << platformStyle->getName();
 
+        qWarning() << "GUI init step: create ClientModel";
         clientModel = new ClientModel(optionsModel);
+        qWarning() << "GUI init step: setClientModel";
         window->setClientModel(clientModel);
+        qWarning() << "GUI init step: setClientModel done";
 
 #ifdef ENABLE_WALLET
         if(pwalletMain)
         {
+            qWarning() << "GUI init step: create WalletModel";
             walletModel = new WalletModel(platformStyle, pwalletMain, optionsModel);
-
+            qWarning() << "GUI init step: addWallet";
             window->addWallet(DogecoinGUI::DEFAULT_WALLET, walletModel);
+            qWarning() << "GUI init step: setCurrentWallet";
             window->setCurrentWallet(DogecoinGUI::DEFAULT_WALLET);
+            qWarning() << "GUI init step: wallet ready";
         }
 #endif
 
         // If -min option passed, start window minimized.
+        qWarning() << "GUI init step: show window";
         if(GetBoolArg("-min", false))
         {
             window->showMinimized();
@@ -468,9 +475,11 @@ void DogecoinApplication::initializeResult(int retval)
         {
             window->show();
         }
+        qWarning() << "GUI init step: splashFinished";
         Q_EMIT splashFinished(window);
 
 #ifdef ENABLE_WALLET
+        qWarning() << "GUI init step: paymentServer wire-up";
         paymentServer->setOptionsModel(optionsModel);
 
         // Now that initialization/startup is done, process any command-line
@@ -483,6 +492,7 @@ void DogecoinApplication::initializeResult(int retval)
         connect(paymentServer, SIGNAL(message(QString,QString,unsigned int)),
                          window, SLOT(message(QString,QString,unsigned int)));
         QTimer::singleShot(100, paymentServer, SLOT(uiReady()));
+        qWarning() << "GUI init step: initializeResult complete";
 #endif
     } else {
         quit(); // Exit main loop

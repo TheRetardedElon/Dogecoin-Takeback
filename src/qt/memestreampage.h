@@ -58,6 +58,7 @@ public Q_SLOTS:
 
 private:
     void setupUi();
+    void ensureClient();
     void updateAuthorLabel();
     QString currentAuthorAddress() const;
     /** Existing receive address, or allocate one labeled for Meme Stream. */

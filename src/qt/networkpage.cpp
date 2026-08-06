@@ -18,6 +18,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QShowEvent>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -33,6 +34,7 @@ NetworkPage::NetworkPage(const PlatformStyle* _platformStyle, QWidget* parent)
       trafficLabel(0),
       warningsLabel(0),
       peerMap(0),
+      mapHostLayout(0),
       pollTimer(0),
       updatingNetworkToggle(false),
       peersContextMenu(0),
@@ -114,10 +116,12 @@ void NetworkPage::setupUi()
     warningsLabel->setWordWrap(true);
     root->addWidget(warningsLabel);
 
-    // Map fills the page (peer/ban tables live in Debug Console)
-    peerMap = new PeerMapWidget(this);
-    peerMap->setMinimumHeight(320);
-    root->addWidget(peerMap, 1);
+    // Peer map is created on first show (ensurePeerMap) so wallet open does not
+    // construct QNetworkAccessManager / geo timers during startup.
+    mapHostLayout = new QVBoxLayout();
+    mapHostLayout->setContentsMargins(0, 0, 0, 0);
+    root->addLayout(mapHostLayout, 1);
+    peerMap = 0;
 
     // Tables kept hidden for optional future use; disconnect/ban via Debug Console
     peerView = 0;
@@ -128,7 +132,9 @@ void NetworkPage::setupUi()
 
     pollTimer = new QTimer(this);
     connect(pollTimer, SIGNAL(timeout()), this, SLOT(updateStats()));
-    pollTimer->start(2000);
+    // Stats poll is cheap; start after a short delay so core GUI finishes first.
+    pollTimer->setInterval(2000);
+    QTimer::singleShot(1500, pollTimer, SLOT(start()));
 }
 
 void NetworkPage::setupContextMenus()
@@ -141,11 +147,31 @@ void NetworkPage::setupContextMenus()
 void NetworkPage::setClientModel(ClientModel* model)
 {
     clientModel = model;
+    // If map already exists (user visited Network before), re-bind.
     if (peerMap)
         peerMap->setClientModel(model);
-    if (clientModel && clientModel->getPeerTableModel())
-        clientModel->getPeerTableModel()->startAutoRefresh();
+    // Do not start PeerTableModel auto-refresh here — only when map is live.
     updateStats();
+}
+
+void NetworkPage::showEvent(QShowEvent* event)
+{
+    QWidget::showEvent(event);
+    ensurePeerMap();
+    if (pollTimer && !pollTimer->isActive())
+        pollTimer->start();
+    updateStats();
+}
+
+void NetworkPage::ensurePeerMap()
+{
+    if (peerMap || !mapHostLayout)
+        return;
+    peerMap = new PeerMapWidget(this);
+    peerMap->setMinimumHeight(320);
+    mapHostLayout->addWidget(peerMap, 1);
+    if (clientModel)
+        peerMap->setClientModel(clientModel);
 }
 
 void NetworkPage::refresh()

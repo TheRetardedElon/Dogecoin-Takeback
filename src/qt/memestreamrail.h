@@ -48,6 +48,7 @@ public Q_SLOTS:
 
 private:
     void setupUi();
+    void ensureClient();
     void rebuild(const QList<MemeStreamItem>& items);
     QWidget* buildCard(const MemeStreamItem& item);
     QString currentAuthorAddress() const;

@@ -23,14 +23,12 @@
 #include <QVariantList>
 #include <QVariantMap>
 
-#ifdef Q_OS_WIN
-#include <windows.h>
-#include <wincrypt.h>
-#endif
-
 static const char* DEFAULT_BASE = "https://gopastearth.com";
 
-/** One-shot: ensure Qt SSL works and Windows system CAs are loaded (OpenSSL backend). */
+/** One-shot SSL capability log. Do NOT inject Windows ROOT certs into
+ *  QSslSocket::setDefaultCaCertificates — that path has caused STATUS_HEAP_CORRUPTION
+ *  (0xc0000374) on Windows + mingw-Qt OpenSSL builds (also removed from PeerMap).
+ *  Use the Qt/OpenSSL default CA bundle instead. */
 static void ensureMemeStreamSsl()
 {
     static bool done = false;
@@ -44,29 +42,7 @@ static void ensureMemeStreamSsl()
                   "(Protocol \"https\" is unknown). Rebuild Qt with -openssl-linked.\n");
         return;
     }
-
-#ifdef Q_OS_WIN
-    // Qt OpenSSL backend does not use the Windows cert store by default.
-    // Import current-user + local-machine ROOT stores so gopastearth.com verifies.
-    QList<QSslCertificate> cas = QSslSocket::defaultCaCertificates();
-    const DWORD stores[] = { CERT_SYSTEM_STORE_CURRENT_USER, CERT_SYSTEM_STORE_LOCAL_MACHINE };
-    for (unsigned si = 0; si < sizeof(stores) / sizeof(stores[0]); ++si) {
-        HCERTSTORE hStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, 0,
-                                          stores[si] | CERT_STORE_READONLY_FLAG, "ROOT");
-        if (!hStore)
-            continue;
-        PCCERT_CONTEXT ctx = 0;
-        while ((ctx = CertEnumCertificatesInStore(hStore, ctx)) != 0) {
-            QByteArray der(reinterpret_cast<const char*>(ctx->pbCertEncoded),
-                           static_cast<int>(ctx->cbCertEncoded));
-            QList<QSslCertificate> parsed = QSslCertificate::fromData(der, QSsl::Der);
-            cas.append(parsed);
-        }
-        CertCloseStore(hStore, 0);
-    }
-    if (!cas.isEmpty())
-        QSslSocket::setDefaultCaCertificates(cas);
-#endif
+    LogPrintf("MemeStream: SSL available (using default CA bundle; not injecting Windows ROOT store)\n");
 #else
     LogPrintf("MemeStream: QT_NO_SSL defined; HTTPS unavailable.\n");
 #endif
