@@ -371,6 +371,60 @@ bool AssumeUtxoDevActivationAllowed()
     return GetBoolArg("-assumeutxodev", false);
 }
 
+bool AssumeUtxoActivationAllowed(int height, const uint256& coins_hash, std::string& error)
+{
+    error.clear();
+    if (AssumeUtxoDevActivationAllowed()) {
+        return true;
+    }
+    if (height < 0 || coins_hash.IsNull()) {
+        error = "Snapshot height/hash invalid for attestation check";
+        return false;
+    }
+    const AssumeutxoData* data = Params().AssumeutxoForHeight(height);
+    if (!data) {
+        error = strprintf(
+            "Height %d is not an attested AssumeUTXO height for this chain. "
+            "Use -assumeutxodev=1 for development, or wait for a published attestation "
+            "in chainparams (mapAssumeutxo).",
+            height);
+        return false;
+    }
+    if (data->hash_serialized != coins_hash) {
+        error = strprintf(
+            "Snapshot coins hash %s does not match attested hash %s for height %d",
+            coins_hash.ToString(), data->hash_serialized.ToString(), height);
+        return false;
+    }
+    return true;
+}
+
+double GetAssumeUtxoValidationProgress()
+{
+    if (!g_snapshot_is_active) {
+        return 1.0;
+    }
+    if (g_bg_status == BackgroundValidationStatus::COMPLETED) {
+        return 1.0;
+    }
+    if (g_bg_status == BackgroundValidationStatus::FAILED) {
+        return 0.0;
+    }
+    if (g_bg_target_height <= 0) {
+        return 0.0;
+    }
+    if (g_bg_height < 0) {
+        return 0.0;
+    }
+    if (g_bg_height >= g_bg_target_height) {
+        return 0.99; // waiting on final hash check
+    }
+    double p = static_cast<double>(g_bg_height) / static_cast<double>(g_bg_target_height);
+    if (p < 0.0) p = 0.0;
+    if (p > 1.0) p = 1.0;
+    return p;
+}
+
 BackgroundValidationStatus GetBackgroundValidationStatus()
 {
     return g_bg_status;
@@ -422,11 +476,6 @@ bool ActivateLoadedSnapshot(std::string& error)
 {
     error.clear();
 
-    if (!AssumeUtxoDevActivationAllowed()) {
-        error = "Snapshot activation requires -assumeutxodev=1 (always allowed on regtest). "
-                "This is a dev-only Phase B2 step; Phase C will validate history in the background.";
-        return false;
-    }
     if (g_snapshot_is_active) {
         error = "Snapshot chainstate is already active";
         return false;
@@ -452,6 +501,14 @@ bool ActivateLoadedSnapshot(std::string& error)
     if (!snap->HasSnapshotCoinsHash()) {
         error = "Snapshot coins hash missing (reload snapshot with a current build)";
         return false;
+    }
+
+    {
+        std::string gate_err;
+        if (!AssumeUtxoActivationAllowed(snap->Tip()->nHeight, snap->SnapshotCoinsHash(), gate_err)) {
+            error = gate_err;
+            return false;
+        }
     }
 
     LOCK(cs_main);

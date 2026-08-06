@@ -348,7 +348,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-datadir=<dir>", _("Specify data directory"));
     strUsage += HelpMessageOpt("-dbcache=<n>", strprintf(_("Set database cache size in megabytes (%d to %d, default: %d). Larger values speed Initial Block Download if you have free RAM (e.g. 2048–4096 on a desktop)."), nMinDbCache, nMaxDbCache, nDefaultDbCache));
     strUsage += HelpMessageOpt("-ibdrescue", strprintf(_("During initial block download, allow non-preferred peers to fetch blocks when preferred download peers are stalling or saturated (default: %u)"), 1));
-    strUsage += HelpMessageOpt("-assumeutxodev", strprintf(_("Allow activatesnapshot / loadtxoutset activate=true to promote a loaded UTXO snapshot to the active tip without background validation (Phase B2 dev only; default: %u). Always allowed on regtest. Do not use on mainnet for real funds."), 0));
+    strUsage += HelpMessageOpt("-assumeutxodev", strprintf(_("Allow activatesnapshot even when the snapshot height is not attested in chainparams (default: %u). Regtest always allows activation. Attested heights use mapAssumeutxo hash_serialized checks instead. Do not use untrusted snapshots with real funds."), 0));
     if (showDebug)
         strUsage += HelpMessageOpt("-feefilter", strprintf("Tell other nodes to filter invs to us by our mempool min fee (default: %u)", DEFAULT_FEEFILTER));
     strUsage += HelpMessageOpt("-loadblock=<file>", _("Imports blocks from external blk000??.dat file on startup"));

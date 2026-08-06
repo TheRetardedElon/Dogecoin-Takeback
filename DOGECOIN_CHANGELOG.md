@@ -467,7 +467,9 @@ Work continued in 2025–2026 as **Dogecoin Core Pro** on the 1.14 DNA line — 
 
 **Reasoning:** Goal = wallet-usable tip in minutes without forking. Snapshot is **not** a soft fork; background validation must fail closed on hash mismatch. Dev flag keeps mainnet activation explicit until attested heights exist.
 
-**Still open (product):** chainparams `AssumeutxoData`, signed public artifacts, GUI progress modal, drop blanket `-assumeutxodev` for attested heights only.
+**D1 (attestation + GUI):** `AssumeutxoData` / `mapAssumeutxo` in chainparams; activate if height+`hash_serialized` attested **or** `-assumeutxodev` / regtest; Qt status bar shows historical validation % while snapshot tip is current. Main/test maps empty until hashes published.
+
+**Still open (product):** publish attested mainnet/testnet hashes, signed public artifacts, richer GUI modal, optional hard-collapse of parked IBD DB.
 
 ### **5. Storage (wallet) progress**
 

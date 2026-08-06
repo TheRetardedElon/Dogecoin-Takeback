@@ -1,6 +1,6 @@
 # AssumeUTXO for Dogecoin Core (1.14 DNA) — Design
 
-**Status:** design + **Phase C2 persist/restore**  
+**Status:** design + **Phase D1 attestation gate + GUI progress**  
 **Depends on:** P0/P0.1 IBD telemetry, ASMAP, healthy single-chainstate  
 **Consensus impact:** none if done like Bitcoin (background full validation to the assume height)
 
@@ -15,6 +15,7 @@
 | **B2** Activate snapshot as tip (dev) | **Done** | `activatesnapshot` / `loadtxoutset … true`; `-assumeutxodev`; mirrors `chainActive`/`pcoinsTip`; parks IBD on background |
 | **C1** Background validation | **Done** | `StepBackgroundValidation` ConnectBlock loop; `hash_serialized` match; fail-closed shutdown; auto-step after ActivateBestChain; `stepbackgroundvalidation` RPC |
 | **C2** Persist / restore / fetch / collapse | **Done** | `assumeutxo.dat`; `MaybeRestoreAssumeUtxo` on startup; historical getdata for missing blocks; dual collapse after validated |
+| **D1** Attestation gate + GUI progress | **Done** | `mapAssumeutxo` / `AssumeutxoData` in chainparams; activate if attested **or** `-assumeutxodev`; status-bar historical % |
 
 ## 1. Goal
 
@@ -85,8 +86,8 @@ Suggested structure (names illustrative):
 | `src/node/utxo_snapshot.h/.cpp` | **B1 done:** metadata + write/load |
 | RPC `dumptxoutset` / `loadtxoutset` | **B1 done:** dump active tip; load into background |
 | `chainstate_snapshot/` LevelDB | **B1 done:** separate from live `chainstate/` |
-| `chainparams` AssumeutxoData | Pending (Phase C — hardcoded trusted height/hash) |
-| `activatesnapshot` / `-assumeutxodev` | **B2 done:** promote loaded snapshot to active tip (dev) |
+| `chainparams` AssumeutxoData / `mapAssumeutxo` | **D1 done:** structure + empty maps (fill when attested hashes published) |
+| `activatesnapshot` / `-assumeutxodev` | **B2+D1:** promote tip; attested height+hash skips `-assumeutxodev` |
 
 **B1 exit criteria (met):** dump + load round-trip; background reports `has_snapshot`; active tip unchanged.  
 **B2 exit criteria (met):** with `-assumeutxodev` (or regtest), activate snapshot so `chainActive`/`pcoinsTip`/wallet tip = H; IBD tip parked; no Phase C yet.
@@ -154,10 +155,12 @@ Suggested structure (names illustrative):
 
 ## 9. Suggested next engineering
 
-1. ~~Land P0.3 / Phase A / B / C1 / C2~~  
-2. Hardcoded mainnet/testnet AssumeutxoData + attested snapshot heights (drop blanket `-assumeutxodev`)  
-3. Product polish: GUI “historical validation N%”, prune rules, signed snapshot artifacts  
-4. Optional: hard-collapse (delete parked IBD DB after complete)
+1. ~~Land P0.3 / Phase A / B / C / D1~~  
+2. Publish community-attested mainnet/testnet entries into `mapAssumeutxo` (fill hashes)  
+3. Signed snapshot artifacts + prune product rules  
+4. Optional: hard-collapse parked IBD DB; richer GUI modal  
+
+**D1 note:** Main/test maps are empty until hashes are published — use `-assumeutxodev` for experiments.
 
 ## 10. Success metric
 

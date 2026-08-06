@@ -66,9 +66,21 @@
           <tr><td>B2</td><td><span class="badge badge-done">Done</span></td><td><code>activatesnapshot</code>; mirrors globals for wallet</td></tr>
           <tr><td>C1</td><td><span class="badge badge-done">Done</span></td><td>Background <code>ConnectBlock</code> → H; <code>hash_serialized</code> match; fail-closed</td></tr>
           <tr><td>C2</td><td><span class="badge badge-done">Done</span></td><td><code>assumeutxo.dat</code> restore; historical getdata; dual collapse flag</td></tr>
-          <tr><td>D</td><td><span class="badge badge-todo">Later</span></td><td>GUI modal, attested mainnet heights, signed artifacts</td></tr>
+          <tr><td>D1</td><td><span class="badge badge-done">Done</span></td><td><code>mapAssumeutxo</code> gate; status-bar “historical validation %”</td></tr>
+          <tr><td>D2</td><td><span class="badge badge-todo">Later</span></td><td>Publish attested hashes; signed artifacts; GUI modal polish</td></tr>
         </tbody>
       </table>
+
+      <h2>Activation policy (D1)</h2>
+      <ul>
+        <li><strong>regtest</strong> — always allowed</li>
+        <li><strong>Attested</strong> — height in <code>mapAssumeutxo</code> and <code>hash_serialized</code> matches snapshot coins hash</li>
+        <li><strong>-assumeutxodev=1</strong> — development override (mainnet/testnet when map empty)</li>
+      </ul>
+      <p>
+        Mainnet/testnet maps are currently <strong>empty</strong> until community-attested
+        heights are published. Structure is ready in <code>chainparams</code>.
+      </p>
 
       <h2>End-to-end operator flow</h2>
       <div class="flow">
@@ -164,9 +176,9 @@ repeat: txid | CCoins serialization</code></pre>
 
       <h2>Still open</h2>
       <ul class="checklist">
-        <li class="todo">Hardcoded <code>AssumeutxoData</code> in chainparams (mainnet/testnet)</li>
-        <li class="todo">Drop blanket <code>-assumeutxodev</code> for attested heights only</li>
-        <li class="todo">GUI: “Using snapshot; historical validation N%”</li>
+        <li class="done">AssumeutxoData / mapAssumeutxo structure + attested gate</li>
+        <li class="done">GUI status-bar historical validation %</li>
+        <li class="todo">Publish real mainnet/testnet attested hashes into mapAssumeutxo</li>
         <li class="todo">Signed public snapshot artifacts + prune product rules</li>
         <li class="todo">Optional hard delete of parked IBD DB after complete</li>
       </ul>

@@ -116,6 +116,11 @@ public:
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0xe7d4577405223918491477db725a393bcfc349d8ee63b0a4fde23cbfbfd81dea"); // 5,050,000
 
+        // AssumeUTXO attested snapshots (Phase D): none published yet.
+        // When community-attested: mapAssumeutxo[H] = AssumeutxoData(H, hash_serialized);
+        // Until then, snapshot activation requires -assumeutxodev=1.
+        mapAssumeutxo.clear();
+
         // AuxPoW parameters
         consensus.nAuxpowChainId = 0x0062; // 98 - Josh Wise!
         consensus.fStrictChainId = true;
@@ -272,6 +277,9 @@ public:
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x199bea6a442310589cbb50a193a30b097c228bd5a0f21af21e4e53dd57c382d3"); // 5,900,000
 
+        // AssumeUTXO: no testnet attestation published yet (-assumeutxodev required).
+        mapAssumeutxo.clear();
+
         // AuxPoW parameters
         consensus.nAuxpowChainId = 0x0062; // 98 - Josh Wise!
         consensus.fStrictChainId = false;
@@ -413,6 +421,9 @@ public:
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x00");
 
+        // AssumeUTXO: regtest allows any snapshot (see AssumeUtxoActivationAllowed).
+        mapAssumeutxo.clear();
+
         // AuxPow parameters
         consensus.nAuxpowChainId = 0x0062; // 98 - Josh Wise!
         consensus.fStrictChainId = true;
@@ -503,6 +514,20 @@ const Consensus::Params *Consensus::Params::GetConsensus(uint32_t nTargetHeight)
 
     // No better match below the target height
     return this;
+}
+
+const AssumeutxoData* CChainParams::AssumeutxoForHeight(int height) const
+{
+    std::map<int, AssumeutxoData>::const_iterator it = mapAssumeutxo.find(height);
+    if (it == mapAssumeutxo.end()) {
+        return nullptr;
+    }
+    return &it->second;
+}
+
+bool CChainParams::IsAssumeutxoHeight(int height) const
+{
+    return mapAssumeutxo.count(height) > 0;
 }
 
 CChainParams& Params(const std::string& chain)

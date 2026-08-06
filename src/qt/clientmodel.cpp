@@ -155,6 +155,10 @@ void ClientModel::updateTimer()
     // the following calls will acquire the required lock
     Q_EMIT mempoolSizeChanged(getMempoolSize(), getMempoolDynamicUsage());
     Q_EMIT bytesChanged(getTotalBytesRecv(), getTotalBytesSent());
+    // AssumeUTXO: refresh status bar while tip is current but history still validates.
+    if (IsSnapshotChainstateActive() && !IsAssumeUtxoValidated()) {
+        Q_EMIT numBlocksChanged(getNumBlocks(), getLastBlockDate(), getVerificationProgress(nullptr), false);
+    }
 }
 
 void ClientModel::updateNumConnections(int numConnections)
@@ -186,6 +190,46 @@ QString ClientModel::getIbdStatsSummary() const
         .arg(s.ibd_rescue_fetches)
         .arg(s.download_timeouts)
         .arg(s.flushes);
+}
+
+bool ClientModel::isAssumeUtxoActive() const
+{
+    return IsSnapshotChainstateActive();
+}
+
+bool ClientModel::isAssumeUtxoValidated() const
+{
+    return IsAssumeUtxoValidated();
+}
+
+double ClientModel::getAssumeUtxoValidationProgress() const
+{
+    return GetAssumeUtxoValidationProgress();
+}
+
+QString ClientModel::getAssumeUtxoStatusLabel() const
+{
+    if (!IsSnapshotChainstateActive()) {
+        return QString();
+    }
+    if (IsAssumeUtxoValidated()) {
+        return tr("Snapshot validated");
+    }
+    if (IsAssumeUtxoFailed()) {
+        return tr("Snapshot validation failed");
+    }
+    const QString st = QString::fromStdString(BackgroundValidationStatusString());
+    const int h = GetBackgroundValidationHeight();
+    const int t = GetBackgroundValidationTargetHeight();
+    const double pct = 100.0 * GetAssumeUtxoValidationProgress();
+    if (t > 0) {
+        return tr("Snapshot: historical validation %1% (%2 / %3) [%4]")
+            .arg(QString::number(pct, 'f', 1))
+            .arg(h)
+            .arg(t)
+            .arg(st);
+    }
+    return tr("Snapshot: historical validation [%1]").arg(st);
 }
 
 enum BlockSource ClientModel::getBlockSource() const

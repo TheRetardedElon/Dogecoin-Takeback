@@ -71,6 +71,13 @@ public:
     bool inInitialBlockDownload() const;
     /** Compact IBD telemetry line for Network page (stall/rescue/flush counters). */
     QString getIbdStatsSummary() const;
+    /** AssumeUTXO: snapshot tip active (wallet may be at assumed height). */
+    bool isAssumeUtxoActive() const;
+    bool isAssumeUtxoValidated() const;
+    /** 0.0–1.0 background history validation progress. */
+    double getAssumeUtxoValidationProgress() const;
+    /** Short status for status bar (empty if not in assume path). */
+    QString getAssumeUtxoStatusLabel() const;
     //! Returns enum BlockSource of the current importing/syncing state
     enum BlockSource getBlockSource() const;
     //! Return true if network activity in core is enabled

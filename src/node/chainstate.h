@@ -110,7 +110,15 @@ CChain& ActiveChain();
 CCoinsViewCache* ActiveCoinsTip();
 
 bool ActivateLoadedSnapshot(std::string& error);
+/** True if -assumeutxodev or regtest. */
 bool AssumeUtxoDevActivationAllowed();
+/**
+ * Whether activation is allowed for a snapshot at height with coins_hash.
+ * Allowed if: regtest, -assumeutxodev, or height+hash matches chainparams AssumeutxoData.
+ */
+bool AssumeUtxoActivationAllowed(int height, const uint256& coins_hash, std::string& error);
+/** Progress 0.0–1.0 of background validation (1.0 if complete/none). */
+double GetAssumeUtxoValidationProgress();
 
 /**
  * Phase C2: if assumeutxo.dat + chainstate_snapshot/ exist after normal init,

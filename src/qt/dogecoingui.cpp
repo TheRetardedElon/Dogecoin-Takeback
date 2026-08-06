@@ -2185,6 +2185,35 @@ void DogecoinGUI::setNumBlocks(int count, const QDateTime& blockDate, double nVe
 
     tooltip = tr("Processed %n block(s) of transaction history.", "", count);
 
+    // AssumeUTXO Phase D: tip may be "current" while background still proves history.
+    if (clientModel->isAssumeUtxoActive() && !clientModel->isAssumeUtxoValidated()) {
+        const QString assumeLabel = clientModel->getAssumeUtxoStatusLabel();
+        if (progressBarLabel) {
+            progressBarLabel->setText(assumeLabel);
+            progressBarLabel->setVisible(true);
+        }
+        if (progressBar) {
+            const double p = clientModel->getAssumeUtxoValidationProgress();
+            progressBar->setFormat(tr("%1% — validating snapshot history").arg(QString::number(100.0 * p, 'f', 1)));
+            progressBar->setMaximum(1000);
+            progressBar->setValue(static_cast<int>(p * 1000.0));
+            progressBar->setVisible(true);
+        }
+        tooltip = assumeLabel + QString("<br>") + tooltip;
+        if (labelBlocksIcon) {
+            labelBlocksIcon->setPixmap(platformStyle->SingleColorIcon(":/icons/synced").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
+        }
+#ifdef ENABLE_WALLET
+        if (walletFrame) {
+            walletFrame->showOutOfSyncWarning(false);
+        }
+#endif
+        if (labelBlocksIcon) {
+            labelBlocksIcon->setToolTip(tooltip);
+        }
+        return;
+    }
+
     // Set icon state: spinning if catching up, tick otherwise
     if(secs < 90*60)
     {

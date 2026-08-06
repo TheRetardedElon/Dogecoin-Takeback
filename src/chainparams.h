@@ -11,7 +11,9 @@
 #include "consensus/params.h"
 #include "primitives/block.h"
 #include "protocol.h"
+#include "uint256.h"
 
+#include <map>
 #include <vector>
 
 struct CDNSSeedData {
@@ -35,6 +37,18 @@ struct ChainTxData {
     int64_t nTime;
     int64_t nTxCount;
     double dTxRate;
+};
+
+/**
+ * Attested UTXO snapshot for AssumeUTXO bootstrap (Phase D).
+ * hash_serialized matches gettxoutsetinfo / ComputeCoinsHashSerialized at height.
+ * Empty map = no public attestation yet; activation requires -assumeutxodev (or regtest).
+ */
+struct AssumeutxoData {
+    int height;
+    uint256 hash_serialized;
+    AssumeutxoData() : height(-1) {}
+    AssumeutxoData(int heightIn, const uint256& hashIn) : height(heightIn), hash_serialized(hashIn) {}
 };
 
 /**
@@ -82,6 +96,13 @@ public:
     const CCheckpointData& Checkpoints() const { return checkpointData; }
     const ChainTxData& TxData() const { return chainTxData; }
 
+    /** Attested AssumeUTXO snapshots keyed by height (may be empty). */
+    const std::map<int, AssumeutxoData>& Assumeutxo() const { return mapAssumeutxo; }
+    /** Null if height is not attested for this chain. */
+    const AssumeutxoData* AssumeutxoForHeight(int height) const;
+    /** True if height has an entry (hash must still be checked by caller). */
+    bool IsAssumeutxoHeight(int height) const;
+
 protected:
     CChainParams() {}
 
@@ -101,6 +122,7 @@ protected:
     bool fMineBlocksOnDemand;
     CCheckpointData checkpointData;
     ChainTxData chainTxData;
+    std::map<int, AssumeutxoData> mapAssumeutxo;
 };
 
 /**
