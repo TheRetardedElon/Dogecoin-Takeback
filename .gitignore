@@ -155,3 +155,9 @@ stage/
 # Local smoke binaries / regtest datadirs (do not commit)
 smoke-run/
 
+
+# Built release packages (zip/setup) — publish via GitHub Releases, not git
+release/*.zip
+release/*-setup.exe
+release/SHA256SUMS*
+

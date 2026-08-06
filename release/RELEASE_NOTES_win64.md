@@ -1,47 +1,33 @@
-# Dogecoin Core Pro / Takeback — Windows x64
-
-## Version
-- Client: **1.14.101** (Pro / Takeback tree)
-- Target: Windows 64-bit (x86_64)
-- Built: WSL2 cross-compile (depends + MinGW-w64 posix, Qt 5.7.1)
+# Dogecoin Core Pro 1.14.101 — Windows x64
 
 ## Artifacts
-- `dogecoin-1.14.101-win64.zip` — portable package
-- `dogecoin-1.14.101-win64-setup.exe` — NSIS installer (if present)
-- `SHA256SUMS-win64.txt` — checksums
+- `dogecoin-1.14.101-win64.zip` — portable
+- `dogecoin-1.14.101-win64-setup.exe` — NSIS installer
+- `SHA256SUMS-win64.txt`
 
-## Zip layout
-```
-dogecoin-1.14.101-win64/
-  dogecoin-qt.exe      # GUI wallet
-  daemon/dogecoind.exe # full node daemon
-  bin/dogecoin-cli.exe
-  bin/dogecoin-tx.exe
-  COPYING.txt
-  readme.txt
+## What's inside
+- **dogecoin-qt.exe** — Core Pro GUI (Home, Business, Meme Stream, Network, Arcade, themes)
+- **daemon/dogecoind.exe** — full node
+- **bin/dogecoin-cli.exe** / **daemon/dogecoin-cli.exe**
+- Optional **bin/dogecoin-tx.exe**
+
+## Features (Pro / Takeback)
+- Pure DOGE settlement (no EVM wrap product path)
+- IBD telemetry (`getibdinfo`), stall rescue, parallel download, ASMAP
+- AssumeUTXO dual chainstate RPCs (regtest proven; mainnet map empty until attested)
+- Doge Business invoices/POS, Meme Stream tips on-chain, Arcade mini-game
+
+## Build
+- Cross-compiled via WSL2 + MinGW + depends (Qt 5.7.1)
+- Strip applied to release copies
+
+## Smoke
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\smoke-assumeutxo-regtest.ps1
+powershell -ExecutionPolicy Bypass -File scripts\smoke-assumeutxo-two-node.ps1
 ```
 
 ## Install
-### Installer
-1. Run `dogecoin-1.14.101-win64-setup.exe`
-2. Launch **Dogecoin Core** from the Start Menu
+Run `dogecoin-1.14.101-win64-setup.exe` or unzip portable and launch `dogecoin-qt.exe`.
 
-### Portable
-1. Extract the zip
-2. Run `dogecoin-qt.exe`
-
-## What's new in 1.14.101
-- **IBD P0:** `getibdinfo`, peer stall telemetry, IBD rescue fetch (`-ibdrescue`, default on), Network page IBD line
-- **Arcade:** Retr-Doge Shibe Blaster (client-only mini-game)
-- Pure DOGE — no consensus / AuxPoW changes
-
-## Notes
-- First sync downloads the full Dogecoin chain (or enable pruned mode in Options).
-- Windows SmartScreen may warn on **unsigned** builds — expected until code-signed.
-- Pure DOGE client (no EVM). Pro: Home, Meme Stream, Business, Network, Options, Arcade.
-- Ops: `dogecoin-cli getibdinfo` · `-debug=ibd` · `-ibdrescue=0` to disable rescue fetch.
-
-## Verify
-```
-sha256sum -c SHA256SUMS-win64.txt
-```
+**Pre-release** — review before high-value use.
