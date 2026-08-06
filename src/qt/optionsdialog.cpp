@@ -49,6 +49,29 @@ OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
     ui->pruneWarning->setVisible(false);
     ui->pruneWarning->setStyleSheet("QLabel { color: red; }");
 
+    // IBD / storage guidance (Pro: full history vs prune)
+    ui->prune->setToolTip(tr(
+        "Prune block storage to save disk space. All blocks are still fully validated, "
+        "but older block files are deleted after a point.\n\n"
+        "• Leave OFF for a full archival node or if you may use tools that need old blocks.\n"
+        "• Turning prune ON (or changing size) can require a restart; reverting prune later "
+        "requires re-downloading the chain.\n"
+        "• Not recommended mid-IBD on a brand-new node until you understand the tradeoff."));
+    ui->pruneSize->setToolTip(tr(
+        "Target size for pruned block storage in GB (actual usage may be somewhat higher). "
+        "Dogecoin Core enforces a minimum prune target."));
+    ui->databaseCacheLabel->setToolTip(tr(
+        "In-memory cache for the UTXO / chainstate (LevelDB). Larger cache usually speeds up "
+        "initial block download and reindex if you have free RAM.\n\n"
+        "• Default is fine for light use.\n"
+        "• For a long mainnet IBD on a machine with spare RAM, try 2000–4000 MB "
+        "(restart required after change).\n"
+        "• Do not set so high that the OS starts swapping."));
+    ui->databaseCache->setToolTip(ui->databaseCacheLabel->toolTip());
+    ui->threadsScriptVerif->setToolTip(tr(
+        "Parallel script verification threads during block validation.\n"
+        "0 = automatic (recommended). Negative values leave that many CPU cores free."));
+
     ui->pruneSize->setEnabled(false);
     connect(ui->prune, SIGNAL(toggled(bool)), ui->pruneSize, SLOT(setEnabled(bool)));
 

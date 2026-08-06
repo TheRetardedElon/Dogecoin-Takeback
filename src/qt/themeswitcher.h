@@ -49,6 +49,10 @@ private:
     void applyCustomColors();
     void resetToDefaults();
     void updateColorButtons();
+    /** Copy ThemeManager live palette into the color swatches (so Dark shows dark chips). */
+    void seedColorsFromCurrentTheme();
+    /** Apply combo selection to ThemeManager + full Pro shell stylesheet. */
+    void applySelectedThemeToApp();
 
     // Theme selection
     QComboBox* m_themeCombo;
@@ -61,6 +65,8 @@ private:
     QPushButton* m_textButton;
     QPushButton* m_accentButton;
     QPushButton* m_borderButton;
+    QPushButton* m_applyCustomButton;
+    QPushButton* m_resetColorsButton;
     
     // Font controls
     QGroupBox* m_fontGroup;
