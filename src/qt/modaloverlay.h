@@ -27,6 +27,8 @@ public:
 public Q_SLOTS:
     void tipUpdate(int count, const QDateTime& blockDate, double nVerificationProgress);
     void setKnownBestHeight(int count, const QDateTime& blockDate);
+    /** Header-sync progress 0.0–1.0 (estimated); -1 if not in header-sync phase. */
+    double headerSyncProgress() const;
 
     void toggleVisibility();
     // will show or hide the modal layer
@@ -39,9 +41,16 @@ protected:
     bool event(QEvent* ev);
 
 private:
+    /** Refresh blocks-left / header phase labels from bestHeaderHeight. */
+    void updateHeaderSyncLabel(int blockCount);
+    /** When headers are still far ahead, drive the progress bar from header estimate. */
+    void setProgressForHeadersPhase();
+
     Ui::ModalOverlay *ui;
     int bestHeaderHeight; //best known height (based on the headers)
     QDateTime bestHeaderDate;
+    int lastBlockCount; // last validated tip height from tipUpdate
+    double lastVerificationProgress;
     QVector<QPair<qint64, double> > blockProcessTime;
     bool layerIsVisible;
     bool userClosed;

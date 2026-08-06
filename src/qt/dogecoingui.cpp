@@ -2115,12 +2115,29 @@ void DogecoinGUI::setNetworkActive(bool networkActive)
 
 void DogecoinGUI::updateHeadersSyncProgressLabel()
 {
+    if (!clientModel)
+        return;
     int64_t headersTipTime = clientModel->getHeaderTipTime();
     int headersTipHeight = clientModel->getHeaderTipHeight();
+    if (headersTipHeight < 0)
+        return;
     int estHeadersLeft = (GetTime() - headersTipTime) / Params().GetConsensus(headersTipHeight).nPowTargetSpacing;
     if (estHeadersLeft > HEADER_HEIGHT_DELTA_SYNC) {
+        const double headerPct =
+            100.0 * static_cast<double>(headersTipHeight) /
+            static_cast<double>(headersTipHeight + estHeadersLeft);
         if (progressBarLabel) {
-        progressBarLabel->setText(tr("Syncing Headers (%1%)...").arg(QString::number(100.0 / (headersTipHeight+estHeadersLeft)*headersTipHeight, 'f', 1)));
+            progressBarLabel->setText(tr("Syncing Headers (%1%)...")
+                                          .arg(QString::number(headerPct, 'f', 1)));
+            progressBarLabel->setVisible(true);
+        }
+        // Status bar used to leave the bar at block-verification % (~0) while the
+        // label already said headers 1.9% — keep both in lockstep.
+        if (progressBar) {
+            progressBar->setFormat(tr("%1% headers").arg(QString::number(headerPct, 'f', 1)));
+            progressBar->setMaximum(1000);
+            progressBar->setValue(static_cast<int>(headerPct * 10.0 + 0.5));
+            progressBar->setVisible(true);
         }
     }
 }
@@ -2130,13 +2147,9 @@ void DogecoinGUI::setNumBlocks(int count, const QDateTime& blockDate, double nVe
     if (modalOverlay)
     {
         if (header) {
-            if (modalOverlay) {
             modalOverlay->setKnownBestHeight(count, blockDate);
-            }
         } else {
-            if (modalOverlay) {
             modalOverlay->tipUpdate(count, blockDate, nVerificationProgress);
-            }
         }
     }
     if (!clientModel)
@@ -2151,6 +2164,13 @@ void DogecoinGUI::setNumBlocks(int count, const QDateTime& blockDate, double nVe
         case BLOCK_SOURCE_NETWORK:
             if (header) {
                 updateHeadersSyncProgressLabel();
+                // Still show out-of-sync modal during header phase
+#ifdef ENABLE_WALLET
+                if (walletFrame && modalOverlay) {
+                    walletFrame->showOutOfSyncWarning(true);
+                    modalOverlay->showHide();
+                }
+#endif
                 return;
             }
             if (progressBarLabel) {

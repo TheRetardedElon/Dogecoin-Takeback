@@ -18,6 +18,8 @@ QWidget(parent),
 ui(new Ui::ModalOverlay),
 bestHeaderHeight(0),
 bestHeaderDate(QDateTime()),
+lastBlockCount(0),
+lastVerificationProgress(0.0),
 layerIsVisible(false),
 userClosed(false)
 {
@@ -30,6 +32,12 @@ userClosed(false)
 
     blockProcessTime.clear();
     setVisible(false);
+    // Clear stale defaults so we never look "stuck at 0%" without labels
+    ui->percentageProgress->setText(tr("…"));
+    ui->progressBar->setValue(0);
+    ui->numberOfBlocksLeft->setText(tr("Starting…"));
+    ui->expectedTimeLeft->setText(tr("…"));
+    ui->progressIncreasePerH->setText(tr("…"));
 }
 
 ModalOverlay::~ModalOverlay()
@@ -73,11 +81,77 @@ void ModalOverlay::setKnownBestHeight(int count, const QDateTime& blockDate)
         bestHeaderHeight = count;
         bestHeaderDate = blockDate;
     }
+    // Header tips move without tipUpdate — keep the modal in sync so progress
+    // is not stuck at 0% while the status bar already shows header %.
+    updateHeaderSyncLabel(lastBlockCount);
+    if (headerSyncProgress() >= 0.0)
+        setProgressForHeadersPhase();
+}
+
+double ModalOverlay::headerSyncProgress() const
+{
+    if (!bestHeaderDate.isValid() || bestHeaderHeight <= 0)
+        return -1.0;
+
+    const QDateTime currentDate = QDateTime::currentDateTime();
+    const int estHeadersLeft =
+        bestHeaderDate.secsTo(currentDate) / Params().GetConsensus(bestHeaderHeight).nPowTargetSpacing;
+    // Same condition as status-bar "Syncing Headers (x%)..."
+    if (estHeadersLeft <= HEADER_HEIGHT_DELTA_SYNC)
+        return -1.0; // headers caught up enough; use block verification progress
+
+    const double denom = static_cast<double>(bestHeaderHeight + estHeadersLeft);
+    if (denom <= 0.0)
+        return -1.0;
+    const double p = static_cast<double>(bestHeaderHeight) / denom;
+    if (p < 0.0)
+        return 0.0;
+    if (p > 1.0)
+        return 1.0;
+    return p;
+}
+
+void ModalOverlay::setProgressForHeadersPhase()
+{
+    const double p = headerSyncProgress();
+    if (p < 0.0)
+        return;
+    ui->percentageProgress->setText(
+        tr("%1% (headers)").arg(QString::number(p * 100.0, 'f', 1)));
+    ui->progressBar->setValue(static_cast<int>(p * 100.0 + 0.5));
+    // Block-validation ETA is meaningless until headers settle
+    ui->expectedTimeLeft->setText(tr("Syncing headers first…"));
+    if (ui->progressIncreasePerH->text().isEmpty() ||
+        ui->progressIncreasePerH->text() == QLatin1String("…") ||
+        ui->progressIncreasePerH->text() == QLatin1String("0.00%")) {
+        ui->progressIncreasePerH->setText(tr("n/a (headers)"));
+    }
+}
+
+void ModalOverlay::updateHeaderSyncLabel(int blockCount)
+{
+    if (!bestHeaderDate.isValid())
+        return;
+
+    const QDateTime currentDate = QDateTime::currentDateTime();
+    const int estimateNumHeadersLeft =
+        bestHeaderDate.secsTo(currentDate) / Params().GetConsensus(bestHeaderHeight).nPowTargetSpacing;
+    const bool hasBestHeader = bestHeaderHeight >= blockCount;
+
+    if (estimateNumHeadersLeft < HEADER_HEIGHT_DELTA_SYNC && hasBestHeader) {
+        ui->numberOfBlocksLeft->setText(QString::number(bestHeaderHeight - blockCount));
+    } else {
+        ui->numberOfBlocksLeft->setText(
+            tr("Unknown. Syncing Headers (%1)…").arg(bestHeaderHeight));
+        ui->expectedTimeLeft->setText(tr("Unknown…"));
+    }
 }
 
 void ModalOverlay::tipUpdate(int count, const QDateTime& blockDate, double nVerificationProgress)
 {
     QDateTime currentDate = QDateTime::currentDateTime();
+    lastBlockCount = count;
+    lastVerificationProgress = nVerificationProgress;
 
     // keep a vector of samples of verification progress at height
     blockProcessTime.push_front(qMakePair(currentDate.toMSecsSinceEpoch(), nVerificationProgress));
@@ -119,26 +193,18 @@ void ModalOverlay::tipUpdate(int count, const QDateTime& blockDate, double nVeri
     // show the last block date
     ui->newestBlockDate->setText(blockDate.toString());
 
-    // show the percentage done according to nVerificationProgress
-    ui->percentageProgress->setText(QString::number(nVerificationProgress*100, 'f', 2)+"%");
-    ui->progressBar->setValue(nVerificationProgress*100);
-
-    if (!bestHeaderDate.isValid())
-        // not syncing
-        return;
-
-    // estimate the number of headers left based on nPowTargetSpacing
-    // and check if the GUI is not aware of the best header (happens rarely)
-    int estimateNumHeadersLeft = bestHeaderDate.secsTo(currentDate) / Params().GetConsensus(bestHeaderHeight).nPowTargetSpacing;
-    bool hasBestHeader = bestHeaderHeight >= count;
-
-    // show remaining number of blocks
-    if (estimateNumHeadersLeft < HEADER_HEIGHT_DELTA_SYNC && hasBestHeader) {
-        ui->numberOfBlocksLeft->setText(QString::number(bestHeaderHeight - count));
+    // Progress bar: during header sync, nVerificationProgress stays ~0% even while
+    // the status bar correctly reports header %. Prefer header estimate in that phase.
+    const double headerP = headerSyncProgress();
+    if (headerP >= 0.0) {
+        setProgressForHeadersPhase();
     } else {
-        ui->numberOfBlocksLeft->setText(tr("Unknown. Syncing Headers (%1)...").arg(bestHeaderHeight));
-        ui->expectedTimeLeft->setText(tr("Unknown..."));
+        ui->percentageProgress->setText(
+            tr("%1% (blocks)").arg(QString::number(nVerificationProgress * 100.0, 'f', 2)));
+        ui->progressBar->setValue(static_cast<int>(nVerificationProgress * 100.0 + 0.5));
     }
+
+    updateHeaderSyncLabel(count);
 }
 
 void ModalOverlay::toggleVisibility()
