@@ -1,58 +1,182 @@
-# Dogecoin Takeback — Core Pro
+# Ð Dogecoin Takeback — **Core Pro**
 
-**[TheRetardedElon/Dogecoin-Takeback](https://github.com/TheRetardedElon/Dogecoin-Takeback)**
+### [github.com/TheRetardedElon/Dogecoin-Takeback](https://github.com/TheRetardedElon/Dogecoin-Takeback)
 
-A Dogecoin Core–based full node and wallet client (**Dogecoin Core Pro**) focused on **native DOGE**: wallet, merchant tools, Meme Stream tips, and a modern shell — **not** an EVM “app layer,” wrapped DOGE, or a second ledger.
+> **Not a meme coin wrapper. Not an EVM “DOGE app layer.”**  
+> A full **Dogecoin Core (1.14 DNA)** node + wallet — rebranded, re-shelled, productized, and upgraded for real operators — while **consensus stays pure DOGE** (AuxPoW, subsidy, scripts: **untouched**).
 
-Based on Dogecoin Core (Bitcoin Core lineage). Development continues here as a product-oriented client on top of real Dogecoin consensus.
+If you open this repo expecting another “to the moon” landing page: wrong door.  
+If you open it expecting **a client that actually ships full-node infrastructure + merchant UX on native DOGE**: **welcome.**
 
 ---
 
-## What this is
+## Holyyyyy — what did you *do* to Dogecoin Core?
 
-| Piece | Description |
+We took Dogecoin Core’s **1.14 line** and turned it into **Dogecoin Core Pro**: identity, product surface, IBD/P2P muscle, and a full **AssumeUTXO dual-chainstate pipeline** — without inventing a second ledger.
+
+| Pillar | What landed |
 |--------|-------------|
-| **dogecoind / dogecoin-cli / dogecoin-tx** | Full node, RPC, utilities |
-| **dogecoin-qt (Core Pro)** | GUI wallet with modern sidebar shell |
-| **Doge Business** | Local invoices, POS keypad, payment QR, auto-watch paid |
-| **Meme Stream** | Feed / publish / tip creators on-chain (author = wallet address) |
-| **Network page** | Peers, bans, disconnect/ban/unban, activity toggle |
-| **Arcade** | In-client mini-game tab (pure Qt; no consensus) |
-| **Themes** | ThemeManager + Options → Theme (and full Options tabs restored) |
-| **IBD / P2P** | `getibdinfo`, stall rescue, ASMAP, parallel block fetch (1.14.101) |
-| **AssumeUTXO** | Dual chainstate A–C2: dump/load/activate, background prove, restore (`-assumeutxodev`) |
+| **Identity** | Full Dogecoin rebrand path: binaries, Qt, locales, consensus package names, RPC strings — Core DNA, DOGE name |
+| **Shell** | Modern **sidebar Pro UI** (Home / Send / Receive / History / **Network** / **Doge Business** / **Meme Stream** / **Arcade** / Console) |
+| **Merchant** | **Doge Business**: invoices, POS keypad, QR, auto-mark paid when the wallet receives |
+| **Social tips** | **Meme Stream**: feed / publish / like; **tips are on-chain** to the creator’s Dogecoin address |
+| **Network UX** | Live network page + world peer map (lazy-loaded) + full debug console parity |
+| **IBD / P2P** | `getibdinfo`, stall rescue, flush policy, ASMAP, parallel block download — **1.14.101** |
+| **AssumeUTXO** | Dual chainstate **A→D**: dump / load / activate / background prove / persist / attestation hooks / prune guard / smokes |
+| **Docs** | Living HTML docs under `html/docs/` — open `index.html` offline |
+| **Windows** | Full PE build story, smoke scripts, crash hardening for Pro shell |
 
-**Settlement rule:** money that matters is **native DOGE on Dogecoin**. Optional external business platforms (e.g. GPE) are out of scope for this README; this repo ships the Core client.
-
-More product detail: open **`html/docs/index.html`** in a browser (local docs, no server required).
-
-- [Pure DOGE strategy](html/docs/pages/pure-doge-strategy.html)
-- [Payment layer](html/docs/pages/payment-layer.html)
-- [Core Pro UI reference](html/docs/pages/ui-reference-core-pro.html)
-- [IBD & P2P](html/docs/pages/ibd-and-p2p.html)
-- [AssumeUTXO](html/docs/pages/assumeutxo.html)
-- [Roadmap](html/docs/pages/roadmap.html)
-- [Changelog (heavy updates)](DOGECOIN_CHANGELOG.md)
+**Settlement rule (non-negotiable):** money that matters is **native DOGE on Dogecoin L1.**  
+No wrap token. No “pro version of DOGE” ERC-20. No second chain for payments.
 
 ---
 
-## Build (Linux / WSL)
+## Feature map — open the box
 
-Typical path used in this project (WSL2 Ubuntu):
+### Full node (still the real thing)
+
+```text
+dogecoind      — full node + RPC
+dogecoin-cli   — control plane
+dogecoin-tx    — raw tx toolkit
+dogecoin-qt    — Core Pro GUI wallet
+```
+
+Same job as Core: validate, relay, wallet, mine (if you want).  
+Different experience: **Pro product surface + serious IBD/AssumeUTXO tooling.**
+
+### Core Pro GUI (the “wait what” UI)
+
+- **Modern nav shell** — dark Pro chrome, not 2013 Bitcoin Qt cosplay  
+- **Home** — overview + Meme Stream rail  
+- **Doge Business** — dashboard / invoices / POS (keys stay in *this* wallet)  
+- **Meme Stream** — full page + media; tip → creator DOGE address  
+- **Network** — connections, headers/blocks, IBD telemetry, peer map  
+- **Arcade** — Retr-Doge mini-game tab (pure Qt — zero consensus)  
+- **Themes** — ThemeManager + Options → Theme (Preview / custom swatches / Pro shell CSS)  
+- **Options** — Main / Wallet / Network / Window / Display / Theme restored  
+- **Debug window** — Information / Console / Traffic / Peers  
+
+### IBD & P2P (1.14.101 — measure, unstick, parallelize)
+
+Because multi-hour sync without telemetry is flying blind:
+
+| Capability | Why it matters |
+|------------|----------------|
+| **`getibdinfo` + `IBDStats`** | Flush / stall / rescue / connect timing in one RPC |
+| **Stall rescue (`-ibdrescue`)** | Don’t die forever on a stuck peer |
+| **Flush policy + prune tips** | Fewer thrash flushes mid-IBD |
+| **ASMAP (`-asmap`)** | ASN-aware peer groups |
+| **Parallel IBD download** | More blocks in flight / more header peers |
+| **Header vs block progress UI** | Status + modal finally agree during “Syncing Headers…” |
+
+### AssumeUTXO on **1.14 DNA** (this is the big one)
+
+Not a Bitcoin Core 24+ paste. **Dogecoin-shaped** dual chainstate:
+
+```text
+Phase A  Dual chainstate foundation (active + background)
+Phase B  dumptxoutset / loadtxoutset / activatesnapshot
+Phase C  Background ConnectBlock + hash fail-closed + persist/restore
+Phase D  Attestation map hooks + GUI status + prune guard + tests
+```
+
+**Operator RPCs**
+
+| RPC | Job |
+|-----|-----|
+| `dumptxoutset` | Snapshot UTXO set + `hash_serialized` + **chainparams snippet** |
+| `loadtxoutset` | Load into background (`activate` optional) |
+| `activatesnapshot` | Promote snapshot tip (regtest / attested / `-assumeutxodev`) |
+| `listassumeutxo` | Compiled attestation heights |
+| `getchainstates` | Dual-state visibility |
+| `getibdinfo` | IBD + AssumeUTXO progress / collapse flags |
+| `stepbackgroundvalidation` | Manual proof steps |
+
+**Proven on Windows PE (regtest)**
+
+```powershell
+# Same machine — full dump → load → activate → collapse
+powershell -ExecutionPolicy Bypass -File scripts/smoke-assumeutxo-regtest.ps1
+
+# Producer dumps tip; consumer loads snapshot + proves history over P2P
+powershell -ExecutionPolicy Bypass -File scripts/smoke-assumeutxo-two-node.ps1
+```
+
+Also: `qa/rpc-tests/assumeutxo.py` (native Linux `dogecoind` with AssumeUTXO built-in).
+
+> **Honest status:** mainnet/testnet `mapAssumeutxo` entries are **empty until community-attested heights + hashes are published**.  
+> The **pipeline is real**. Official public snapshot trust is the next ops chapter — not vaporware code.
+
+---
+
+## Architecture snapshot
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  dogecoin-qt  Core Pro shell                                │
+│  Business · Meme Stream · Network · Arcade · Themes         │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ RPC / signals
+┌───────────────────────────▼─────────────────────────────────┐
+│  dogecoind  — validation · wallet · mempool · P2P           │
+│  ┌─────────────────────┐   ┌──────────────────────────────┐ │
+│  │ Active chainstate   │   │ Background / snapshot path   │ │
+│  │ (IBD or snapshot)   │   │ load → prove → collapse      │ │
+│  └─────────────────────┘   └──────────────────────────────┘ │
+│  getibdinfo · IBDStats · ASMAP · parallel download          │
+└─────────────────────────────────────────────────────────────┘
+                            │
+              Native DOGE  ·  AuxPoW consensus  ·  one ledger
+```
+
+**What we refuse to change:** consensus rules, AuxPoW, subsidy schedule, “just make DOGE an EVM chain” nonsense.
+
+---
+
+## Version line
+
+| | |
+|--|--|
+| **Product** | Dogecoin Core Pro |
+| **Line** | **1.14 DNA** (Pro + IBD + AssumeUTXO program) |
+| **Stamp** | **v1.14.101** (distinguish from stock 1.14.x packages) |
+| **User-Agent** | Shibetoshi lineage |
+
+Pre-release GUI: **use at your own risk** for large merchant float / mining until you’ve reviewed builds yourself.
+
+---
+
+## Docs that actually exist
+
+Open **[`html/docs/index.html`](html/docs/index.html)** in a browser (no server).
+
+| Page | |
+|------|--|
+| [Pure DOGE strategy](html/docs/pages/pure-doge-strategy.html) | Why no wrap / EVM product path |
+| [Payment layer](html/docs/pages/payment-layer.html) | Invoices / POS / tips on L1 |
+| [UI reference](html/docs/pages/ui-reference-core-pro.html) | Screenshots + layout contract |
+| [IBD & P2P](html/docs/pages/ibd-and-p2p.html) | Telemetry, rescue, parallelism |
+| [AssumeUTXO](html/docs/pages/assumeutxo.html) | Dual chainstate + smokes |
+| [Roadmap](html/docs/pages/roadmap.html) | Phases 0–7 checklist |
+| [Architecture](html/docs/pages/architecture.html) | System view |
+| [Changelog (heavy)](DOGECOIN_CHANGELOG.md) | Full war diary |
+
+Design notes: `doc/assumeutxo-dogecoin-1.14.md`, `doc/ibd-p0-peer-telemetry.md`.
+
+---
+
+## Build
+
+### Linux / WSL (native)
 
 ```bash
-# deps: build-essential, libtool, autotools, pkg-config, bsdmainutils,
-#       libssl-dev, libevent-dev, libboost-all-dev, libdb5.3++-dev,
-#       qtbase5-dev, qttools5-dev, libqrencode-dev, libminiupnpc-dev, ...
-
 ./autogen.sh
 ./configure --with-gui=qt5 --enable-c++17 --with-incompatible-bdb
 make -j$(nproc)
 # GUI:
 make -C src qt/dogecoin-qt -j$(nproc)
 ```
-
-Binaries (when built):
 
 ```text
 src/dogecoind
@@ -61,84 +185,120 @@ src/dogecoin-tx
 src/qt/dogecoin-qt
 ```
 
-See also [BUILD_GUIDE.md](BUILD_GUIDE.md), [html/docs/pages/build-and-run.html](html/docs/pages/build-and-run.html), and upstream-style docs under `doc/`.
+See [BUILD_GUIDE.md](BUILD_GUIDE.md) and [html/docs/pages/build-and-run.html](html/docs/pages/build-and-run.html).
 
-Smoke helper (optional):
+### Windows PE (cross from WSL)
+
+This tree carries a **real Windows cross-build story** (depends + mingw). Prefer a **full Qt rebuild** after GUI work:
 
 ```bash
-./contrib/smoke-core-pro.sh
+# From WSL, example helper (adjust paths to your winbuild tree):
+bash scripts/full-rebuild-dogecoin-qt.sh
 ```
+
+Other helpers under `scripts/` (relink, theme, progress UI, AssumeUTXO smokes).
 
 ---
 
 ## Run
 
 ```bash
-# Full node + wallet GUI (mainnet)
+# Mainnet GUI
 ./src/qt/dogecoin-qt
-
-# Testnet
-./src/qt/dogecoin-qt -testnet
 
 # Daemon
 ./src/dogecoind -daemon
 ./src/dogecoin-cli getblockchaininfo
+./src/dogecoin-cli getibdinfo
+./src/dogecoin-cli getchainstates
 ```
 
-### Default ports
+| | mainnet | testnet | regtest |
+|--|--------:|--------:|--------:|
+| P2P | 22556 | 44556 | 18444 |
+| RPC | 22555 | 44555 | 18332 |
 
-| Function | mainnet | testnet | regtest |
-|----------|--------:|--------:|--------:|
-| P2P      |   22556 |   44556 |   18444 |
-| RPC      |   22555 |   44555 |   18332 |
+**Do not expose RPC to the public internet.**
 
-Do **not** expose RPC to the public internet.
+### AssumeUTXO (regtest / dev)
+
+```bash
+# Dump tip coins
+dogecoin-cli -regtest dumptxoutset utxo.dat
+
+# Fresh consumer: headers first, then
+dogecoin-cli loadtxoutset utxo.dat
+dogecoin-cli activatesnapshot   # regtest always allowed
+dogecoin-cli getibdinfo         # snapshot_active, assumeutxo_progress, collapse
+```
+
+Mainnet activate without attestation requires `-assumeutxodev=1` (dev only — **not** for untrusted snapshots with real funds).
 
 ---
 
 ## Product principles
 
-1. **One coin** — Dogecoin L1; no wrap token as the product path.  
-2. **Keys in Core** — local Business / POS allocate receive addresses from this wallet.  
-3. **Tips are on-chain** — Meme Stream tip uses the creator’s Dogecoin address.  
-4. **Payment layer ≠ EVM L2** — merchant UX and optional cloud tools settle real DOGE; this client is not a zk/EVM stack.  
-5. **Docs move with code** — living HTML under `html/docs/`.
+1. **One coin** — Dogecoin L1.  
+2. **Keys in Core** — Business / POS / tips use *this* wallet.  
+3. **Tips are on-chain** — creator address, real DOGE.  
+4. **Payment layer ≠ EVM L2** — merchant UX settles L1.  
+5. **Measure IBD before magic** — telemetry and peer path before snapshot theater.  
+6. **Docs move with code** — `html/docs/` stays alive.  
+7. **Consensus is sacred** — AuxPoW and rules stay Dogecoin.
 
 ---
 
-## Repository layout (high level)
+## Repo layout
 
 ```text
-src/           Core node, wallet, consensus, RPC
-src/qt/        Core Pro GUI (Business, Meme Stream, Network, themes)
-html/docs/     Project documentation (open index.html)
-contrib/       Scripts and helpers
-doc/           Classic Core documentation
-depends/       Optional dependency builds
+src/              Node, wallet, consensus, RPC, dual chainstate
+src/qt/           Core Pro GUI (Business, Meme Stream, Network, Arcade, themes)
+src/node/         AssumeUTXO chainstate + snapshot plumbing
+qa/rpc-tests/     assumeutxo.py + classic Core tests
+scripts/          Windows rebuild + AssumeUTXO PE smokes
+html/docs/        Living product docs (open index.html)
+doc/              Design notes + classic Core docs
+DOGECOIN_CHANGELOG.md   Heavy-update history
 ```
 
 ---
 
-## Status
+## Status (read this before you YOLO)
 
-- **Branch:** `master` — active integration (expect ongoing UI/product work).  
-- Prefer tagged releases for production binaries when tags are published.  
-- Pre-release GUI: not for high-value mining or unattended merchant float without your own review.
+| | |
+|--|--|
+| **Branch** | `master` — active integration |
+| **AssumeUTXO code** | A→D engineered; regtest **1-node + 2-node** PE smokes green |
+| **Mainnet mapAssumeutxo** | Empty until attested heights published |
+| **GUI** | Pre-release — review before high-value merchant float |
+| **Upstream DNA** | Dogecoin Core / Bitcoin Core lineage |
 
-Upstream Dogecoin resources (reference): [dogecoin/dogecoin](https://github.com/dogecoin/dogecoin).
+Upstream reference: [dogecoin/dogecoin](https://github.com/dogecoin/dogecoin).
 
 ---
 
 ## Contributing
 
-Issues and PRs against this repo. Keep changes aligned with **pure DOGE** settlement (no EVM/wrap product paths in Core Pro).
+PRs and issues against this repo. Keep changes aligned with **pure DOGE** settlement — no EVM/wrap product paths in Core Pro.
 
-Please do not commit secrets, RPC passwords, wallet seeds, or private infrastructure notes.
+**Do not commit** secrets, RPC passwords, seeds, wallets, or private infra.
 
 ---
 
 ## License
 
-Released under the **MIT** license. See [COPYING](COPYING).
+**MIT** — see [COPYING](COPYING).
 
-Dogecoin branding and heritage remain as in the Dogecoin Core lineage; many source files retain historical Bitcoin Core copyright headers where appropriate.
+Dogecoin branding and heritage remain of the Dogecoin Core lineage. Many source files retain historical Bitcoin Core copyright headers where appropriate.
+
+---
+
+<div align="center">
+
+### Built on real consensus. Shipped with a Pro shell. Aimed at operators who want **native DOGE** — not a costume.
+
+**Dogecoin Core Pro · 1.14.101 · Takeback**
+
+`getibdinfo` · `getchainstates` · `dumptxoutset` · `activatesnapshot`
+
+</div>
