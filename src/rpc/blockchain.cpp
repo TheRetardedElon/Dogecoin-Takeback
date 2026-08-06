@@ -932,6 +932,15 @@ UniValue pruneblockchain(const JSONRPCRequest& request)
     if (!fPruneMode)
         throw JSONRPCError(RPC_MISC_ERROR, "Cannot prune blocks because node is not in prune mode.");
 
+    // AssumeUTXO Phase D3: block files between background tip and snapshot base
+    // are required for historical proof — refuse manual prune until validated.
+    if (IsSnapshotChainstateActive() && !IsAssumeUtxoValidated()) {
+        throw JSONRPCError(RPC_MISC_ERROR,
+            "Cannot prune while AssumeUTXO background validation is in progress "
+            "(blocks may still be needed for historical proof). "
+            "Wait until assumeutxo_validated=true / getchainstates dual_collapsed.");
+    }
+
     LOCK(cs_main);
 
     int heightParam = request.params[0].get_int();
@@ -1915,6 +1924,8 @@ UniValue getibdinfo(const JSONRPCRequest& request)
     obj.pushKV("assumeutxo_validated", IsAssumeUtxoValidated());
     obj.pushKV("assumeutxo_failed", IsAssumeUtxoFailed());
     obj.pushKV("assumeutxo_dual_collapsed", IsAssumeUtxoDualCollapsed());
+    obj.pushKV("assumeutxo_progress", GetAssumeUtxoValidationProgress());
+    obj.pushKV("assumeutxo_attested_count", (int)Params().Assumeutxo().size());
     if (HasBackgroundChainstate() && BackgroundChainstate()) {
         obj.pushKV("background_chainstate", BackgroundChainstate()->GetName());
         obj.pushKV("background_idle", BackgroundChainstate()->IsIdle());

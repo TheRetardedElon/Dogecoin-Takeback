@@ -56,6 +56,8 @@ public:
     explicit PeerMapWidget(QWidget* parent = 0);
 
     void setClientModel(ClientModel* model);
+
+public Q_SLOTS:
     void refreshFromPeers();
 
 protected:

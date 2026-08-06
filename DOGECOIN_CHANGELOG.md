@@ -471,6 +471,8 @@ Work continued in 2025–2026 as **Dogecoin Core Pro** on the 1.14 DNA line — 
 
 **D2 (attestation workflow):** `dumptxoutset` returns `hash_serialized` + C++ `assumeutxo_snippet` for chainparams PRs; `listassumeutxo` lists compiled attestations; after background prove, hard-collapse background slot to `collapsed` (no further ConnectBlock/fetch).
 
+**D3 (safety + test):** `pruneblockchain` refused while snapshot active and not yet validated (blocks needed for historical proof); `qa/rpc-tests/assumeutxo.py` regtest smoke for dump/load/activate/collapse; `getibdinfo` includes `assumeutxo_progress`.
+
 **Still open (product):** publish attested mainnet/testnet hashes, signed public artifacts, richer GUI modal, optional delete of on-disk IBD `chainstate/` after collapse.
 
 ### **5. Storage (wallet) progress**

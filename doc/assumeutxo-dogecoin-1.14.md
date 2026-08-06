@@ -1,6 +1,6 @@
 # AssumeUTXO for Dogecoin Core (1.14 DNA) — Design
 
-**Status:** design + **Phase D2 attestation workflow + hard collapse**  
+**Status:** design + **Phase D3 prune guard + regtest smoke**  
 **Depends on:** P0/P0.1 IBD telemetry, ASMAP, healthy single-chainstate  
 **Consensus impact:** none if done like Bitcoin (background full validation to the assume height)
 
@@ -17,6 +17,7 @@
 | **C2** Persist / restore / fetch / collapse | **Done** | `assumeutxo.dat`; `MaybeRestoreAssumeUtxo` on startup; historical getdata for missing blocks; dual collapse after validated |
 | **D1** Attestation gate + GUI progress | **Done** | `mapAssumeutxo` / `AssumeutxoData` in chainparams; activate if attested **or** `-assumeutxodev`; status-bar historical % |
 | **D2** Attestation workflow + hard collapse | **Done** | `dumptxoutset` → `hash_serialized` + snippet; `listassumeutxo`; hard-collapse background after prove |
+| **D3** Prune guard + regtest smoke | **Done** | refuse `pruneblockchain` during bg proof; `qa/rpc-tests/assumeutxo.py` |
 
 ## 1. Goal
 
