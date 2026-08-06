@@ -87,6 +87,29 @@
 # → hash_serialized, assumeutxo_snippet
 dogecoin-cli listassumeutxo   # compiled attestations (may be empty)</code></pre>
 
+      <h2>Windows PE smoke scripts</h2>
+      <p>
+        Local regression without a full Python rpc-test harness (uses
+        <code>smoke-run/dogecoind.exe</code> + <code>dogecoin-cli.exe</code>):
+      </p>
+      <ul>
+        <li>
+          <code>scripts/smoke-assumeutxo-regtest.ps1</code> —
+          single node: generate → dump → load → activate → collapse
+        </li>
+        <li>
+          <code>scripts/smoke-assumeutxo-two-node.ps1</code> —
+          producer dumps tip; consumer syncs headers, activates snapshot,
+          fetches historical blocks over P2P, validates and dual-collapses
+        </li>
+      </ul>
+      <pre><code>powershell -ExecutionPolicy Bypass -File scripts/smoke-assumeutxo-regtest.ps1
+powershell -ExecutionPolicy Bypass -File scripts/smoke-assumeutxo-two-node.ps1</code></pre>
+      <p class="muted">
+        Also available: <code>qa/rpc-tests/assumeutxo.py</code> (needs a native
+        Linux <code>dogecoind</code> with AssumeUTXO RPCs built).
+      </p>
+
       <h2>Activation policy (D1)</h2>
       <ul>
         <li><strong>regtest</strong> — always allowed</li>
