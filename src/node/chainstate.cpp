@@ -100,17 +100,28 @@ void FailBackgroundValidation(const std::string& reason)
     StartShutdown();
 }
 
+void CollapseBackgroundAfterValidation()
+{
+    // Phase D2 hard-collapse: drop the parked IBD chainstate object so we no longer
+    // hold a dual tip for ConnectBlock/fetch. Original coins remain at
+    // g_original_pcoins_tip for process shutdown (pcoinsTip restore).
+    // On-disk chainstate/ LevelDB is left intact for operators who want to inspect it.
+    g_background_chainstate.reset(new CChainState("collapsed"));
+    g_background_chainstate->SetActiveRole(false);
+    LogPrintf("Chainstate: dual background slot hard-collapsed (name=collapsed); "
+              "no further AssumeUTXO ConnectBlock or historical getdata\n");
+}
+
 void CompleteBackgroundValidation()
 {
     g_bg_status = BackgroundValidationStatus::COMPLETED;
     g_assumeutxo_validated = true;
     g_assumeutxo_failed = false;
-    // Soft collapse: dual work finished; background may remain on disk for diagnostics
-    // but we stop stepping and treat the node as fully validated from genesis→H.
     g_dual_collapsed = true;
     LogPrintf("Chainstate: AssumeUTXO background validation COMPLETED at height %d "
-              "(coins hash matches assumed snapshot %s). Dual validation collapsed.\n",
+              "(coins hash matches assumed snapshot %s).\n",
               g_bg_height, g_expected_coins_hash.ToString());
+    CollapseBackgroundAfterValidation();
     std::string perr;
     if (!PersistAssumeUtxoStateUnlocked(perr)) {
         LogPrintf("Chainstate: warning: failed to persist assumeutxo.dat after complete: %s\n", perr);

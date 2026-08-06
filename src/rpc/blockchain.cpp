@@ -1988,6 +1988,8 @@ UniValue dumptxoutset(const JSONRPCRequest& request)
             "  \"coins_written\": n,\n"
             "  \"base_hash\": \"hex\",\n"
             "  \"base_height\": n,\n"
+            "  \"hash_serialized\": \"hex\",  (for mapAssumeutxo attestation)\n"
+            "  \"assumeutxo_snippet\": \"...\", (C++ line to paste into chainparams)\n"
             "  \"path\": \"...\"\n"
             "}\n"
             "\nExamples:\n"
@@ -2033,6 +2035,23 @@ UniValue dumptxoutset(const JSONRPCRequest& request)
     result.pushKV("base_hash", base_hash.GetHex());
     result.pushKV("base_height", base_height);
     result.pushKV("path", path.string());
+
+    // Phase D2: hash for chainparams mapAssumeutxo attestation PRs.
+    {
+        uint256 coins_hash;
+        std::string herr;
+        if (ComputeCoinsHashSerialized(ActiveCoinsTip(), coins_hash, herr)) {
+            result.pushKV("hash_serialized", coins_hash.GetHex());
+            result.pushKV("assumeutxo_snippet",
+                strprintf("mapAssumeutxo[%d] = AssumeutxoData(%d, uint256S(\"%s\"));",
+                          base_height, base_height, coins_hash.GetHex()));
+            const AssumeutxoData* att = Params().AssumeutxoForHeight(base_height);
+            result.pushKV("already_attested",
+                att && att->hash_serialized == coins_hash);
+        } else {
+            result.pushKV("hash_serialized_error", herr);
+        }
+    }
     return result;
 }
 
@@ -2094,6 +2113,17 @@ UniValue loadtxoutset(const JSONRPCRequest& request)
     result.pushKV("tip_hash", base_hash.GetHex());
     result.pushKV("base_height", base_height);
     result.pushKV("path", path.string());
+    if (HasBackgroundChainstate() && BackgroundChainstate() &&
+        BackgroundChainstate()->HasSnapshotCoinsHash()) {
+        const uint256& ch = BackgroundChainstate()->SnapshotCoinsHash();
+        result.pushKV("hash_serialized", ch.GetHex());
+        const AssumeutxoData* att = Params().AssumeutxoForHeight(base_height);
+        const bool attested = att && att->hash_serialized == ch;
+        result.pushKV("attested", attested);
+        if (attested && !activate) {
+            result.pushKV("note", "Snapshot matches chainparams attestation; activate with loadtxoutset path true or activatesnapshot (no -assumeutxodev needed)");
+        }
+    }
     if (!MaybeActivateSnapshot(activate, result, error)) {
         // Load succeeded but activation failed — report load + error.
         result.pushKV("active_swapped", false);
@@ -2101,6 +2131,41 @@ UniValue loadtxoutset(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_MISC_ERROR, error);
     }
     return result;
+}
+
+UniValue listassumeutxo(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+        throw runtime_error(
+            "listassumeutxo\n"
+            "\nList AssumeUTXO heights attested in chainparams (mapAssumeutxo).\n"
+            "Empty until community-published hash_serialized values are compiled in.\n"
+            "Use dumptxoutset's hash_serialized / assumeutxo_snippet to propose entries.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"network\": \"main|test|regtest\",\n"
+            "  \"assumeutxodev\": true|false,\n"
+            "  \"heights\": [ { \"height\": n, \"hash_serialized\": \"hex\" }, ... ]\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("listassumeutxo", "")
+            + HelpExampleRpc("listassumeutxo", "")
+        );
+
+    UniValue root(UniValue::VOBJ);
+    root.pushKV("network", Params().NetworkIDString());
+    root.pushKV("assumeutxodev", GetBoolArg("-assumeutxodev", false));
+    UniValue arr(UniValue::VARR);
+    const std::map<int, AssumeutxoData>& m = Params().Assumeutxo();
+    for (std::map<int, AssumeutxoData>::const_iterator it = m.begin(); it != m.end(); ++it) {
+        UniValue o(UniValue::VOBJ);
+        o.pushKV("height", it->second.height);
+        o.pushKV("hash_serialized", it->second.hash_serialized.GetHex());
+        arr.push_back(o);
+    }
+    root.pushKV("heights", arr);
+    root.pushKV("count", (int)arr.size());
+    return root;
 }
 
 UniValue activatesnapshot(const JSONRPCRequest& request)
@@ -2152,7 +2217,9 @@ UniValue getchainstates(const JSONRPCRequest& request)
             "  \"snapshot_active\": true|false,\n"
             "  \"background_validation_status\": \"none|running|waiting_blocks|completed|failed\",\n"
             "  \"assumeutxo_validated\": true|false,\n"
-            "  \"phase\": \"C1-background-validation\"\n"
+            "  \"assumeutxo_progress\": x.x,\n"
+            "  \"assumeutxo_attested_count\": n,\n"
+            "  \"phase\": \"D2-attestation-workflow\"\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getchainstates", "")
@@ -2186,7 +2253,9 @@ UniValue getchainstates(const JSONRPCRequest& request)
     root.pushKV("assumeutxo_validated", IsAssumeUtxoValidated());
     root.pushKV("assumeutxo_failed", IsAssumeUtxoFailed());
     root.pushKV("assumeutxo_dual_collapsed", IsAssumeUtxoDualCollapsed());
-    root.pushKV("phase", "C2-persist-restore");
+    root.pushKV("assumeutxo_progress", GetAssumeUtxoValidationProgress());
+    root.pushKV("assumeutxo_attested_count", (int)Params().Assumeutxo().size());
+    root.pushKV("phase", "D2-attestation-workflow");
     return root;
 }
 
@@ -2252,6 +2321,7 @@ static const CRPCCommand commands[] =
     { "blockchain",         "dumptxoutset",           &dumptxoutset,           true,  {"path"} },
     { "blockchain",         "loadtxoutset",           &loadtxoutset,           true,  {"path","activate"} },
     { "blockchain",         "activatesnapshot",       &activatesnapshot,       true,  {} },
+    { "blockchain",         "listassumeutxo",         &listassumeutxo,         true,  {} },
     { "blockchain",         "stepbackgroundvalidation", &stepbackgroundvalidation, true, {"nblocks"} },
     { "blockchain",         "getblockstats",          &getblockstats,          true,  {"hash", "stats"} },
     { "blockchain",         "getbestblockhash",       &getbestblockhash,       true,  {} },

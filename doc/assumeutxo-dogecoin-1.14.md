@@ -1,6 +1,6 @@
 # AssumeUTXO for Dogecoin Core (1.14 DNA) — Design
 
-**Status:** design + **Phase D1 attestation gate + GUI progress**  
+**Status:** design + **Phase D2 attestation workflow + hard collapse**  
 **Depends on:** P0/P0.1 IBD telemetry, ASMAP, healthy single-chainstate  
 **Consensus impact:** none if done like Bitcoin (background full validation to the assume height)
 
@@ -16,6 +16,7 @@
 | **C1** Background validation | **Done** | `StepBackgroundValidation` ConnectBlock loop; `hash_serialized` match; fail-closed shutdown; auto-step after ActivateBestChain; `stepbackgroundvalidation` RPC |
 | **C2** Persist / restore / fetch / collapse | **Done** | `assumeutxo.dat`; `MaybeRestoreAssumeUtxo` on startup; historical getdata for missing blocks; dual collapse after validated |
 | **D1** Attestation gate + GUI progress | **Done** | `mapAssumeutxo` / `AssumeutxoData` in chainparams; activate if attested **or** `-assumeutxodev`; status-bar historical % |
+| **D2** Attestation workflow + hard collapse | **Done** | `dumptxoutset` → `hash_serialized` + snippet; `listassumeutxo`; hard-collapse background after prove |
 
 ## 1. Goal
 
@@ -155,12 +156,12 @@ Suggested structure (names illustrative):
 
 ## 9. Suggested next engineering
 
-1. ~~Land P0.3 / Phase A / B / C / D1~~  
-2. Publish community-attested mainnet/testnet entries into `mapAssumeutxo` (fill hashes)  
+1. ~~Land P0.3 / Phase A–D2~~  
+2. Publish community-attested mainnet/testnet entries into `mapAssumeutxo` (use `dumptxoutset` snippet)  
 3. Signed snapshot artifacts + prune product rules  
-4. Optional: hard-collapse parked IBD DB; richer GUI modal  
+4. Optional: delete on-disk `chainstate/` after collapse; richer GUI modal  
 
-**D1 note:** Main/test maps are empty until hashes are published — use `-assumeutxodev` for experiments.
+**Attestation workflow:** `dumptxoutset` → `hash_serialized` + `assumeutxo_snippet` → PR into `mapAssumeutxo` → releases accept that height without `-assumeutxodev`.
 
 ## 10. Success metric
 

@@ -67,9 +67,24 @@
           <tr><td>C1</td><td><span class="badge badge-done">Done</span></td><td>Background <code>ConnectBlock</code> → H; <code>hash_serialized</code> match; fail-closed</td></tr>
           <tr><td>C2</td><td><span class="badge badge-done">Done</span></td><td><code>assumeutxo.dat</code> restore; historical getdata; dual collapse flag</td></tr>
           <tr><td>D1</td><td><span class="badge badge-done">Done</span></td><td><code>mapAssumeutxo</code> gate; status-bar “historical validation %”</td></tr>
-          <tr><td>D2</td><td><span class="badge badge-todo">Later</span></td><td>Publish attested hashes; signed artifacts; GUI modal polish</td></tr>
+          <tr><td>D2</td><td><span class="badge badge-done">Done</span></td><td><code>listassumeutxo</code>; dump hash snippet; hard-collapse after prove</td></tr>
+          <tr><td>D3</td><td><span class="badge badge-todo">Later</span></td><td>Publish mainnet hashes; signed artifacts; GUI modal</td></tr>
         </tbody>
       </table>
+
+      <h2>Attestation workflow (D2)</h2>
+      <div class="flow">
+        <div class="flow-step"><strong>1. Sync</strong> Full node at height H</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>2. dumptxoutset</strong> utxo.dat + hash_serialized</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>3. PR</strong> mapAssumeutxo snippet into chainparams</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>4. Release</strong> activate without -assumeutxodev</div>
+      </div>
+      <pre><code>dogecoin-cli dumptxoutset utxo.dat
+# → hash_serialized, assumeutxo_snippet
+dogecoin-cli listassumeutxo   # compiled attestations (may be empty)</code></pre>
 
       <h2>Activation policy (D1)</h2>
       <ul>
@@ -161,6 +176,7 @@ repeat: txid | CCoins serialization</code></pre>
           <tr><td><code>loadtxoutset</code></td><td>Load into background (optional activate)</td></tr>
           <tr><td><code>activatesnapshot</code></td><td>Promote loaded snapshot to tip</td></tr>
           <tr><td><code>stepbackgroundvalidation</code></td><td>Manual Phase C progress</td></tr>
+          <tr><td><code>listassumeutxo</code></td><td>Compiled mapAssumeutxo attestations</td></tr>
         </tbody>
       </table>
 
