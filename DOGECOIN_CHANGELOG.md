@@ -499,10 +499,15 @@ Work continued in 2025–2026 as **Dogecoin Core Pro** on the 1.14 DNA line — 
 
 - ✅ Rebrand + theme **baseline** complete (historical section above)
 - ✅ Core Pro product shell + pure DOGE payments path
-- ✅ IBD P0–P0.3 and AssumeUTXO through **C2** on 1.14 DNA
-- ⏳ AssumeUTXO product attestation + GUI polish
-- ⏳ SQLite wallet backend; optional RocksDB/libmdbx engine (orthogonal to dual views)
+- ✅ IBD P0–P0.3 and AssumeUTXO engineering **A–D3** on 1.14 DNA
+- ⏳ **Product P1–P4** tiered storage / fast sync — see `doc/tiered-storage-and-fast-sync.md`
+  - P1 trust anchors + CDN stream-hash + Fast Sync UI  
+  - P2 default prune-as-you-go product  
+  - P3 optional cold blk object CDN  
+  - P4 RocksDB-class hot engine (ops; not main space win)
+- ⏳ SQLite wallet backend (orthogonal)
 - ⚠️ Prefer `html/docs/` + code over outdated “100% Bitcoin eliminated” claims
+- ⚠️ Cloud = CDN + hash fail-closed; never live LevelDB on Drive/FUSE
 
 ---
 

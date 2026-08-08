@@ -131,19 +131,24 @@ graph TB
         CRYPTO --> SCRIPT
     end
 
-    %% Storage Layer (+ AssumeUTXO dual views)
+    %% Storage Layer (+ AssumeUTXO dual views + future tiered CDN)
     subgraph "Storage Layer"
-        LEVELDB["leveldb/<br/>(KV engine)"]
+        LEVELDB["leveldb/<br/>(hot KV — chainstate)"]
         TXDB["txdb.h/cpp<br/>(coins + block index)"]
         COINS["coins.h/cpp<br/>(UTXO cache)"]
         NODECS["node/chainstate<br/>(active + background)"]
         SNAP["node/utxo_snapshot<br/>(dump/load + assumeutxo.dat)"]
+        BLKFILES["blocks/blk*.dat<br/>(local cold history)"]
+        CDN["CDN objects P1/P3<br/>(snapshot + optional blk)<br/>hash then write local"]
         MEMPOOL["txmempool.h/cpp<br/>(Memory Pool)"]
         
         LEVELDB --> TXDB
         TXDB --> COINS
         NODECS --> COINS
         SNAP --> NODECS
+        CDN -.->|"stream-hash P1"| SNAP
+        CDN -.->|"optional P3"| BLKFILES
+        BLKFILES --> NODECS
         TXDB --> MEMPOOL
     end
 

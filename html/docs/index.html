@@ -26,7 +26,7 @@
         <span>Workspace: <code>C:\dogedev</code></span>
         <span>Client: <strong>1.14.101</strong></span>
         <span>Docs: <code>html/docs/</code></span>
-        <span>Updated: 2026-08-05</span>
+        <span>Updated: 2026-08-08</span>
       </div>
 
       <div class="callout ok">
@@ -39,18 +39,20 @@
 
       <div class="callout ok">
         <strong>Node workstream (2026)</strong>
-        IBD P0 telemetry + stall rescue + ASMAP + parallel download are in tree.
-        AssumeUTXO dual chainstate through <strong>Phase C2</strong> (load, activate,
-        background proof, persist/restore). Details:
+        IBD P0–P0.3 and AssumeUTXO engineering <strong>A–D3</strong> are in tree.
+        Next is <strong>product P1–P4</strong> (Fast Sync CDN, default prune, optional
+        cold blocks, RocksDB-class hot path). Details:
         <a href="pages/ibd-and-p2p.html">IBD &amp; P2P</a> ·
-        <a href="pages/assumeutxo.html">AssumeUTXO</a>.
+        <a href="pages/assumeutxo.html">AssumeUTXO</a> ·
+        <a href="pages/storage-stack.html">Storage stack</a> ·
+        <code>doc/tiered-storage-and-fast-sync.md</code>.
       </div>
 
       <div class="callout warn">
         <strong>AssumeUTXO is still dev-gated</strong>
-        Snapshot tip activation needs <code>-assumeutxodev=1</code> (except regtest).
-        Do not trust un-attested snapshots with real funds until chainparams heights
-        and product polish land.
+        Snapshot tip activation needs <code>-assumeutxodev=1</code> (except regtest)
+        until <code>mapAssumeutxo</code> is filled. Cloud = hash-checked CDN only —
+        never live LevelDB on Drive/FUSE. No “zero risk”; fail closed.
       </div>
 
       <h2>Status at a glance</h2>
@@ -68,10 +70,16 @@
           <span class="badge badge-done">Done</span>
         </div>
         <div class="card">
-          <h3>AssumeUTXO</h3>
-          <div class="stat">C2</div>
-          <p>Dual chainstate, dump/load, bg proof, restore</p>
+          <h3>AssumeUTXO eng</h3>
+          <div class="stat">A–D3</div>
+          <p>Dual chainstate, dump/load, bg proof, map hooks</p>
           <span class="badge badge-done">Done</span>
+        </div>
+        <div class="card">
+          <h3>Fast Sync product</h3>
+          <div class="stat">P1</div>
+          <p>Attestations + CDN stream-hash + GUI</p>
+          <span class="badge badge-todo">Next</span>
         </div>
         <div class="card">
           <h3>Wallet DB</h3>
@@ -110,14 +118,19 @@
         <span>85%</span>
       </div>
       <div class="progress-row">
-        <span>AssumeUTXO (to product)</span>
-        <div class="progress-bar"><span style="width:70%"></span></div>
-        <span>70%</span>
+        <span>AssumeUTXO engineering</span>
+        <div class="progress-bar"><span style="width:92%"></span></div>
+        <span>92%</span>
+      </div>
+      <div class="progress-row">
+        <span>Fast Sync / tiered storage product</span>
+        <div class="progress-bar"><span style="width:15%"></span></div>
+        <span>15%</span>
       </div>
       <div class="progress-row">
         <span>Living HTML docs</span>
-        <div class="progress-bar"><span style="width:75%"></span></div>
-        <span>75%</span>
+        <div class="progress-bar"><span style="width:85%"></span></div>
+        <span>85%</span>
       </div>
       <div class="progress-row">
         <span>SQLite wallet backend</span>

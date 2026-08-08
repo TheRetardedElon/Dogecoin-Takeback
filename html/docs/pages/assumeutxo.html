@@ -25,15 +25,24 @@
       </p>
       <div class="meta">
         <span>Design: <code>doc/assumeutxo-dogecoin-1.14.md</code></span>
-        <span>Phase: <strong>C2 done</strong> (persist/restore)</span>
-        <span>Flag: <code>-assumeutxodev</code> (mainnet/testnet activate)</span>
+        <span>Engineering: <strong>A–D3 done</strong></span>
+        <span>Product: <strong>P1 open</strong> (attestation + CDN Fast Sync)</span>
+        <span>Flag: <code>-assumeutxodev</code> until map filled</span>
       </div>
 
       <div class="callout warn">
         <strong>Dev activation only (for now)</strong>
         Promoting a snapshot to the active tip requires <code>-assumeutxodev=1</code>
-        except on regtest. Do not use untrusted snapshots with real funds until
-        Phase C completes and community-attested heights land in chainparams.
+        except on regtest or an <strong>attested</strong> height in <code>mapAssumeutxo</code>
+        (maps still empty on mainnet/testnet). Do not use untrusted snapshots with real funds.
+        Product plan: <code>doc/tiered-storage-and-fast-sync.md</code>.
+      </div>
+
+      <div class="callout ok">
+        <strong>Two hashes (do not confuse)</strong>
+        <code>hash_serialized</code> = hash of the <em>UTXO set</em> at height H (already in
+        <code>AssumeutxoData</code>). CDN <em>artifact digest</em> = hash of the snapshot
+        <em>file bytes</em> (Product P1 stream-and-hash). Both must pass; fail closed.
       </div>
 
       <h2>Goal vs today</h2>
@@ -69,23 +78,44 @@
           <tr><td>D1</td><td><span class="badge badge-done">Done</span></td><td><code>mapAssumeutxo</code> gate; status-bar “historical validation %”</td></tr>
           <tr><td>D2</td><td><span class="badge badge-done">Done</span></td><td><code>listassumeutxo</code>; dump hash snippet; hard-collapse after prove</td></tr>
           <tr><td>D3</td><td><span class="badge badge-done">Done</span></td><td>Prune blocked during bg proof; <code>qa/rpc-tests/assumeutxo.py</code></td></tr>
-          <tr><td>D4</td><td><span class="badge badge-todo">Later</span></td><td>Publish mainnet hashes; signed artifacts; GUI modal</td></tr>
+          <tr><td>P1</td><td><span class="badge badge-todo">Next</span></td><td>Fill map + CDN stream-hash + Fast Sync GUI — <a href="storage-stack.html">tiered storage</a></td></tr>
+          <tr><td>P2</td><td><span class="badge badge-todo">Open</span></td><td>Default prune-as-you-go product (stock <code>-prune=</code>)</td></tr>
+          <tr><td>P3–P4</td><td><span class="badge badge-todo">Later</span></td><td>Cold blk CDN; RocksDB-class hot engine</td></tr>
         </tbody>
       </table>
 
-      <h2>Attestation workflow (D2)</h2>
+      <h2>Attestation workflow (engineering D2 + product P1)</h2>
       <div class="flow">
         <div class="flow-step"><strong>1. Sync</strong> Full node at height H</div>
         <span class="flow-arrow">→</span>
         <div class="flow-step"><strong>2. dumptxoutset</strong> utxo.dat + hash_serialized</div>
         <span class="flow-arrow">→</span>
-        <div class="flow-step"><strong>3. PR</strong> mapAssumeutxo snippet into chainparams</div>
+        <div class="flow-step"><strong>3. PR</strong> mapAssumeutxo coins hash</div>
         <span class="flow-arrow">→</span>
-        <div class="flow-step"><strong>4. Release</strong> activate without -assumeutxodev</div>
+        <div class="flow-step"><strong>4. CDN</strong> host file + artifact digest</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>5. Client</strong> stream-hash → load → activate</div>
       </div>
       <pre><code>dogecoin-cli dumptxoutset utxo.dat
-# → hash_serialized, assumeutxo_snippet
+# → hash_serialized, assumeutxo_snippet  (UTXO set hash — not file SHA-256)
+sha256sum utxo.dat   # artifact digest for CDN manifest (P1)
 dogecoin-cli listassumeutxo   # compiled attestations (may be empty)</code></pre>
+
+      <h2>Fast Sync sequence (product P1 target)</h2>
+      <div class="flow">
+        <div class="flow-step"><strong>GUI</strong> Fast Sync</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>HTTPS</strong> stream to temp</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>Artifact</strong> digest OK?</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>loadtxoutset</strong></div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>mapAssumeutxo</strong> coins hash</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>Tip = H</strong> + bg prove</div>
+      </div>
+      <p class="diagram-caption">Mismatch at any step → fail closed (delete temp / refuse activate / offer full IBD).</p>
 
       <h2>Windows PE smoke scripts</h2>
       <p>

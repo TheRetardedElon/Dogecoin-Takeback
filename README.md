@@ -75,10 +75,17 @@ Because multi-hour sync without telemetry is flying blind:
 Not a Bitcoin Core 24+ paste. **Dogecoin-shaped** dual chainstate:
 
 ```text
-Phase A  Dual chainstate foundation (active + background)
-Phase B  dumptxoutset / loadtxoutset / activatesnapshot
-Phase C  Background ConnectBlock + hash fail-closed + persist/restore
-Phase D  Attestation map hooks + GUI status + prune guard + tests
+Engineering (done):
+  Phase A  Dual chainstate foundation (active + background)
+  Phase B  dumptxoutset / loadtxoutset / activatesnapshot
+  Phase C  Background ConnectBlock + hash fail-closed + persist/restore
+  Phase D  Attestation map hooks + GUI status + prune guard + tests
+
+Product next (doc/tiered-storage-and-fast-sync.md):
+  P1  Trust anchors + CDN stream-hash Fast Sync UI
+  P2  Default prune-as-you-go for wallet nodes
+  P3  Optional cold blk object CDN
+  P4  RocksDB-class hot engine (ops; not main space win)
 ```
 
 **Operator RPCs**
@@ -106,7 +113,8 @@ powershell -ExecutionPolicy Bypass -File scripts/smoke-assumeutxo-two-node.ps1
 Also: `qa/rpc-tests/assumeutxo.py` (native Linux `dogecoind` with AssumeUTXO built-in).
 
 > **Honest status:** mainnet/testnet `mapAssumeutxo` entries are **empty until community-attested heights + hashes are published**.  
-> The **pipeline is real**. Official public snapshot trust is the next ops chapter — not vaporware code.
+> The **pipeline is real**. Product **P1** (CDN stream-hash + Fast Sync GUI + filled map) is the next chapter — see `doc/tiered-storage-and-fast-sync.md`.  
+> Cloud = hash-checked CDN only; never live LevelDB on Drive/FUSE.
 
 ---
 
@@ -157,7 +165,9 @@ Open **[`html/docs/index.html`](html/docs/index.html)** in a browser (no server)
 | [Payment layer](html/docs/pages/payment-layer.html) | Invoices / POS / tips on L1 |
 | [UI reference](html/docs/pages/ui-reference-core-pro.html) | Screenshots + layout contract |
 | [IBD & P2P](html/docs/pages/ibd-and-p2p.html) | Telemetry, rescue, parallelism |
-| [AssumeUTXO](html/docs/pages/assumeutxo.html) | Dual chainstate + smokes |
+| [AssumeUTXO](html/docs/pages/assumeutxo.html) | Dual chainstate A–D3 + product P1 |
+| [Storage stack](html/docs/pages/storage-stack.html) | Tiered storage / prune / CDN plan |
+| [Tiered storage plan](doc/tiered-storage-and-fast-sync.md) | Authoritative P1–P4 architecture |
 | [Roadmap](html/docs/pages/roadmap.html) | Phases 0–7 checklist |
 | [Architecture](html/docs/pages/architecture.html) | System view |
 | [Changelog (heavy)](DOGECOIN_CHANGELOG.md) | Full war diary |

@@ -19,7 +19,8 @@ No server required (`file://` works). Styles, diagrams, and nav are local under 
 | `index.html` | Dashboard / status at a glance |
 | `pages/` | Workstream and architecture pages |
 | `pages/ibd-and-p2p.html` | IBD telemetry, stall rescue, ASMAP, parallelism |
-| `pages/assumeutxo.html` | AssumeUTXO dual chainstate A1–C2 |
+| `pages/assumeutxo.html` | AssumeUTXO dual chainstate A–D3 + product P1 |
+| `pages/storage-stack.html` | Engines + tiered storage / CDN plan |
 | `pages/arcade.html` | Arcade tab (pure Qt) |
 | `pages/payment-layer.html` | Native DOGE merchants / Core Pro vs optional GPE |
 | `pages/pure-doge-strategy.html` | North-star strategy (no EVM product path) |
@@ -35,7 +36,8 @@ Private operator planning for GPE deployment is intentionally **not** part of th
 
 | File | Topic |
 |------|--------|
-| `doc/assumeutxo-dogecoin-1.14.md` | AssumeUTXO phased design + implementation table |
+| `doc/assumeutxo-dogecoin-1.14.md` | AssumeUTXO engineering A–D3 + product links |
+| `doc/tiered-storage-and-fast-sync.md` | **Authoritative** P1–P4 tiered storage / Fast Sync plan |
 | `doc/ibd-p0-peer-telemetry.md` | IBD P0 notes |
 
 Root **`DOGECOIN_CHANGELOG.md`** carries the heavy engineering changelog (2026 node + product).

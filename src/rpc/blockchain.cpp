@@ -28,6 +28,7 @@
 #include "ibdstats.h"
 #include "fs.h"
 #include "node/chainstate.h"
+#include "node/snapshot_fetch.h"
 #include "node/utxo_snapshot.h"
 
 #include <stdint.h>
@@ -2144,6 +2145,99 @@ UniValue loadtxoutset(const JSONRPCRequest& request)
     return result;
 }
 
+UniValue fetchassumeutxo(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() < 2 || request.params.size() > 4)
+        throw runtime_error(
+            "fetchassumeutxo \"source\" \"artifact_sha256\" ( \"dest\" load )\n"
+            "\nProduct P1: fetch a UTXO snapshot artifact from a URL or local path,\n"
+            "stream-hashing with single SHA-256 (sha256sum style). Fail closed on\n"
+            "digest mismatch (deletes dest). Does NOT activate the snapshot by itself\n"
+            "unless load=true (then calls the same path as loadtxoutset without activate).\n"
+            "\nCloud is a dumb pipe: only the artifact digest is trusted at this step.\n"
+            "mapAssumeutxo hash_serialized (UTXO set hash) is checked later on load/activate.\n"
+            "\nArguments:\n"
+            "1. \"source\"          (string, required) https:// URL or local file path\n"
+            "2. \"artifact_sha256\" (string, required) Expected 64-hex SHA-256 of file bytes\n"
+            "3. \"dest\"            (string, optional) Destination path (default: snapshots/utxo_fetch.dat under datadir)\n"
+            "4. load               (boolean, optional, default=false) loadtxoutset after successful fetch\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"path\": \"...\",\n"
+            "  \"bytes\": n,\n"
+            "  \"artifact_sha256\": \"hex\",\n"
+            "  \"loaded\": true|false,\n"
+            "  ... loadtxoutset fields if loaded ...\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("fetchassumeutxo", "\"https://cdn.example/utxo.dat\" \"aabbcc...\"")
+            + HelpExampleCli("fetchassumeutxo", "\"C:\\\\snaps\\\\utxo.dat\" \"aabbcc...\" \"snapshots/main.dat\" true")
+        );
+
+    const std::string source = request.params[0].get_str();
+    const std::string expect_hex = request.params[1].get_str();
+    uint256 expected;
+    std::string error;
+    if (!ParseSha256Hex(expect_hex, expected, error))
+        throw JSONRPCError(RPC_INVALID_PARAMETER, error);
+
+    fs::path dest;
+    if (request.params.size() > 2 && !request.params[2].isNull() && !request.params[2].get_str().empty()) {
+        dest = request.params[2].get_str();
+        if (dest.is_relative())
+            dest = GetDataDir() / dest;
+    } else {
+        dest = GetDataDir() / "snapshots" / "utxo_fetch.dat";
+    }
+
+    {
+        boost::system::error_code ec;
+        fs::create_directories(dest.parent_path(), ec);
+    }
+
+    uint64_t bytes = 0;
+    if (!FetchSnapshotArtifact(source, dest, expected, bytes, error))
+        throw JSONRPCError(RPC_MISC_ERROR, error);
+
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("path", dest.string());
+    result.pushKV("bytes", bytes);
+    result.pushKV("artifact_sha256", expected.GetHex());
+    result.pushKV("verified", true);
+
+    bool do_load = false;
+    if (request.params.size() > 3 && !request.params[3].isNull())
+        do_load = request.params[3].get_bool();
+
+    if (!do_load) {
+        result.pushKV("loaded", false);
+        result.pushKV("note", "Fetch OK. Call loadtxoutset path (true) to load/activate when attested.");
+        return result;
+    }
+
+    if (!HasBackgroundChainstate())
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Background chainstate not initialized");
+
+    uint64_t coins_loaded = 0;
+    uint256 base_hash;
+    int base_height = -1;
+    if (!LoadUTXOSnapshot(dest, coins_loaded, base_hash, base_height, error))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, error);
+
+    result.pushKV("loaded", true);
+    result.pushKV("coins_loaded", (uint64_t)coins_loaded);
+    result.pushKV("tip_hash", base_hash.GetHex());
+    result.pushKV("base_height", base_height);
+    if (HasBackgroundChainstate() && BackgroundChainstate() &&
+        BackgroundChainstate()->HasSnapshotCoinsHash()) {
+        const uint256& ch = BackgroundChainstate()->SnapshotCoinsHash();
+        result.pushKV("hash_serialized", ch.GetHex());
+        const AssumeutxoData* att = Params().AssumeutxoForHeight(base_height);
+        result.pushKV("attested", att && att->hash_serialized == ch);
+    }
+    return result;
+}
+
 UniValue listassumeutxo(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 0)
@@ -2331,6 +2425,7 @@ static const CRPCCommand commands[] =
     { "blockchain",         "getchainstates",         &getchainstates,         true,  {} },
     { "blockchain",         "dumptxoutset",           &dumptxoutset,           true,  {"path"} },
     { "blockchain",         "loadtxoutset",           &loadtxoutset,           true,  {"path","activate"} },
+    { "blockchain",         "fetchassumeutxo",        &fetchassumeutxo,        true,  {"source","artifact_sha256","dest","load"} },
     { "blockchain",         "activatesnapshot",       &activatesnapshot,       true,  {} },
     { "blockchain",         "listassumeutxo",         &listassumeutxo,         true,  {} },
     { "blockchain",         "stepbackgroundvalidation", &stepbackgroundvalidation, true, {"nblocks"} },

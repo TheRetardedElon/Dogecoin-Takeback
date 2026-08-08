@@ -1,8 +1,9 @@
 # AssumeUTXO for Dogecoin Core (1.14 DNA) — Design
 
-**Status:** design + **Phase D3 prune guard + regtest smoke**  
+**Status:** engineering **A–D3 done** · product path **open** (see `doc/tiered-storage-and-fast-sync.md`)  
 **Depends on:** P0/P0.1 IBD telemetry, ASMAP, healthy single-chainstate  
-**Consensus impact:** none if done like Bitcoin (background full validation to the assume height)
+**Consensus impact:** none if done like Bitcoin (background full validation to the assume height)  
+**Related:** tiered storage / CDN / default prune product plan — **P1–P4** in `tiered-storage-and-fast-sync.md` (do not confuse with engineering Phase A)
 
 ### Implementation progress
 
@@ -18,6 +19,10 @@
 | **D1** Attestation gate + GUI progress | **Done** | `mapAssumeutxo` / `AssumeutxoData` in chainparams; activate if attested **or** `-assumeutxodev`; status-bar historical % |
 | **D2** Attestation workflow + hard collapse | **Done** | `dumptxoutset` → `hash_serialized` + snippet; `listassumeutxo`; hard-collapse background after prove |
 | **D3** Prune guard + regtest smoke | **Done** | refuse `pruneblockchain` during bg proof; `qa/rpc-tests/assumeutxo.py` |
+| **P1** Trust anchors + CDN stream-hash + Fast Sync UI | **Open** | fill `mapAssumeutxo`; artifact digest; HTTP stream-hash; GUI modal — see tiered-storage doc |
+| **P2** Default prune-as-you-go product | **Open** | stock `-prune=` already works; make wallet-node default |
+| **P3** Optional cold `blk` object CDN | **Open** | secondary fetch; never FUSE |
+| **P4** Hot KV engine (RocksDB/…) | **Open** | ops win; orthogonal to dual views |
 
 ## 1. Goal
 
@@ -112,38 +117,55 @@ Suggested structure (names illustrative):
 **C1 exit criteria (met):** good snapshot reaches `completed`; bad UTXO hash fail-closes.  
 **C2 exit criteria (met):** restart resumes snapshot tip + bg validation; pruned history re-fetched; validated → dual collapsed flag.
 
-### Phase D — Product polish
+### Phase D — Product hooks (engineering)
 
-- GUI modal: “Using snapshot; historical validation N%”  
-- Prune interaction rules (snapshot + prune is subtle — design carefully)  
-- Release tooling: produce signed snapshot artifacts for height H  
-- Docs + security FAQ  
+- [x] GUI status-bar historical validation % (D1)  
+- [x] Attestation gate structure `mapAssumeutxo` / `AssumeutxoData` (D1–D2)  
+- [x] Prune interaction during bg proof (D3)  
+- [ ] **Published** mainnet/testnet map entries (values still empty)  
+- [ ] Stream-and-hash CDN download + first-run Fast Sync modal → **Product P1**  
+- [ ] Default prune product path → **Product P2**  
+
+Full product architecture (CDN as dumb pipe, two-hash trust model, mermaid flows):  
+**`doc/tiered-storage-and-fast-sync.md`**.
+
+### Trust: two hashes (do not confuse)
+
+| Field | Meaning |
+|-------|---------|
+| `AssumeutxoData.hash_serialized` | Hash of the **UTXO set** at H (coins), same family as `gettxoutsetinfo` |
+| Artifact digest (P1) | Hash of the **snapshot file bytes** from the CDN (integrity in transit) |
+
+Gemini-style “`hash_serialized` = SHA-256 of the file” is **wrong**. Both checks are required for Fast Sync.
 
 ## 5. Dogecoin-specific checklist
 
-- [ ] AuxPoW blocks validate in background path via existing `CheckAuxPowProofOfWork`  
-- [ ] Digishield / subsidy epochs correct across H  
-- [ ] Pruned nodes: snapshot must not require missing block files for tip operation  
-- [ ] 1-minute block spacing → choose H with stable community attestation  
-- [ ] Snapshot size estimate & hosting (CDN / torrent / GitHub release)  
-- [ ] No change to AuxPoW chain ID, merge-mining magic, or consensus constants  
+- [x] AuxPoW blocks validate in background path via existing `CheckAuxPowProofOfWork` (uses normal ConnectBlock)  
+- [ ] Digishield / subsidy epochs correct across chosen H (verify when picking H)  
+- [x] Pruned nodes: tip can run without full history; bg proof needs blocks (fetch / refuse prune mid-proof)  
+- [ ] 1-minute block spacing → choose H with stable multi-party attestation  
+- [ ] Snapshot size estimate & hosting (CDN; multi‑GB, minutes of I/O)  
+- [x] No change to AuxPoW chain ID, merge-mining magic, or consensus constants  
 
 ## 6. File surface estimate (1.14)
 
-**High churn:**  
-`validation.cpp/h`, `init.cpp`, `txdb.cpp/h`, `coins.cpp/h`, `net_processing.cpp`, `rpc/blockchain.cpp`, `chainparams.cpp`, `qt/clientmodel` / modal overlay  
+**Shipped (A–D3):**  
+`node/chainstate.*`, `node/utxo_snapshot.*`, `validation` dual paths, `rpc/blockchain` dump/load/list, `chainparams` map hooks, Qt status progress  
 
-**New:**  
-`node/chainstate.*`, `node/utxo_snapshot.*`, tests under `src/test/`  
+**Product P1 still open:**  
+stream-hash downloader, manifest, GUI first-run modal, filled `mapAssumeutxo` values, release hosting  
 
 **Untouched (goal):**  
 `auxpow.*`, `pow.*` subsidy, script interpreter consensus  
 
-## 7. What we will **not** do in Phase A–C
+## 7. What engineering A–D did **not** include
 
-- RocksDB migration  
+- RocksDB migration (Product **P4**)  
+- HTTP CDN snapshot fetch (Product **P1**)  
+- Default prune installer policy (Product **P2**)  
+- Cold `blk` object CDN (Product **P3**)  
 - Utreexo / ZK proofs  
-- Soft-forking a consensus-committed UTXO root (different project)  
+- Soft-forking a consensus-committed UTXO root  
 
 ## 8. Prerequisites already done in this repo
 
@@ -154,16 +176,18 @@ Suggested structure (names illustrative):
 | IBD flush policy | Done |
 | ASMAP peer diversity | Done |
 | IBD parallel download (P0.3) | Done |
+| AssumeUTXO dual path A–D3 | Done |
 
-## 9. Suggested next engineering
+## 9. Suggested next engineering (product)
 
-1. ~~Land P0.3 / Phase A–D2~~  
-2. Publish community-attested mainnet/testnet entries into `mapAssumeutxo` (use `dumptxoutset` snippet)  
-3. Signed snapshot artifacts + prune product rules  
-4. Optional: delete on-disk `chainstate/` after collapse; richer GUI modal  
+1. ~~Land P0.3 / engineering Phase A–D3~~  
+2. **Product P1:** testnet/regtest attestation fixture → stream-and-hash → GUI Fast Sync  
+3. Multi-party mainnet `dumptxoutset` agreement → fill `mapAssumeutxo`  
+4. **Product P2:** default prune for wallet-node installs  
+5. **P3/P4** as capacity allows  
 
-**Attestation workflow:** `dumptxoutset` → `hash_serialized` + `assumeutxo_snippet` → PR into `mapAssumeutxo` → releases accept that height without `-assumeutxodev`.
+**Attestation workflow:** `dumptxoutset` → `hash_serialized` + `assumeutxo_snippet` → PR into `mapAssumeutxo` → host artifact + **artifact digest** in manifest → releases accept that height without `-assumeutxodev`.
 
 ## 10. Success metric
 
-A laptop with a published mainnet snapshot reaches **wallet-usable tip in &lt; 30 minutes** on a typical home connection, with background validation completing later without user action, and a wrong snapshot **never** producing a silent wrong chain.
+A laptop with a published mainnet snapshot reaches **wallet-usable tip in tens of minutes** on a typical home connection (honest: multi‑GB download + disk deserialize — not “30 seconds”), with background validation completing later without user action, and a wrong snapshot **never** producing a silent wrong chain. Disk for non-archival users stays **bounded** via prune defaults (P2).

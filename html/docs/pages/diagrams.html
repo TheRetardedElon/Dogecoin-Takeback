@@ -64,7 +64,7 @@ Storage: LevelDB chainstate + chainstate_snapshot + blk*.dat</code></pre>
       </div>
       <p class="diagram-caption">Full write-up: <a href="ibd-and-p2p.html">IBD &amp; P2P</a>.</p>
 
-      <h2>AssumeUTXO dual path</h2>
+      <h2>AssumeUTXO dual path (engineering — done)</h2>
       <div class="flow">
         <div class="flow-step"><strong>dumptxoutset</strong> Snapshot file</div>
         <span class="flow-arrow">→</span>
@@ -76,6 +76,47 @@ Storage: LevelDB chainstate + chainstate_snapshot + blk*.dat</code></pre>
         <span class="flow-arrow">→</span>
         <div class="flow-step"><strong>Hash OK</strong> validated / collapse</div>
       </div>
+
+      <h2>Tiered storage / Fast Sync (product P1–P4)</h2>
+      <p>
+        Plan: <code>doc/tiered-storage-and-fast-sync.md</code> ·
+        <a href="storage-stack.html">Storage stack</a>.
+      </p>
+      <div class="flow">
+        <div class="flow-step"><strong>CDN</strong> snapshot object</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>Stream-hash</strong> artifact digest</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>loadtxoutset</strong></div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>mapAssumeutxo</strong> coins hash</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>Tip usable</strong> + bg prove</div>
+      </div>
+      <div class="flow">
+        <div class="flow-step"><strong>Hot</strong> chainstate local NVMe</div>
+        <span class="flow-arrow">│</span>
+        <div class="flow-step"><strong>Cold</strong> blk local / prune / optional CDN</div>
+        <span class="flow-arrow">│</span>
+        <div class="flow-step"><strong>Never</strong> LevelDB on FUSE/Drive</div>
+      </div>
+      <pre><code>Product phases (not engineering A–D):
+  P1  Trust anchors + stream-hash Fast Sync UI     ← NEXT
+  P2  Default prune-as-you-go for wallet nodes
+  P3  Optional cold blk object CDN
+  P4  RocksDB-class hot engine (ops, not space)</code></pre>
+
+      <h2>Prune-as-you-go (stock Core — already exists)</h2>
+      <div class="flow">
+        <div class="flow-step"><strong>Fetch</strong> full block</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>Validate</strong> + apply UTXO</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>Write</strong> blk*.dat</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>-prune=N</strong> drop old files</div>
+      </div>
+      <p class="diagram-caption">Mid-IBD prune is valid. Product P2 makes this the default for non-archival installs.</p>
       <pre><code>        [ peers / blk*.dat ]
                  │
      ┌───────────┴───────────┐

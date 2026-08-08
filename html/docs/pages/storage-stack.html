@@ -19,9 +19,61 @@
     <main class="main">
       <h1>Storage stack</h1>
       <p class="lead">
-        Current engines, AssumeUTXO dual-directory layout, and planned engine
-        replacements. RocksDB/libmdbx are still <strong>not</strong> implemented —
-        dual chainstate is two LevelDB views, not a new KV engine.
+        Current engines, AssumeUTXO dual-directory layout, tiered storage / CDN
+        product plan (P1–P4), and optional future KV engines. RocksDB/libmdbx are
+        still <strong>not</strong> implemented — dual chainstate is two LevelDB
+        views, not a new KV engine.
+      </p>
+      <div class="meta">
+        <span>Plan: <code>doc/tiered-storage-and-fast-sync.md</code></span>
+        <span>Updated: 2026-08-08</span>
+      </div>
+
+      <div class="callout warn">
+        <strong>Cloud honesty</strong>
+        Object storage (S3/R2) is a <em>dumb CDN</em>: download, hash, fail closed,
+        then write local. Never mount Drive/Dropbox/FUSE as live <code>chainstate/</code>.
+        There is no “zero corruption risk” — only detect, refuse, recover.
+      </div>
+
+      <h2>Tiered model (target product)</h2>
+      <table>
+        <thead>
+          <tr><th>Tier</th><th>Data</th><th>Where it may live</th><th>Product phase</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Hot</td>
+            <td><code>chainstate/</code>, wallet, indexes</td>
+            <td><strong>Local NVMe / cloud block volume only</strong> (real fsync)</td>
+            <td>Today; P4 = better engine</td>
+          </tr>
+          <tr>
+            <td>Bootstrap</td>
+            <td>UTXO snapshot artifact</td>
+            <td>CDN object → stream-hash → local temp → load</td>
+            <td><strong>P1</strong> (next)</td>
+          </tr>
+          <tr>
+            <td>Warm/cold history</td>
+            <td><code>blocks/blk*.dat</code></td>
+            <td>Local while needed; prune drops old; optional object CDN later</td>
+            <td>P2 prune default; <strong>P3</strong> CDN</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="flow">
+        <div class="flow-step"><strong>P1</strong> Trust anchors + Fast Sync</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>P2</strong> Default prune</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>P3</strong> Cold blk CDN</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>P4</strong> RocksDB-class hot</div>
+      </div>
+      <p class="diagram-caption">
+        Space win = prune (+ not archiving). Ops win = P4. Time-to-usable = P1 AssumeUTXO + CDN.
+        Engineering AssumeUTXO A–D3 is already done — see <a href="assumeutxo.html">AssumeUTXO</a>.
       </p>
 
       <h2>Current state</h2>
@@ -126,10 +178,11 @@
 
       <h2>Recommended implementation order</h2>
       <ol>
-        <li>Stabilize build and rebrand residuals (no storage change).</li>
-        <li><strong>Wallet SQLite dual-stack</strong> — biggest operator pain (BDB deps), clear migration story.</li>
-        <li>Optional: RocksDB behind CDBWrapper for chainstate (lower risk than mdbx).</li>
-        <li>Optional later: libmdbx if metrics justify the concurrency redesign.</li>
+        <li><strong>P1 Fast Sync</strong> — attestations + stream-hash CDN + GUI (highest user pain after full IBD).</li>
+        <li><strong>P2 Default prune</strong> — stock <code>-prune=</code> as wallet-node default (disk ceiling).</li>
+        <li><strong>Wallet SQLite dual-stack</strong> — operator pain (BDB), parallel track OK.</li>
+        <li><strong>P3</strong> optional cold blk object CDN.</li>
+        <li><strong>P4</strong> RocksDB behind CDBWrapper (ops); libmdbx only if metrics justify.</li>
       </ol>
 
       <h2>Success criteria for any storage swap</h2>
@@ -142,8 +195,8 @@
       </ul>
 
       <div class="footer">
-        Related discussion captured from prior Gemini/Grok design sessions —
-        treat this page as the engineering source of truth going forward.
+        Authoritative markdown: <code>doc/tiered-storage-and-fast-sync.md</code>.
+        Gemini/Grok sessions informed this page; code + that doc win arguments.
       </div>
     </main>
   </div>
