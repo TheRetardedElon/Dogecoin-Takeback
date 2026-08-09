@@ -5,7 +5,7 @@ export PATH=/usr/bin:/bin
 BUILD=/home/theretardedelon/dogedev-winbuild
 SRC=/mnt/c/dogedev
 OUT=/mnt/c/dogedev/release
-VERSION=1.14.101
+VERSION="${VERSION:-1.14.102}"
 REL=dogecoin-${VERSION}-win64
 
 test -f "$BUILD/release/dogecoin-qt.exe"
@@ -132,11 +132,12 @@ EOF
 
 # Fix accidental double-escaping from heredoc - write cleaner with python
 python3 <<'PY'
+import os
 from pathlib import Path
 BUILD = "/home/theretardedelon/dogedev-winbuild"
 SRC = "/mnt/c/dogedev"
 OUT = "/mnt/c/dogedev/release"
-VERSION = "1.14.101"
+VERSION = os.environ.get("VERSION", "1.14.102")
 REL = f"dogecoin-{VERSION}-win64"
 nsi = f'''Name "Dogecoin Core (64-bit)"
 RequestExecutionLevel highest
