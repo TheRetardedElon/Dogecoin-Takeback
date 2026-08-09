@@ -156,8 +156,18 @@ stage/
 smoke-run/
 
 
-# Built release packages (zip/setup) — publish via GitHub Releases, not git
+# Built release packages (zip/setup) ï¿½ publish via GitHub Releases, not git
 release/*.zip
 release/*-setup.exe
 release/SHA256SUMS*
 
+scripts/win-make-102-direct.sh
+scripts/wait-make-dogecoind2.sh
+scripts/wait-linux-dogecoind-build.sh
+scripts/start-win-release-102.sh
+scripts/make-setup-1.14.101.sh
+scripts/make-dogecoind-fg.sh
+scripts/fix-linux-dogecoind-link.sh
+scripts/build-linux-daemon-gpe.sh
+scripts/make-setup-1.14.101.sh
+scripts/make-setup-1.14.101.sh
