@@ -2238,6 +2238,106 @@ UniValue fetchassumeutxo(const JSONRPCRequest& request)
     return result;
 }
 
+UniValue fetchassumeutxomanifest(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() > 2)
+        throw runtime_error(
+            "fetchassumeutxomanifest ( \"manifest\" load )\n"
+            "\nProduct P1: resolve a CDN latest.json (or local/inline JSON) to artifact\n"
+            "URL + SHA-256, then stream-fetch and fail-closed verify (same as fetchassumeutxo).\n"
+            "\nGPE Fast Sync CDN default:\n"
+            "  https://sync.doge.gopastearth.com/latest.json\n"
+            "Accepts field aliases: sha256, blocks, bytes, bestblock, status.\n"
+            "Placeholder manifests (status set, no sha256) fail closed with a clear error.\n"
+            "\nArguments:\n"
+            "1. \"manifest\" (string, optional) HTTPS URL, local JSON path, or inline JSON\n"
+            "                object. Default: official GPE latest.json URL.\n"
+            "2. load         (boolean, optional, default=false) loadtxoutset after fetch\n"
+            "\nResult: resolved fields + fetchassumeutxo result shape.\n"
+            "\nExamples:\n"
+            + HelpExampleCli("fetchassumeutxomanifest", "")
+            + HelpExampleCli("fetchassumeutxomanifest", "\"https://sync.doge.gopastearth.com/latest.json\"")
+            + HelpExampleCli("fetchassumeutxomanifest", "\"C:\\\\snaps\\\\latest.json\" true")
+        );
+
+    std::string manifest_src = DEFAULT_SNAPSHOT_MANIFEST_URL;
+    if (request.params.size() > 0 && !request.params[0].isNull() && !request.params[0].get_str().empty())
+        manifest_src = request.params[0].get_str();
+
+    // Prefer -snapshotmanifest if set and caller omitted explicit arg
+    if ((request.params.size() == 0 || request.params[0].isNull() || request.params[0].get_str().empty()) &&
+        IsArgSet("-snapshotmanifest") && !GetArg("-snapshotmanifest", "").empty()) {
+        manifest_src = GetArg("-snapshotmanifest", "");
+    }
+
+    SnapshotArtifactManifest m;
+    std::string error;
+    if (!ResolveSnapshotFromManifest(manifest_src, m, error))
+        throw JSONRPCError(RPC_MISC_ERROR, error);
+
+    uint256 expected;
+    if (!ParseSha256Hex(m.artifact_sha256_hex, expected, error))
+        throw JSONRPCError(RPC_INVALID_PARAMETER, error);
+
+    fs::path dest = GetDataDir() / "snapshots" / "utxo_fetch.dat";
+    {
+        boost::system::error_code ec;
+        fs::create_directories(dest.parent_path(), ec);
+    }
+
+    uint64_t bytes = 0;
+    if (!FetchSnapshotArtifact(m.url, dest, expected, bytes, error))
+        throw JSONRPCError(RPC_MISC_ERROR, error);
+
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("manifest", manifest_src);
+    result.pushKV("url", m.url);
+    result.pushKV("artifact_sha256", expected.GetHex());
+    if (m.height >= 0)
+        result.pushKV("height", m.height);
+    if (!m.base_blockhash_hex.empty())
+        result.pushKV("bestblock", m.base_blockhash_hex);
+    if (!m.hash_serialized_hex.empty())
+        result.pushKV("hash_serialized_manifest", m.hash_serialized_hex);
+    if (m.size_bytes >= 0)
+        result.pushKV("size_bytes_manifest", m.size_bytes);
+    result.pushKV("path", dest.string());
+    result.pushKV("bytes", bytes);
+    result.pushKV("verified", true);
+
+    bool do_load = false;
+    if (request.params.size() > 1 && !request.params[1].isNull())
+        do_load = request.params[1].get_bool();
+
+    if (!do_load) {
+        result.pushKV("loaded", false);
+        result.pushKV("note", "Fetch OK. Call loadtxoutset path (true) when height is attested in mapAssumeutxo.");
+        return result;
+    }
+
+    if (!HasBackgroundChainstate())
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Background chainstate not initialized");
+
+    uint64_t coins_loaded = 0;
+    uint256 base_hash;
+    int base_height = -1;
+    if (!LoadUTXOSnapshot(dest, coins_loaded, base_hash, base_height, error))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, error);
+
+    result.pushKV("loaded", true);
+    result.pushKV("coins_loaded", (uint64_t)coins_loaded);
+    result.pushKV("tip_hash", base_hash.GetHex());
+    result.pushKV("base_height", base_height);
+    if (HasBackgroundChainstate() && BackgroundChainstate() &&
+        BackgroundChainstate()->HasSnapshotCoinsHash()) {
+        const uint256& ch = BackgroundChainstate()->SnapshotCoinsHash();
+        result.pushKV("hash_serialized", ch.GetHex());
+        const AssumeutxoData* att = Params().AssumeutxoForHeight(base_height);
+        result.pushKV("attested", att && att->hash_serialized == ch);
+    }
+    return result;
+}
+
 UniValue listassumeutxo(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 0)
@@ -2426,6 +2526,7 @@ static const CRPCCommand commands[] =
     { "blockchain",         "dumptxoutset",           &dumptxoutset,           true,  {"path"} },
     { "blockchain",         "loadtxoutset",           &loadtxoutset,           true,  {"path","activate"} },
     { "blockchain",         "fetchassumeutxo",        &fetchassumeutxo,        true,  {"source","artifact_sha256","dest","load"} },
+    { "blockchain",         "fetchassumeutxomanifest",&fetchassumeutxomanifest,true,  {"manifest","load"} },
     { "blockchain",         "activatesnapshot",       &activatesnapshot,       true,  {} },
     { "blockchain",         "listassumeutxo",         &listassumeutxo,         true,  {} },
     { "blockchain",         "stepbackgroundvalidation", &stepbackgroundvalidation, true, {"nblocks"} },

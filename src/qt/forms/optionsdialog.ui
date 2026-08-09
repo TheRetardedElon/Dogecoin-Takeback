@@ -101,6 +101,66 @@
         </widget>
        </item>
        <item>
+        <widget class="QGroupBox" name="groupFastSync">
+         <property name="title">
+          <string>Core Pro sync (Fast path / cloud snapshot)</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_FastSync">
+          <item>
+           <widget class="QCheckBox" name="preferFastSync">
+            <property name="toolTip">
+             <string>Prefer Fast path: prune old blocks and use an attested UTXO snapshot when available (Product P1). Does not place your live datadir on OneDrive/Drive — cloud is only for downloading snapshot files over HTTPS.</string>
+            </property>
+            <property name="text">
+             <string>Prefer Fast Sync when available (prune + snapshot CDN)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="fastSyncHint">
+            <property name="styleSheet">
+             <string notr="true">QLabel { color: #666; }</string>
+            </property>
+            <property name="text">
+             <string>Snapshot download uses official or custom HTTPS URLs (S3, R2, Azure Blob, etc.). Do not run the wallet data directory inside OneDrive/Google Drive/Dropbox.</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="snapshotUrlLabel">
+            <property name="text">
+             <string>Custom snapshot URL (optional HTTPS):</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="snapshotUrl">
+            <property name="placeholderText">
+             <string>https://…/utxo.dat or …/latest.json (empty = sync.doge.gopastearth.com)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="snapshotShaLabel">
+            <property name="text">
+             <string>Artifact SHA-256 (required for custom URL):</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="snapshotSha256">
+            <property name="placeholderText">
+             <string>64 hex characters (sha256sum of the file)</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2_Main">
          <item>
           <widget class="QLabel" name="databaseCacheLabel">

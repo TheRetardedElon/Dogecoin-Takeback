@@ -149,6 +149,14 @@ QString Intro::getDataDirectory()
     return ui->dataDirectory->text();
 }
 
+bool Intro::preferFastSync() const
+{
+    // Default true if UI widgets missing (older form)
+    if (!ui->syncFast)
+        return true;
+    return ui->syncFast->isChecked();
+}
+
 void Intro::setDataDirectory(const QString &dataDir)
 {
     ui->dataDirectory->setText(dataDir);
@@ -208,6 +216,18 @@ bool Intro::pickDataDirectory()
 
         settings.setValue("strDataDir", dataDir);
         settings.setValue("fReset", false);
+
+        // Product P1/P2: first-run sync mode (Intro dialog)
+        const bool fast = intro.preferFastSync();
+        settings.setValue("fPreferFastSync", fast);
+        if (fast) {
+            // Stock Core auto prune-as-you-go; ~5.5 GiB block target (Dogecoin tip).
+            // SoftSet so dogecoin.conf can still override if the user sets -prune explicitly.
+            SoftSetArg("-prune", "5500");
+            settings.setValue("nPrune", 5500);
+        } else {
+            settings.setValue("nPrune", 0);
+        }
     }
     /* Only override -datadir if different from the default, to make it possible to
      * override -datadir in the bitcoin.conf file in the default data directory

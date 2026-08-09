@@ -49,6 +49,9 @@ public:
         DatabaseCache,          // int
         SpendZeroConfChange,    // bool
         Listen,                 // bool
+        PreferFastSync,         // bool — Core Pro P1/P2
+        SnapshotUrl,            // QString — custom HTTPS snapshot (optional)
+        SnapshotSha256,         // QString — artifact digest for custom URL
         OptionIDRowCount,
     };
 

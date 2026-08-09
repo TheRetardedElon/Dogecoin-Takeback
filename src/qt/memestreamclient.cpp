@@ -6,6 +6,7 @@
 
 #include "memestreampublishkey.h"
 #include "util.h"
+#include "win_image_decode.h"
 
 #include <QHttpMultiPart>
 #include <QHttpPart>
@@ -17,18 +18,20 @@
 #include <QPixmap>
 #include <QPointer>
 #include <QSslConfiguration>
+#include <QSslError>
 #include <QSslSocket>
 #include <QUrlQuery>
 #include <QVariant>
 #include <QVariantList>
 #include <QVariantMap>
 
+// Public web + API share the same GPE origin; memestream.* is the product front door.
 static const char* DEFAULT_BASE = "https://gopastearth.com";
 
-/** One-shot SSL capability log. Do NOT inject Windows ROOT certs into
- *  QSslSocket::setDefaultCaCertificates — that path has caused STATUS_HEAP_CORRUPTION
- *  (0xc0000374) on Windows + mingw-Qt OpenSSL builds (also removed from PeerMap).
- *  Use the Qt/OpenSSL default CA bundle instead. */
+/** One-shot SSL capability log. Do NOT call QSslSocket::setDefaultCaCertificates
+ *  with a rebuilt Windows ROOT list — that path caused STATUS_HEAP_CORRUPTION
+ *  (0xc0000374) on mingw-Qt OpenSSL builds (also removed from PeerMap).
+ *  Per-request QSslConfiguration + systemCaCertificates() is the safe path. */
 static void ensureMemeStreamSsl()
 {
     static bool done = false;
@@ -42,10 +45,52 @@ static void ensureMemeStreamSsl()
                   "(Protocol \"https\" is unknown). Rebuild Qt with -openssl-linked.\n");
         return;
     }
-    LogPrintf("MemeStream: SSL available (using default CA bundle; not injecting Windows ROOT store)\n");
+    const QList<QSslCertificate> sys = QSslConfiguration::systemCaCertificates();
+    LogPrintf("MemeStream: SSL available (supportsSsl=1, system CA count=%d, "
+              "libraryBuild=%s libraryRuntime=%s)\n",
+              sys.size(),
+              QSslSocket::sslLibraryBuildVersionString().toUtf8().constData(),
+              QSslSocket::sslLibraryVersionString().toUtf8().constData());
 #else
     LogPrintf("MemeStream: QT_NO_SSL defined; HTTPS unavailable.\n");
 #endif
+}
+
+/** Apply OS trust store to this request only (no global CA mutation). */
+static void applyHttpsSsl(QNetworkRequest& req)
+{
+#ifndef QT_NO_SSL
+    if (!QSslSocket::supportsSsl())
+        return;
+    QSslConfiguration conf = QSslConfiguration::defaultConfiguration();
+    const QList<QSslCertificate> sys = QSslConfiguration::systemCaCertificates();
+    if (!sys.isEmpty())
+        conf.setCaCertificates(sys);
+    // Qt 5.7: SecureProtocols is the portable default (TLS 1.0+ as negotiated).
+    conf.setProtocol(QSsl::SecureProtocols);
+    req.setSslConfiguration(conf);
+#else
+    Q_UNUSED(req);
+#endif
+}
+
+static QString enrichNetworkError(QNetworkReply* reply)
+{
+    if (!reply)
+        return QStringLiteral("Unknown network error");
+    QString msg = reply->errorString();
+#ifndef QT_NO_SSL
+    if (!QSslSocket::supportsSsl()) {
+        msg += QStringLiteral(" [Qt has no SSL — rebuild with OpenSSL]");
+    }
+#endif
+    const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    if (status > 0)
+        msg += QStringLiteral(" (HTTP %1)").arg(status);
+    const QUrl u = reply->url();
+    if (u.isValid())
+        msg += QStringLiteral(" — %1").arg(u.toString(QUrl::RemoveQuery));
+    return msg;
 }
 
 MemeStreamClient::MemeStreamClient(QObject* parent)
@@ -113,7 +158,23 @@ void MemeStreamClient::fetchFeed(int limit)
 
     QNetworkRequest req(url);
     req.setRawHeader("Accept", "application/json");
+    applyHttpsSsl(req);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+    req.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+#endif
+    LogPrintf("MemeStream: GET feed %s\n", url.toString().toUtf8().constData());
     m_feedReply = m_nam.get(req);
+#ifndef QT_NO_SSL
+    // Log TLS problems without ignoring them (fail closed on bad certs).
+    QObject::connect(m_feedReply,
+                     static_cast<void (QNetworkReply::*)(const QList<QSslError>&)>(&QNetworkReply::sslErrors),
+                     this,
+                     [this](const QList<QSslError>& errs) {
+                         for (const QSslError& e : errs) {
+                             LogPrintf("MemeStream: SSL error: %s\n", e.errorString().toUtf8().constData());
+                         }
+                     });
+#endif
     connect(m_feedReply, SIGNAL(finished()), this, SLOT(onFeedFinished()));
 }
 
@@ -126,16 +187,25 @@ void MemeStreamClient::onFeedFinished()
     reply->deleteLater();
 
     if (reply->error() != QNetworkReply::NoError) {
-        Q_EMIT feedFailed(reply->errorString());
+        const QString msg = enrichNetworkError(reply);
+        LogPrintf("MemeStream: feed failed: %s\n", msg.toUtf8().constData());
+        Q_EMIT feedFailed(msg);
         return;
     }
 
+    const QByteArray body = reply->readAll();
+    LogPrintf("MemeStream: feed HTTP %d, %d bytes\n",
+              reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt(),
+              (int)body.size());
+
     QString err;
-    QList<MemeStreamItem> items = parseFeedJson(reply->readAll(), err);
+    QList<MemeStreamItem> items = parseFeedJson(body, err);
     if (!err.isEmpty()) {
+        LogPrintf("MemeStream: feed JSON error: %s\n", err.toUtf8().constData());
         Q_EMIT feedFailed(err);
         return;
     }
+    LogPrintf("MemeStream: feed ok, %d items\n", items.size());
     Q_EMIT feedReceived(items);
 }
 
@@ -160,6 +230,7 @@ void MemeStreamClient::publish(const QString& title, const QString& body, const 
     QNetworkRequest req(url);
     req.setRawHeader("X-MemeStream-Key", m_publishKey.toUtf8());
     req.setRawHeader("Accept", "application/json");
+    applyHttpsSsl(req);
 
     if (imageData.isEmpty()) {
         req.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
@@ -255,6 +326,7 @@ void MemeStreamClient::likeItem(const QString& itemId, const QString& walletAddr
     QNetworkRequest req(url);
     req.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
     req.setRawHeader("Accept", "application/json");
+    applyHttpsSsl(req);
     if (!walletAddress.isEmpty())
         req.setRawHeader("X-Doge-Address", walletAddress.toUtf8());
 
@@ -373,9 +445,10 @@ void MemeStreamClient::loadImageInto(QLabel* target, const QString& pathOrUrl, c
 
     QNetworkRequest req(url);
     req.setRawHeader("Accept", "image/*");
+    applyHttpsSsl(req);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
-    // Do not follow redirects off allowlisted hosts (SSRF hardening).
-    req.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::ManualRedirectPolicy);
+    // Same-origin redirects only (GPE may bounce www ↔ apex).
+    req.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
 #endif
     QNetworkReply* reply = m_nam.get(req);
     QPointer<QLabel> label = target;
@@ -385,20 +458,57 @@ void MemeStreamClient::loadImageInto(QLabel* target, const QString& pathOrUrl, c
         if (!label)
             return;
         if (reply->error() != QNetworkReply::NoError) {
-            label->setText(QString());
-            label->setVisible(false);
+            LogPrintf("MemeStream: image fetch failed: %s url=%s\n",
+                      reply->errorString().toUtf8().constData(),
+                      reply->url().toString().toUtf8().constData());
+            label->setText(QObject::tr("(image unavailable)"));
+            label->setObjectName(QStringLiteral("mutedLabel"));
+            label->setVisible(true);
             return;
         }
         const QByteArray bytes = reply->readAll();
+        const QString ctype = reply->header(QNetworkRequest::ContentTypeHeader).toString().toLower();
+        const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        // GPE misconfig often returns SPA HTML (200 text/html) for /media/* instead of the file.
+        const bool looksHtml = ctype.contains(QLatin1String("text/html")) ||
+                               bytes.startsWith("<!DOCTYPE") || bytes.startsWith("<!doctype") ||
+                               bytes.startsWith("<html") || bytes.startsWith("<HTML");
+        if (looksHtml || ctype.contains(QLatin1String("application/json"))) {
+            LogPrintf("MemeStream: image URL returned non-image (HTTP %d ctype=%s size=%d) %s\n",
+                      status, ctype.toUtf8().constData(), (int)bytes.size(),
+                      reply->url().toString().toUtf8().constData());
+            label->setText(QObject::tr("(media not served — GPE /media route)"));
+            label->setObjectName(QStringLiteral("mutedLabel"));
+            label->setWordWrap(true);
+            label->setVisible(true);
+            return;
+        }
         if (bytes.size() <= 0 || bytes.size() > MAX_MEME_IMAGE_BYTES) {
-            label->setText(QString());
-            label->setVisible(false);
+            LogPrintf("MemeStream: image size out of range (%d) %s\n",
+                      (int)bytes.size(), reply->url().toString().toUtf8().constData());
+            label->setText(QObject::tr("(image unavailable)"));
+            label->setVisible(true);
             return;
         }
         QPixmap px;
         if (!px.loadFromData(bytes) || px.isNull()) {
-            label->setText(QString());
-            label->setVisible(false);
+            // Depends Qt is often built without JPEG (-no-libjpeg). Use OS decoder on Windows.
+            const QImage wimg = DecodeImageBytesWin(bytes);
+            if (!wimg.isNull()) {
+                px = QPixmap::fromImage(wimg);
+                LogPrintf("MemeStream: decoded image via OS (WIC) size=%d %s\n",
+                          (int)bytes.size(), reply->url().toString().toUtf8().constData());
+            }
+        }
+        if (px.isNull()) {
+            LogPrintf("MemeStream: QPixmap decode failed (ctype=%s size=%d magic=%02x%02x) %s\n",
+                      ctype.toUtf8().constData(), (int)bytes.size(),
+                      bytes.size() > 0 ? (unsigned char)bytes[0] : 0,
+                      bytes.size() > 1 ? (unsigned char)bytes[1] : 0,
+                      reply->url().toString().toUtf8().constData());
+            label->setText(QObject::tr("(unsupported image format)"));
+            label->setObjectName(QStringLiteral("mutedLabel"));
+            label->setVisible(true);
             return;
         }
         label->setText(QString());

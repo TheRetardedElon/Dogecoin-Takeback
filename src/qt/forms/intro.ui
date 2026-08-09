@@ -204,6 +204,45 @@
     </layout>
    </item>
    <item>
+    <widget class="QGroupBox" name="syncModeGroup">
+     <property name="title">
+      <string>Initial sync (Core Pro)</string>
+     </property>
+     <layout class="QVBoxLayout" name="syncModeLayout">
+      <item>
+       <widget class="QRadioButton" name="syncFast">
+        <property name="text">
+         <string>Fast path (recommended) — prune old blocks to save disk; use attested UTXO snapshot when available (Product P1/P2)</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="syncArchive">
+        <property name="text">
+         <string>Full archive — keep all block files (large disk; for explorers / advanced)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="syncModeHint">
+        <property name="styleSheet">
+         <string notr="true">QLabel { color: #555; font-size: 11px; }</string>
+        </property>
+        <property name="text">
+         <string>Fast path enables automatic prune (~5.5 GB block target). Snapshot CDN download lands when mapAssumeutxo attestations ship; until then you still sync over P2P with a bounded disk.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>

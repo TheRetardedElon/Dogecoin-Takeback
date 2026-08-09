@@ -69,6 +69,9 @@ bool FetchSnapshotArtifact(const std::string& source,
 /**
  * Optional CDN manifest fields (JSON). Product P1.
  * coins hash_serialized is checked later by loadtxoutset / mapAssumeutxo — not here.
+ *
+ * Compatible with GPE Fast Sync CDN latest.json (sync.doge.gopastearth.com):
+ *   url, sha256|artifact_sha256, blocks|height, bytes|size_bytes, bestblock, hash_serialized, status
  */
 struct SnapshotArtifactManifest {
     int height;
@@ -77,11 +80,40 @@ struct SnapshotArtifactManifest {
     std::string artifact_sha256_hex; // required for fetch
     std::string url;
     int64_t size_bytes;
+    std::string status; // e.g. "awaiting first snapshot" (not ready)
 
     SnapshotArtifactManifest() : height(-1), size_bytes(-1) {}
 };
 
-/** Parse a minimal JSON manifest object (univalue). */
+/** Official GPE public manifest URL (empty until first dumptxoutset is published). */
+static const char* const DEFAULT_SNAPSHOT_MANIFEST_URL =
+    "https://sync.doge.gopastearth.com/latest.json";
+
+/** Parse a minimal JSON manifest object (univalue). GPE field aliases accepted. */
 bool ParseSnapshotArtifactManifest(const std::string& json, SnapshotArtifactManifest& out, std::string& error);
+
+/**
+ * Download a small text body (manifest JSON) via HTTP(S).
+ * Same libevent constraints as DownloadUrlStreamHash (https may need local file).
+ */
+bool DownloadUrlToString(const std::string& url,
+                         std::string& body_out,
+                         std::string& error,
+                         int timeout_sec = 60);
+
+/**
+ * Resolve artifact URL + SHA-256 from:
+ *   - a JSON object string, or
+ *   - an http(s) URL to latest.json (downloaded then parsed), or
+ *   - a local path to a JSON file
+ * Fail closed if status indicates not ready or required fields missing.
+ */
+bool ResolveSnapshotFromManifest(const std::string& manifest_json_or_url,
+                                 SnapshotArtifactManifest& out,
+                                 std::string& error,
+                                 int timeout_sec = 60);
+
+/** True if s looks like a JSON object (starts with '{') rather than a URL/path. */
+bool LooksLikeJsonObject(const std::string& s);
 
 #endif // DOGECOIN_NODE_SNAPSHOT_FETCH_H

@@ -49,7 +49,8 @@ $(package)_config_opts += -no-icu
 $(package)_config_opts += -no-iconv
 $(package)_config_opts += -no-kms
 $(package)_config_opts += -no-linuxfb
-$(package)_config_opts += -no-libjpeg
+# JPEG required for Meme Stream media (GPE serves .jpg). Was -no-libjpeg.
+$(package)_config_opts += -qt-libjpeg
 $(package)_config_opts += -no-libproxy
 $(package)_config_opts += -no-libudev
 $(package)_config_opts += -no-mitshm
@@ -102,7 +103,7 @@ $(package)_config_opts += -no-feature-ftp
 # $(package)_config_opts += -no-feature-http
 $(package)_config_opts += -no-feature-image_heuristic_mask
 $(package)_config_opts += -no-feature-imageformat_bmp
-$(package)_config_opts += -no-feature-imageformat_jpeg
+# JPEG enabled via -qt-libjpeg (Meme Stream); do not disable imageformat_jpeg
 $(package)_config_opts += -no-feature-imageformat_ppm
 $(package)_config_opts += -no-feature-imageformat_xbm
 $(package)_config_opts += -no-feature-keysequenceedit

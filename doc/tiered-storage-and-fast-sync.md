@@ -1,7 +1,7 @@
 # Tiered storage & fast sync — Dogecoin Core Pro (1.14.101)
 
-**Status:** planning (engineering AssumeUTXO A–D3 **done**; product path **open**)  
-**Date:** 2026-08-08  
+**Status:** engineering AssumeUTXO A–D3 **done**; product P1 **partial** (manifest resolve + Options SoftSet; CDN hostname live; mainnet attestation + dump binary still open)  
+**Date:** 2026-08-09  
 **Audience:** implementers + release operators  
 
 This document is the **authoritative product architecture** for:
@@ -145,9 +145,10 @@ flowchart TB
 |-----------|--------|
 | P1.1 Publish attestation | Operator: full node at H → `dumptxoutset` → record `hash_serialized` → PR into `mapAssumeutxo` mainnet/testnet |
 | P1.2 Artifact hosting | CDN URL(s); multi‑GB expected (minutes of I/O, not “30 seconds”) |
-| P1.3 Manifest | height, base hash, `hash_serialized`, `artifact_sha256`, size, URLs |
-| P1.4 Stream-and-hash downloader | **Started:** `src/node/snapshot_fetch.*` + RPC `fetchassumeutxo` (local path fully; HTTP best-effort) |
-| P1.5 Wire to load path | On success: `loadtxoutset` + activate (attested path, no `-assumeutxodev`); `fetchassumeutxo … true` loads without activate |
+| P1.3 Manifest | **Done (parse + GPE aliases):** `ParseSnapshotArtifactManifest` / `ResolveSnapshotFromManifest`; official CDN `https://sync.doge.gopastearth.com/latest.json`; RPC `fetchassumeutxomanifest` |
+| P1.4 Stream-and-hash downloader | **Done (local):** `src/node/snapshot_fetch.*` + RPC `fetchassumeutxo`; smokes green. HTTP best-effort (https SSL may need local path on some builds). |
+| P1.5 Wire to load path | **E2E PE smoke green:** dump → fetch → load → activate → prove/collapse (`scripts/smoke-fetchassumeutxo-e2e.ps1`) |
+| P1.6 Intro Fast path | **Scaffolded:** Intro UI Fast vs Archive; Fast → SoftSet `-prune=5500` + QSettings `fPreferFastSync`; Options SoftSet `-snapshotmanifest` / `-snapshoturl` / `-snapshotsha256` |
 | P1.6 Fail closed | Mismatch → delete temp, log critical, **fallback full IBD** (or abort with clear UI) |
 | P1.7 GUI modal | First empty datadir: **Fast Sync (Recommended)** vs **Standard Sync** |
 | P1.8 Docs / security FAQ | What we trust, for how long, background prove |

@@ -23,6 +23,7 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
 
@@ -126,6 +127,9 @@ void MemeStreamPage::setupUi()
     connect(searchEdit, &QLineEdit::textChanged, [this](const QString&) {
         rebuildFeed(lastItems);
     });
+
+    // Auto-load feed when the full page is first constructed (same as rail).
+    QTimer::singleShot(400, this, SLOT(onRefreshClicked()));
 }
 
 void MemeStreamPage::setWalletModel(WalletModel* model)

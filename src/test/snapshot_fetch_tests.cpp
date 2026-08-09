@@ -61,11 +61,61 @@ BOOST_AUTO_TEST_CASE(parse_manifest_json)
     std::string err;
     // hash_serialized in manifest may be short in this test for field presence only —
     // artifact_sha256 must be 64 hex. aaaa is only for optional field.
-    // Fix: use valid 64-hex for artifact only; hash_serialized can be any string in manifest.
     BOOST_REQUIRE(ParseSnapshotArtifactManifest(json, m, err));
     BOOST_CHECK_EQUAL(m.height, 100);
     BOOST_CHECK_EQUAL(m.url, "https://example.com/utxo.dat");
     BOOST_CHECK_EQUAL(m.size_bytes, 1234);
+}
+
+BOOST_AUTO_TEST_CASE(parse_gpe_latest_json_aliases)
+{
+    // Shape used by sync.doge.gopastearth.com / make_utxo_snapshot.sh
+    std::string json =
+        "{"
+        "\"network\": \"main\","
+        "\"hostname\": \"sync.doge.gopastearth.com\","
+        "\"url\": \"https://sync.doge.gopastearth.com/utxo-6324326-20260809.dat\","
+        "\"filename\": \"utxo-6324326-20260809.dat\","
+        "\"sha256\": \"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\","
+        "\"bytes\": 987654321,"
+        "\"blocks\": 6324326,"
+        "\"bestblock\": \"abcd\","
+        "\"hash_serialized\": \"ef01\","
+        "\"created_utc\": \"2026-08-09T00:00:00Z\","
+        "\"producer\": \"gpednode1\""
+        "}";
+    SnapshotArtifactManifest m;
+    std::string err;
+    BOOST_REQUIRE_MESSAGE(ParseSnapshotArtifactManifest(json, m, err), err);
+    BOOST_CHECK_EQUAL(m.height, 6324326);
+    BOOST_CHECK_EQUAL(m.size_bytes, 987654321);
+    BOOST_CHECK_EQUAL(m.url, "https://sync.doge.gopastearth.com/utxo-6324326-20260809.dat");
+    BOOST_CHECK_EQUAL(m.artifact_sha256_hex,
+                      "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+    BOOST_CHECK_EQUAL(m.base_blockhash_hex, "abcd");
+    BOOST_CHECK_EQUAL(m.hash_serialized_hex, "ef01");
+
+    // Resolve from inline JSON (no network)
+    SnapshotArtifactManifest m2;
+    BOOST_REQUIRE(ResolveSnapshotFromManifest(json, m2, err));
+    BOOST_CHECK_EQUAL(m2.height, 6324326);
+    BOOST_CHECK(LooksLikeJsonObject(json));
+    BOOST_CHECK(!LooksLikeJsonObject("https://sync.doge.gopastearth.com/latest.json"));
+}
+
+BOOST_AUTO_TEST_CASE(parse_gpe_placeholder_awaiting)
+{
+    std::string json =
+        "{"
+        "\"status\": \"awaiting first snapshot\","
+        "\"nodeTip\": {\"blocks\": 6324326}"
+        "}";
+    SnapshotArtifactManifest m;
+    std::string err;
+    BOOST_CHECK(!ParseSnapshotArtifactManifest(json, m, err));
+    BOOST_CHECK(err.find("not published") != std::string::npos ||
+                err.find("awaiting") != std::string::npos ||
+                err.find("status") != std::string::npos);
 }
 
 BOOST_AUTO_TEST_CASE(parse_sha256_hex)

@@ -35,8 +35,11 @@ MemeStreamRail::MemeStreamRail(const PlatformStyle* _platformStyle, QWidget* par
     autoRefresh = new QTimer(this);
     autoRefresh->setInterval(60 * 1000);
     connect(autoRefresh, SIGNAL(timeout()), this, SLOT(onRefreshClicked()));
-    // Do not auto-start: first fetch is manual or after a short idle delay once UI is up.
     autoRefresh->setSingleShot(false);
+
+    // First load shortly after the home shell is painted (was "click only", which
+    // looked like Meme Stream was broken). SSL/QNAM still deferred until ensureClient().
+    QTimer::singleShot(1500, this, SLOT(onRefreshClicked()));
 }
 
 void MemeStreamRail::setupUi()

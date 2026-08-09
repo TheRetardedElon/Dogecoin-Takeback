@@ -32,6 +32,9 @@ public:
     QString getDataDirectory();
     void setDataDirectory(const QString &dataDir);
 
+    /** Product P1/P2: true if user chose Fast path (prune + future snapshot). */
+    bool preferFastSync() const;
+
     /**
      * Determine data directory. Let the user choose if the current one doesn't exist.
      *

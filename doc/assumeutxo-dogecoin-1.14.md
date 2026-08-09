@@ -19,7 +19,7 @@
 | **D1** Attestation gate + GUI progress | **Done** | `mapAssumeutxo` / `AssumeutxoData` in chainparams; activate if attested **or** `-assumeutxodev`; status-bar historical % |
 | **D2** Attestation workflow + hard collapse | **Done** | `dumptxoutset` → `hash_serialized` + snippet; `listassumeutxo`; hard-collapse background after prove |
 | **D3** Prune guard + regtest smoke | **Done** | refuse `pruneblockchain` during bg proof; `qa/rpc-tests/assumeutxo.py` |
-| **P1** Trust anchors + CDN stream-hash + Fast Sync UI | **Open** | fill `mapAssumeutxo`; artifact digest; HTTP stream-hash; GUI modal — see tiered-storage doc |
+| **P1** Trust anchors + CDN stream-hash + Fast Sync UI | **Partial** | stream-hash + `fetchassumeutxo` / `fetchassumeutxomanifest` + GPE `latest.json` aliases + Options SoftSet; still open: mainnet `mapAssumeutxo` values, first-run modal, custom daemon on gpednode for dump |
 | **P2** Default prune-as-you-go product | **Open** | stock `-prune=` already works; make wallet-node default |
 | **P3** Optional cold `blk` object CDN | **Open** | secondary fetch; never FUSE |
 | **P4** Hot KV engine (RocksDB/…) | **Open** | ops win; orthogonal to dual views |

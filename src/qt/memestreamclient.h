@@ -20,10 +20,13 @@ class QLabel;
  * HTTP client for GoPastEarth MemeStream public API.
  * Does not use Dogecoin RPC. Publish requires -memestreamkey=.
  *
- * Canonical base: https://gopastearth.com
+ * Canonical base: https://gopastearth.com (override: -memestreambaseurl=)
  * Feed:   GET  /api/public/memestream/feed
  * Publish: POST /api/public/memestream/publish  (header X-MemeStream-Key)
  * Like:   POST /api/public/memestream/items/:id/like
+ *
+ * Windows: do not use setDefaultCaCertificates with a rebuilt ROOT store
+ * (heap corruption on mingw-Qt). Per-request systemCaCertificates() instead.
  */
 struct MemeStreamItem {
     QString id;

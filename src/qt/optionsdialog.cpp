@@ -183,6 +183,9 @@ void OptionsDialog::setMapper()
     mapper->addMapping(ui->databaseCache, OptionsModel::DatabaseCache);
     mapper->addMapping(ui->prune, OptionsModel::Prune);
     mapper->addMapping(ui->pruneSize, OptionsModel::PruneSize);
+    mapper->addMapping(ui->preferFastSync, OptionsModel::PreferFastSync);
+    mapper->addMapping(ui->snapshotUrl, OptionsModel::SnapshotUrl);
+    mapper->addMapping(ui->snapshotSha256, OptionsModel::SnapshotSha256);
 
     mapper->addMapping(ui->spendZeroConfChange, OptionsModel::SpendZeroConfChange);
     mapper->addMapping(ui->coinControlFeatures, OptionsModel::CoinControlFeatures);

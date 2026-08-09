@@ -19,7 +19,8 @@
 #include "net.h"
 #include "netbase.h"
 #include "txdb.h" // for -dbcache defaults
-#include "intro.h" 
+#include "intro.h"
+#include "node/snapshot_fetch.h" // DEFAULT_SNAPSHOT_MANIFEST_URL 
 
 #ifdef ENABLE_WALLET
 #include "wallet/wallet.h"
@@ -99,6 +100,36 @@ void OptionsModel::Init(bool resetSettings)
     const uint64_t nPruneSizeMiB = PruneGBtoMiB(settings.value("nPruneSize").toInt());
     if (!SoftSetArg("-prune", settings.value("bPrune").toBool() ? std::to_string(nPruneSizeMiB) : "0")) {
       addOverriddenOption("-prune");
+    }
+
+    // Product P1 Fast Sync: SoftSet snapshot source for RPC/CLI (does not auto-fetch).
+    {
+        if (!settings.contains("fPreferFastSync"))
+            settings.setValue("fPreferFastSync", true);
+        if (!settings.contains("strSnapshotUrl"))
+            settings.setValue("strSnapshotUrl", "");
+        if (!settings.contains("strSnapshotSha256"))
+            settings.setValue("strSnapshotSha256", "");
+
+        const QString snapUrl = settings.value("strSnapshotUrl").toString().trimmed();
+        const QString snapSha = settings.value("strSnapshotSha256").toString().trimmed().toLower();
+        const bool preferFast = settings.value("fPreferFastSync", true).toBool();
+
+        if (!snapUrl.isEmpty() && !snapSha.isEmpty()) {
+            if (!SoftSetArg("-snapshoturl", snapUrl.toStdString()))
+                addOverriddenOption("-snapshoturl");
+            if (!SoftSetArg("-snapshotsha256", snapSha.toStdString()))
+                addOverriddenOption("-snapshotsha256");
+        } else if (!snapUrl.isEmpty() &&
+                   (snapUrl.endsWith(QStringLiteral(".json"), Qt::CaseInsensitive) ||
+                    snapUrl.contains(QStringLiteral("latest.json"), Qt::CaseInsensitive))) {
+            if (!SoftSetArg("-snapshotmanifest", snapUrl.toStdString()))
+                addOverriddenOption("-snapshotmanifest");
+        } else if (preferFast) {
+            // Official GPE CDN manifest (placeholder until first dump is published).
+            if (!SoftSetArg("-snapshotmanifest", std::string(DEFAULT_SNAPSHOT_MANIFEST_URL)))
+                addOverriddenOption("-snapshotmanifest");
+        }
     }
 
     if (!settings.contains("nDatabaseCache"))
@@ -262,6 +293,12 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return settings.value("nThreadsScriptVerif");
         case Listen:
             return settings.value("fListen");
+        case PreferFastSync:
+            return settings.value("fPreferFastSync", true);
+        case SnapshotUrl:
+            return settings.value("strSnapshotUrl");
+        case SnapshotSha256:
+            return settings.value("strSnapshotSha256");
         default:
             return QVariant();
         }
@@ -421,6 +458,22 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
                 settings.setValue("fListen", value);
                 setRestartRequired(true);
             }
+            break;
+        case PreferFastSync:
+            settings.setValue("fPreferFastSync", value.toBool());
+            // Soft-align prune with Fast path when user enables it from Options
+            if (value.toBool() && !settings.value("bPrune").toBool()) {
+                settings.setValue("bPrune", true);
+                if (!settings.contains("nPruneSize") || settings.value("nPruneSize").toInt() < 5)
+                    settings.setValue("nPruneSize", 6); // ~6 GB UI; SoftSet uses MiB conversion elsewhere
+                setRestartRequired(true);
+            }
+            break;
+        case SnapshotUrl:
+            settings.setValue("strSnapshotUrl", value.toString().trimmed());
+            break;
+        case SnapshotSha256:
+            settings.setValue("strSnapshotSha256", value.toString().trimmed().toLower());
             break;
         default:
             break;

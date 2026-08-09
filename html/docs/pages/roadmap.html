@@ -135,9 +135,9 @@
       <ul class="checklist">
         <li class="todo"><strong>P1.1</strong> Publish testnet/regtest + later mainnet <code>mapAssumeutxo</code> values (<code>hash_serialized</code> = UTXO set hash)</li>
         <li class="todo"><strong>P1.2</strong> CDN artifact hosting + manifest (height, coins hash, <em>artifact</em> SHA-256, URLs)</li>
-        <li class="done"><strong>P1.3</strong> Stream-and-hash core: <code>node/snapshot_fetch.*</code> + RPC <code>fetchassumeutxo</code> (local path solid; HTTP best-effort)</li>
-        <li class="partial"><strong>P1.4</strong> Load path wired via <code>fetchassumeutxo … true</code>; GUI + HTTPS CDN hardening still open</li>
-        <li class="todo"><strong>P1.5</strong> GUI first-run: Fast Sync (Recommended) vs Standard Sync</li>
+        <li class="done"><strong>P1.3</strong> Stream-and-hash + RPC <code>fetchassumeutxo</code>; smoke <code>smoke-fetchassumeutxo.ps1</code></li>
+        <li class="done"><strong>P1.4</strong> E2E dump→fetch→load→activate: <code>smoke-fetchassumeutxo-e2e.ps1</code></li>
+        <li class="partial"><strong>P1.5</strong> Intro Fast path UI + prune SoftSet; CDN auto-download + Qt rebuild still open</li>
         <li class="todo"><strong>P2</strong> Default prune-as-you-go for wallet-node installs (stock <code>-prune=</code>)</li>
         <li class="todo"><strong>P3</strong> Optional cold <code>blk</code> object CDN (secondary to peers)</li>
         <li class="todo"><strong>P4</strong> RocksDB-class hot engine (ops; small chainstate space only)</li>

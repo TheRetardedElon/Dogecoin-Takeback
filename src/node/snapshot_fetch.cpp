@@ -32,9 +32,14 @@ bool IsHttpUrl(const std::string& s)
 
 void HashToUint256(CSHA256& hasher, uint256& out)
 {
+    // CSHA256 emits standard big-endian digest bytes.
+    // uint256 GetHex/SetHex reverse for display (Bitcoin base_blob convention),
+    // so store reversed so GetHex() matches sha256sum / user-supplied hex.
     unsigned char buf[CSHA256::OUTPUT_SIZE];
     hasher.Finalize(buf);
-    memcpy(out.begin(), buf, 32);
+    for (int i = 0; i < 32; i++) {
+        out.begin()[i] = buf[31 - i];
+    }
 }
 
 bool StreamHashFromFILE(FILE* f, CSHA256& hasher, uint64_t& bytes_out, std::string& error)
@@ -375,6 +380,19 @@ bool FetchSnapshotArtifact(const std::string& source,
     return true;
 }
 
+bool LooksLikeJsonObject(const std::string& s)
+{
+    size_t i = 0;
+    while (i < s.size() && (s[i] == ' ' || s[i] == '\t' || s[i] == '\r' || s[i] == '\n'))
+        ++i;
+    return i < s.size() && s[i] == '{';
+}
+
+static bool SourceIsHttpUrl(const std::string& s)
+{
+    return s.compare(0, 7, "http://") == 0 || s.compare(0, 8, "https://") == 0;
+}
+
 bool ParseSnapshotArtifactManifest(const std::string& json, SnapshotArtifactManifest& out, std::string& error)
 {
     UniValue v;
@@ -383,10 +401,18 @@ bool ParseSnapshotArtifactManifest(const std::string& json, SnapshotArtifactMani
         return false;
     }
     SnapshotArtifactManifest m;
+    if (v.exists("status") && v["status"].isStr())
+        m.status = v["status"].get_str();
+    // height / blocks (GPE latest.json uses blocks)
     if (v.exists("height"))
         m.height = v["height"].get_int();
+    else if (v.exists("blocks"))
+        m.height = v["blocks"].get_int();
+    // base block hash aliases
     if (v.exists("base_blockhash"))
         m.base_blockhash_hex = v["base_blockhash"].get_str();
+    else if (v.exists("bestblock"))
+        m.base_blockhash_hex = v["bestblock"].get_str();
     if (v.exists("hash_serialized"))
         m.hash_serialized_hex = v["hash_serialized"].get_str();
     if (v.exists("artifact_sha256"))
@@ -395,11 +421,26 @@ bool ParseSnapshotArtifactManifest(const std::string& json, SnapshotArtifactMani
         m.artifact_sha256_hex = v["sha256"].get_str();
     if (v.exists("url"))
         m.url = v["url"].get_str();
+    // size aliases
     if (v.exists("size_bytes"))
         m.size_bytes = v["size_bytes"].get_int64();
+    else if (v.exists("bytes"))
+        m.size_bytes = v["bytes"].get_int64();
+
+    // Placeholder CDN page before first dump
+    if (!m.status.empty() && m.artifact_sha256_hex.empty()) {
+        error = strprintf(
+            "Snapshot not published yet (status=%s). Wait for gpednode dumptxoutset / CDN pull.",
+            m.status);
+        return false;
+    }
 
     if (m.artifact_sha256_hex.empty()) {
         error = "Manifest missing artifact_sha256 (or sha256)";
+        return false;
+    }
+    if (m.url.empty()) {
+        error = "Manifest missing url (HTTPS path to .dat artifact)";
         return false;
     }
     uint256 discard;
@@ -410,4 +451,84 @@ bool ParseSnapshotArtifactManifest(const std::string& json, SnapshotArtifactMani
     }
     out = m;
     return true;
+}
+
+bool DownloadUrlToString(const std::string& url, std::string& body_out, std::string& error, int timeout_sec)
+{
+    // Reuse stream-hash path into a temp file under datadir snapshots (or system temp).
+    fs::path tmp;
+    try {
+        tmp = GetDataDir() / "snapshots" / "manifest_fetch.json";
+    } catch (...) {
+        tmp = fs::temp_directory_path() / "dogecoin_manifest_fetch.json";
+    }
+    {
+        boost::system::error_code ec;
+        fs::create_directories(tmp.parent_path(), ec);
+    }
+    uint256 hash_discard;
+    uint64_t bytes = 0;
+    if (!DownloadUrlStreamHash(url, tmp, hash_discard, bytes, error, timeout_sec))
+        return false;
+
+    FILE* f = fsbridge::fopen(tmp, "rb");
+    if (!f) {
+        error = strprintf("Cannot read downloaded manifest: %s", tmp.string());
+        boost::system::error_code ec;
+        fs::remove(tmp, ec);
+        return false;
+    }
+    body_out.clear();
+    body_out.reserve(static_cast<size_t>(bytes > 0 && bytes < (1 << 20) ? bytes : 4096));
+    char buf[4096];
+    while (true) {
+        size_t n = fread(buf, 1, sizeof(buf), f);
+        if (n > 0)
+            body_out.append(buf, n);
+        if (n < sizeof(buf))
+            break;
+        if (body_out.size() > 2 * 1024 * 1024) {
+            fclose(f);
+            error = "Manifest body too large (>2 MiB)";
+            boost::system::error_code ec;
+            fs::remove(tmp, ec);
+            return false;
+        }
+    }
+    fclose(f);
+    boost::system::error_code ec;
+    fs::remove(tmp, ec);
+    return true;
+}
+
+bool ResolveSnapshotFromManifest(const std::string& manifest_json_or_url,
+                                 SnapshotArtifactManifest& out,
+                                 std::string& error,
+                                 int timeout_sec)
+{
+    std::string json = manifest_json_or_url;
+    if (!LooksLikeJsonObject(manifest_json_or_url)) {
+        if (!SourceIsHttpUrl(manifest_json_or_url)) {
+            // local file path to JSON
+            fs::path p(manifest_json_or_url);
+            FILE* f = fsbridge::fopen(p, "rb");
+            if (!f) {
+                error = strprintf("Cannot open manifest file: %s", p.string());
+                return false;
+            }
+            json.clear();
+            char buf[4096];
+            while (true) {
+                size_t n = fread(buf, 1, sizeof(buf), f);
+                if (n > 0)
+                    json.append(buf, n);
+                if (n < sizeof(buf))
+                    break;
+            }
+            fclose(f);
+        } else if (!DownloadUrlToString(manifest_json_or_url, json, error, timeout_sec)) {
+            return false;
+        }
+    }
+    return ParseSnapshotArtifactManifest(json, out, error);
 }
