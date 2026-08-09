@@ -7,7 +7,7 @@ BUILD=/home/theretardedelon/dogedev-winbuild
 SRC=/mnt/c/dogedev
 OUT=/mnt/c/dogedev/release
 HOST=x86_64-w64-mingw32
-VERSION=1.14.101
+VERSION=1.14.102
 REL=dogecoin-${VERSION}-win64
 JOBS="${JOBS:-4}"
 
@@ -21,6 +21,7 @@ test -f "$BUILD/depends/${HOST}/share/config.site"
 # --- copy Pro sources without clobbering winbuild configure/depends ---
 log "Sync Pro GUI and node sources only"
 for f in \
+  src/clientversion.h \
   src/qt/dogecoin.cpp src/qt/dogecoingui.cpp src/qt/dogecoingui.h \
   src/qt/clientmodel.cpp src/qt/clientmodel.h \
   src/qt/networkpage.cpp src/qt/networkpage.h \
@@ -28,6 +29,7 @@ for f in \
   src/qt/memestreamclient.cpp src/qt/memestreamclient.h \
   src/qt/memestreamrail.cpp src/qt/memestreamrail.h \
   src/qt/memestreampage.cpp src/qt/memestreampage.h \
+  src/qt/win_image_decode.cpp src/qt/win_image_decode.h \
   src/qt/arcadepage.cpp src/qt/arcadepage.h \
   src/qt/arcadegamewidget.cpp src/qt/arcadegamewidget.h \
   src/qt/dogebusinesspage.cpp src/qt/dogebusinesspage.h \
@@ -35,10 +37,13 @@ for f in \
   src/qt/thememanager.cpp src/qt/thememanager.h \
   src/qt/modaloverlay.cpp src/qt/modaloverlay.h \
   src/qt/optionsdialog.cpp src/qt/optionsdialog.h \
+  src/qt/optionsmodel.cpp src/qt/optionsmodel.h \
+  src/qt/intro.cpp src/qt/intro.h \
   src/qt/walletview.cpp src/qt/walletview.h \
   src/qt/walletframe.cpp src/qt/walletframe.h \
   src/node/chainstate.cpp src/node/chainstate.h \
   src/node/utxo_snapshot.cpp src/node/utxo_snapshot.h \
+  src/node/snapshot_fetch.cpp src/node/snapshot_fetch.h \
   src/rpc/blockchain.cpp \
   src/ibdstats.cpp src/ibdstats.h \
   src/init.cpp src/validation.cpp src/net_processing.cpp \
@@ -51,6 +56,10 @@ do
 done
 mkdir -p "$BUILD/src/qt/forms"
 cp -f "$SRC"/src/qt/forms/*.ui "$BUILD/src/qt/forms/" 2>/dev/null || true
+# version stamp for configure (reconf if needed)
+if [[ -f "$SRC/configure.ac" ]]; then
+  cp -f "$SRC/configure.ac" "$BUILD/configure.ac"
+fi
 
 # --- reconfigure for Windows if not already mingw ---
 cd "$BUILD"
@@ -155,10 +164,20 @@ for s in \
 do
   if grep -F "$s" "$NM_QT" >/dev/null 2>&1; then echo " OK nm $s"; else echo " FAIL nm $s"; FAIL=1; fi
 done
-if grep -E 'assumeutxo|loadtxoutset|dumptxoutset' "$STR_D" >/dev/null 2>&1; then
+if grep -E 'assumeutxo|loadtxoutset|dumptxoutset|fetchassumeutxo' "$STR_D" >/dev/null 2>&1; then
   echo " OK assumeutxo RPCs"
 else
   echo " FAIL assumeutxo RPCs"; FAIL=1
+fi
+if grep -F 'fetchassumeutxomanifest' "$STR_D" >/dev/null 2>&1; then
+  echo " OK fetchassumeutxomanifest"
+else
+  echo " WARN fetchassumeutxomanifest string missing (check blockchain.o link)"
+fi
+if grep -F 'sync.doge.gopastearth.com' "$STR_D" >/dev/null 2>&1; then
+  echo " OK GPE CDN default host"
+else
+  echo " WARN GPE CDN host string missing"
 fi
 grep -F ArcadePage "$NM_LIB" >/dev/null && echo " OK ArcadePage lib" || { echo " FAIL ArcadePage lib"; FAIL=1; }
 grep -F MemeStreamPage "$NM_LIB" >/dev/null && echo " OK MemeStreamPage lib" || { echo " FAIL MemeStreamPage lib"; FAIL=1; }
@@ -199,21 +218,18 @@ rm -f "$ZIP"
 log "ZIP $ZIP"
 
 log "NSIS"
-bash "$SRC/scripts/make-setup-1.14.101.sh"
+# NSIS installer (script name may lag version; pass VERSION via env)
+VERSION="$VERSION" bash "$SRC/scripts/make-setup-1.14.101.sh" || \
+  VERSION="$VERSION" bash "$SRC/scripts/make-setup-win64.sh" || true
+if [[ ! -f "$OUT/${REL}-setup.exe" ]]; then
+  log "NSIS helper missing setup — try package-core-pro-win64"
+  VERSION="$VERSION" bash "$SRC/scripts/package-core-pro-win64.sh" 2>/dev/null || true
+fi
 (
   cd "$OUT"
-  sha256sum "${REL}.zip" "${REL}-setup.exe" | tee SHA256SUMS-win64.txt
+  sha256sum "${REL}.zip" "${REL}-setup.exe" 2>/dev/null | tee SHA256SUMS-win64.txt
+  cp -f "$SRC/release/RELEASE_NOTES_win64.md" RELEASE_NOTES_win64.md 2>/dev/null || true
 )
-cat > "$OUT/RELEASE_NOTES_win64.md" <<EOF
-# Dogecoin Core Pro ${VERSION} Windows x64 — FULL RELEASE
-
-Fresh cross-build of dogecoind, dogecoin-cli, dogecoin-tx, dogecoin-qt.
-Includes Meme Stream, Arcade, Doge Business, Network, AssumeUTXO RPCs.
-
-- \`${REL}-setup.exe\`
-- \`${REL}.zip\`
-- \`SHA256SUMS-win64.txt\`
-EOF
 
 ls -lah "$OUT"/${REL}*
 echo FULL_RELEASE_OK

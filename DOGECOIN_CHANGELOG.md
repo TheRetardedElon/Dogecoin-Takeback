@@ -402,6 +402,13 @@ Work continued in 2025–2026 as **Dogecoin Core Pro** on the 1.14 DNA line — 
 
 ---
 
+## 🐕 **2026 — Dogecoin Core Pro 1.14.102 (Fast Sync CDN path)**
+
+- Product P1 partial: GPE `latest.json` manifest resolve, `fetchassumeutxomanifest`, Options SoftSet for snapshot URL/SHA/official CDN (`sync.doge.gopastearth.com`)
+- Intro Fast path + prune SoftSet; stream-hash fail-closed fetch remains
+- Settlement path: custom Linux `dogecoind` for `dumptxoutset` on gpednode (not stock 1.14.9)
+- Still **public Dogecoin consensus** — utility layer, not a fork of the money network
+
 ## 🐕 **2026 — Dogecoin Core Pro (1.14.101) heavy updates**
 
 **Product line:** pure DOGE full node + wallet + Qt (no EVM app layer).  

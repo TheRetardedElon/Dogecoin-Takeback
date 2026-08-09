@@ -148,7 +148,7 @@ Also: `qa/rpc-tests/assumeutxo.py` (native Linux `dogecoind` with AssumeUTXO bui
 |--|--|
 | **Product** | Dogecoin Core Pro |
 | **Line** | **1.14 DNA** (Pro + IBD + AssumeUTXO program) |
-| **Stamp** | **v1.14.101** (distinguish from stock 1.14.x packages) |
+| **Stamp** | **v1.14.102** (Fast Sync CDN / GPE latest.json path; distinguish from stock 1.14.x) |
 | **User-Agent** | Shibetoshi lineage |
 
 Pre-release GUI: **use at your own risk** for large merchant float / mining until you’ve reviewed builds yourself.
@@ -307,7 +307,7 @@ Dogecoin branding and heritage remain of the Dogecoin Core lineage. Many source 
 
 ### Built on real consensus. Shipped with a Pro shell. Aimed at operators who want **native DOGE** — not a costume.
 
-**Dogecoin Core Pro · 1.14.101 · Takeback**
+**Dogecoin Core Pro · 1.14.102 · Takeback**
 
 `getibdinfo` · `getchainstates` · `dumptxoutset` · `activatesnapshot`
 
