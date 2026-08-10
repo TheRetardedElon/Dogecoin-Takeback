@@ -1,0 +1,353 @@
+﻿# Dogecoin Core Pro — architecture diagrams for Eraser
+# Updated: 2026-08-09
+# Same Dogecoin mainnet consensus · dual chainstate · Fast Sync CDN · Core Pro shell · GPENode
+#
+# Paste each ```mermaid block into Eraser (or any Mermaid renderer).
+# File: C:\dogedev\-FlowDiagramLatest\updatedmermaid.txt
+
+================================================================================
+DIAGRAM 1 — MASTER ARCHITECTURE (full project)
+================================================================================
+
+```mermaid
+flowchart TB
+  subgraph USERS["Users / operators"]
+    U[End user]
+    OP[Snapshot operator]
+  end
+
+  subgraph DIST["Distribution"]
+    REL[GitHub release<br/>zip + setup + dogecoin-qt-fastsync]
+  end
+
+  subgraph BIN["Binaries"]
+    QT[dogecoin-qt<br/>Core Pro GUI]
+    D[dogecoind<br/>headless]
+    CLI[dogecoin-cli]
+  end
+
+  subgraph GUI["Qt — Core Pro shell"]
+    NAV[Sidebar nav]
+    HOME[Home / overview + Meme rail]
+    SEND[Send]
+    RECV[Receive]
+    TX[Transactions]
+    NET[Network + peer map]
+    MEME[Meme Stream page]
+    BIZ[Doge Business / invoices]
+    ARC[Arcade]
+    OPT[Options<br/>Prefer Fast Sync / snapshot fields]
+    FSD[Fast Sync dialog<br/>progress / abort / load / activate]
+    THEME[ThemeManager / ThemeSwitcher]
+  end
+
+  subgraph MODELS["GUI models"]
+    CM[ClientModel]
+    WM[WalletModel]
+  end
+
+  subgraph NODE["Node core — same Dogecoin consensus"]
+    INIT[init / AppInit]
+    NETP[P2P net + net_processing]
+    IBD[IBD path<br/>getibdinfo / ibdrescue / ASMAP / parallel download]
+    VAL[validation]
+    MEMP[mempool]
+    WAL[wallet BDB]
+    RPC[RPC server]
+  end
+
+  subgraph CS["Dual chainstate — AssumeUTXO"]
+    ACT[Active chainstate<br/>tip / wallet view]
+    BG[Background / snapshot chainstate]
+    MAP[mapAssumeutxo attestation<br/>e.g. height 6324519]
+    AUD[assumeutxo.dat session]
+    PROVE[Background ConnectBlock prove<br/>fail-closed hash_serialized]
+  end
+
+  subgraph SNAP["Snapshot / Fast Sync pipeline"]
+    SF[snapshot_fetch<br/>stream-hash]
+    WH[WinHTTP HTTPS Windows]
+    FA[fetchassumeutxo]
+    FM[fetchassumeutxomanifest]
+    DUMP[dumptxoutset]
+    LOAD[loadtxoutset]
+    ACTS[activatesnapshot]
+  end
+
+  subgraph GPEN["GPENode / operator stack"]
+    DUMPN[Settlement dump node<br/>dogecoind + dumptxoutset]
+    ART[UTXO .dat + digests]
+    CDN[Static CDN host<br/>sync.doge.gopastearth.com]
+    LJ[latest.json]
+  end
+
+  subgraph EXT["External — not consensus"]
+    PEERS[Dogecoin mainnet peers]
+    GPEAPI[GPE HTTPS APIs<br/>MemeStream feed optional]
+    MESH[Future mirrors urls<br/>multi-operator mesh]
+  end
+
+  U --> REL --> QT
+  U --> REL --> D
+  OP --> DUMPN
+
+  QT --> NAV
+  NAV --> HOME
+  NAV --> SEND
+  NAV --> RECV
+  NAV --> TX
+  NAV --> NET
+  NAV --> MEME
+  NAV --> BIZ
+  NAV --> ARC
+  NAV --> OPT
+  OPT --> FSD
+  FSD --> FM
+  FSD --> FA
+  QT --> THEME
+  QT --> CM
+  QT --> WM
+  CM --> RPC
+  WM --> WAL
+
+  D --> INIT
+  INIT --> VAL
+  INIT --> NETP
+  INIT --> MEMP
+  INIT --> WAL
+  INIT --> RPC
+  NETP --> IBD
+  NETP --> PEERS
+  VAL --> ACT
+  BG --> PROVE
+  PROVE --> ACT
+  MAP --> ACTS
+  AUD --> BG
+
+  DUMPN --> DUMP
+  DUMP --> ART
+  ART --> CDN
+  CDN --> LJ
+  CDN --> MESH
+  FM --> LJ
+  FA --> SF
+  SF --> WH
+  WH --> CDN
+  SF --> LOAD
+  LOAD --> BG
+  LOAD --> ACTS
+  ACTS --> ACT
+
+  MEME --> GPEAPI
+  BIZ -.->|optional settlement RPC| D
+  CLI --> RPC
+```
+
+================================================================================
+DIAGRAM 2 — FAST SYNC SEQUENCE (user path)
+================================================================================
+
+```mermaid
+sequenceDiagram
+  participant U as User / dogecoin-qt
+  participant FS as Fast Sync dialog
+  participant CDN as HTTPS CDN latest.json + .dat
+  participant SF as snapshot_fetch + WinHTTP
+  participant N as Node dual chainstate
+  participant P2P as Mainnet peers
+
+  U->>FS: Settings - Fast Sync from CDN
+  FS->>CDN: GET latest.json
+  CDN-->>FS: url, sha256, height, hash_serialized
+  FS->>SF: fetchassumeutxo / manifest
+  SF->>CDN: stream GET multi-GB .dat
+  SF->>SF: SHA-256 while writing
+  alt digest mismatch
+    SF-->>U: fail closed, delete partial
+  else OK
+    SF->>N: loadtxoutset
+    N->>N: mapAssumeutxo check
+    N->>N: activatesnapshot tip approx H
+    N->>P2P: background prove genesis to H
+    N->>P2P: keep tip moving after H
+    N-->>U: wallet usable sooner
+  end
+```
+
+================================================================================
+DIAGRAM 3 — FAST SYNC FLOWCHART (simple)
+================================================================================
+
+```mermaid
+flowchart LR
+  A[Empty or new datadir] --> B[Prefer Fast Sync / dialog]
+  B --> C[GET latest.json CDN]
+  C --> D[Stream-hash .dat HTTPS]
+  D --> E{File SHA-256 OK?}
+  E -->|No| F[Fail closed / delete]
+  F --> G[Offer classic IBD]
+  E -->|Yes| H[loadtxoutset]
+  H --> I{mapAssumeutxo hash_serialized OK?}
+  I -->|No| F
+  I -->|Yes| J[activatesnapshot tip near H]
+  J --> K[Background prove over P2P]
+  J --> L[Wallet usable sooner]
+  K --> M[Fully trusted history]
+  L --> N[New blocks via peers after H]
+```
+
+================================================================================
+DIAGRAM 4 — DUAL CHAINSTATE (AssumeUTXO engineering)
+================================================================================
+
+```mermaid
+flowchart TB
+  subgraph ACTIVE["Active chainstate"]
+    TIP[chain tip]
+    COINS[coins DB wallet view]
+    NET[net / RPC / GUI read tip here]
+  end
+
+  subgraph BG["Background / snapshot chainstate"]
+    SNAP[chainstate_snapshot LevelDB]
+    BASE[snapshot base height H]
+    PROVE[ConnectBlock genesis to H]
+    HS[recompute hash_serialized]
+  end
+
+  subgraph GATES["Trust gates"]
+    FILE[artifact file SHA-256]
+    MAP[mapAssumeutxo H]
+    FAIL[fail closed on mismatch]
+  end
+
+  CDN[.dat from CDN or local] --> FILE
+  FILE --> SNAP
+  MAP --> SNAP
+  SNAP --> BASE
+  BASE --> ACTIVATE[activatesnapshot]
+  ACTIVATE --> TIP
+  ACTIVATE --> COINS
+  PROVE --> HS
+  HS -->|match| COLLAPSE[dual collapse / done]
+  HS -->|mismatch| FAIL
+  NET --> TIP
+```
+
+================================================================================
+DIAGRAM 5 — GPENODE / MULTI-OPERATOR MESH
+================================================================================
+
+```mermaid
+flowchart TB
+  MAP[mapAssumeutxo in client release]
+
+  subgraph DUMP["Dump / settlement nodes"]
+    D1[Operator A dump node]
+    D2[Operator B dump node optional]
+  end
+
+  subgraph ART["Artifacts"]
+    DAT[utxo-H-timestamp.dat]
+    META[sha256 + height + hash_serialized]
+  end
+
+  subgraph CDN["Static HTTPS hosts"]
+    C1[sync.doge.gopastearth.com]
+    C2[Mirror org CDN]
+    C3[Mirror org CDN]
+  end
+
+  CLIENT[Core Pro client<br/>stream-hash same sha256]
+
+  D1 --> DAT
+  D2 --> DAT
+  DAT --> META
+  DAT --> C1
+  DAT --> C2
+  DAT --> C3
+  C1 --> LJ[latest.json + urls array future]
+  C2 --> LJ
+  C3 --> LJ
+  LJ --> CLIENT
+  MAP --> CLIENT
+  CLIENT --> LOAD[load + activate + bg prove]
+```
+
+================================================================================
+DIAGRAM 6 — BUILD / BINARIES
+================================================================================
+
+```mermaid
+flowchart LR
+  SRC[C:/dogedev source] --> CFG[configure.ac<br/>winhttp on Windows]
+  CFG --> WB[winbuild MinGW cross]
+  WB --> QT[dogecoin-qt.exe]
+  WB --> DD[dogecoind.exe]
+  WB --> CLI[dogecoin-cli.exe]
+  QT --> PKG[zip + NSIS setup]
+  DD --> PKG
+  CLI --> PKG
+  PKG --> GH[GitHub Release 1.14.102]
+  QT --> FS[dogecoin-qt-fastsync.exe asset]
+```
+
+================================================================================
+DIAGRAM 7 — GUI PAGES ONLY (Core Pro product)
+================================================================================
+
+```mermaid
+flowchart TB
+  GUI[DogecoinGUI Core Pro]
+  GUI --> HOME[Home]
+  GUI --> SEND[Send]
+  GUI --> RECV[Receive]
+  GUI --> TX[Transactions]
+  GUI --> NET[Network + PeerMap]
+  GUI --> MEME[Meme Stream]
+  GUI --> BIZ[Doge Business]
+  GUI --> ARC[Arcade]
+  GUI --> OPT[Options]
+  GUI --> FSD[Fast Sync dialog]
+  GUI --> DBG[Debug RPC console]
+  HOME --> RAIL[Meme Stream rail]
+  OPT --> SNAP[snapshotmanifest / url / sha256]
+  OPT --> PRUNE[Prefer Fast Sync + prune]
+  FSD --> CDN[CDN fetch path]
+```
+
+================================================================================
+LEGEND / NOTES FOR ERASER
+================================================================================
+
+Title: Dogecoin Core Pro 1.14 DNA — Architecture
+Subtitle: Same mainnet consensus · dual chainstate AssumeUTXO · Fast Sync CDN · Core Pro shell · GPENode operators
+
+Color suggestions:
+- Green: consensus / chain / peers
+- Purple: RPC / control
+- Blue: P2P / net
+- Red-brown: storage / chainstate
+- Gold: build / config
+- Dark purple: Core Pro GUI product
+- Orange: CDN / operator cloud dumb pipe
+
+Non-goals box:
+- No hard fork / new L1
+- No EVM wrap product path
+- No live LevelDB on Drive/FUSE
+- CDN is not consensus authority
+
+Two hashes:
+- File SHA-256 = CDN .dat bytes
+- hash_serialized = UTXO set at height H mapAssumeutxo
+
+Status snapshot 2026-08-09:
+- Engineering AssumeUTXO A-D3 done
+- P1 Fast Sync ~90% shipped: mapAssumeutxo[6324519] + WinHTTP + FastSyncDialog + CDN live
+- GPENode ops live; open operator kit still to polish
+- Mesh M0-M1 live; M2 multi-URL failover next
+- Eraser Freeform renders published:
+  master-diagram-latest.png · fastsync-diagram.png · assumeUXTO-diagram.png
+- Docs mirror: html/docs/assets/diagrams/ + html/docs/pages/diagrams.html
+- Validated compact Freeform master: CDN dumb pipe · dual chainstate · same consensus

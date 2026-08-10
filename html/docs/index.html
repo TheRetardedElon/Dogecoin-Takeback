@@ -40,12 +40,13 @@
       <div class="callout ok">
         <strong>Node workstream (2026-08-09)</strong>
         IBD P0–P0.3 and AssumeUTXO engineering <strong>A–D3</strong> are in tree.
-        Product <strong>P1 ~90%</strong>: map + CDN + WinHTTP +
-        <strong>Fast Sync dialog shipped</strong>.
+        Product <strong>P1 ~90%</strong>: map <code>6324519</code> + CDN + WinHTTP +
+        <strong>Fast Sync dialog shipped</strong> in 1.14.102 packages.
         Guides:
         <a href="pages/fast-sync.html">Fast Sync explained</a> ·
-        <a href="pages/multi-operator-mesh.html">Multi-operator mesh</a>.
-        P2 prune partial. Next: multi-URL client failover (mesh M2) / more dumps.
+        <a href="pages/multi-operator-mesh.html">Multi-operator mesh</a> ·
+        <a href="pages/diagrams.html">Architecture diagrams</a>.
+        P2 prune partial. Mesh <strong>M1 live</strong>; next: multi-URL failover (M2) / more dumps.
         Details:
         <a href="pages/ibd-and-p2p.html">IBD &amp; P2P</a> ·
         <a href="pages/assumeutxo.html">AssumeUTXO</a> ·
@@ -84,8 +85,14 @@
         <div class="card">
           <h3>Fast Sync product</h3>
           <div class="stat">P1</div>
-          <p>CDN + WinHTTP + Fast Sync dialog in Windows package</p>
+          <p>CDN + WinHTTP + dialog; mapAssumeutxo[6324519]; mesh M1</p>
           <span class="badge badge-partial">~90%</span>
+        </div>
+        <div class="card">
+          <h3>Architecture art</h3>
+          <div class="stat">Eraser</div>
+          <p>Master + Fast Sync sequence + dual chainstate PNGs</p>
+          <span class="badge badge-done">Synced</span>
         </div>
         <div class="card">
           <h3>Wallet DB</h3>
@@ -134,9 +141,9 @@
         <span>90%</span>
       </div>
       <div class="progress-row">
-        <span>Living HTML docs</span>
-        <div class="progress-bar"><span style="width:90%"></span></div>
-        <span>90%</span>
+        <span>Living HTML docs + diagrams</span>
+        <div class="progress-bar"><span style="width:95%"></span></div>
+        <span>95%</span>
       </div>
       <div class="progress-row">
         <span>SQLite wallet backend</span>
@@ -178,12 +185,12 @@
         </div>
         <div class="card">
           <h3>Diagrams</h3>
-          <p>Flows + post-migration art</p>
+          <p>Master + Fast Sync + dual chainstate (Eraser)</p>
           <a class="card-link" href="pages/diagrams.html">Open →</a>
         </div>
         <div class="card">
           <h3>Architecture</h3>
-          <p>Layers and non-fork surfaces</p>
+          <p>Layers, master map, non-fork surfaces</p>
           <a class="card-link" href="pages/architecture.html">Open →</a>
         </div>
         <div class="card">

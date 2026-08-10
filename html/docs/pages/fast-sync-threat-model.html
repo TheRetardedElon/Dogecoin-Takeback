@@ -27,6 +27,7 @@
         <span>Updated: 2026-08-09</span>
         <span>Related: <a href="fast-sync.html">Fast Sync explained</a></span>
         <span><a href="multi-operator-mesh.html">Multi-operator mesh</a></span>
+        <span><a href="diagrams.html">Diagrams</a></span>
       </div>
 
       <div class="callout ok">
@@ -36,6 +37,13 @@
         prove. It <strong>does</strong> add hosting, bandwidth, DNS, and
         <strong>who can write the snapshot files</strong> risk. Serious line =
         publish path + client verification — not “obfuscate the CDN.”
+      </div>
+
+      <div class="callout info">
+        <strong>Matches the master diagram</strong>
+        CDN box = dumb pipe (static files, HTTPS only, no secrets). Operator box =
+        dump + publish. Node box = local verify / fail closed. See
+        <a href="../assets/diagrams/master-diagram-latest.png">master architecture PNG</a>.
       </div>
 
       <h2>Mental model (GPE today)</h2>

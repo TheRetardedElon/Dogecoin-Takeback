@@ -197,6 +197,19 @@ FAST SYNC
                                    └── background P2P 0→H ──re-prove hash_serialized
                                    └── P2P keeps tip moving past H</code></pre>
 
+      <h2>Sequence diagram (Eraser)</h2>
+      <div class="diagram-frame">
+        <img
+          src="../assets/diagrams/fastsync-diagram.png"
+          alt="Fast Sync sequence: dialog, WinHTTP stream-hash, load, activate, background prove"
+        />
+      </div>
+      <p class="diagram-caption">
+        Full gallery: <a href="diagrams.html">Diagrams</a> ·
+        dual chainstate detail: <a href="assumeutxo.html">AssumeUTXO</a> ·
+        master map: <a href="../assets/diagrams/master-diagram-latest.png">master PNG</a>
+      </p>
+
       <h2>Multi-operator mesh (why more hosts help)</h2>
       <p>
         One CDN is a good start; many independent operators hosting the
@@ -217,12 +230,14 @@ FAST SYNC
         <li><a href="multi-operator-mesh.html">Multi-operator mesh</a> — multi-CDN speed + resilience</li>
         <li><a href="storage-stack.html">Storage stack</a> — tiers, prune, CDN honesty</li>
         <li><a href="roadmap.html">Roadmap</a> — Phase 8 checklist</li>
+        <li><a href="diagrams.html">Diagrams</a> — master + sequence + dual chainstate art</li>
         <li><code>doc/tiered-storage-and-fast-sync.md</code> — authoritative product plan</li>
         <li>Root <code>README.md</code> — same story for GitHub readers</li>
       </ul>
 
       <div class="footer">
-        Updated 2026-08-09 · Package: dogecoin-1.14.102-win64 (WinHTTP + FastSyncDialog)
+        Updated 2026-08-09 · Package: dogecoin-1.14.102-win64 (WinHTTP + FastSyncDialog) ·
+        diagrams in <code>html/docs/assets/diagrams/</code>
       </div>
     </main>
   </div>

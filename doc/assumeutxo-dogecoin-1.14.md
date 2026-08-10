@@ -1,9 +1,10 @@
 # AssumeUTXO for Dogecoin Core (1.14 DNA) — Design
 
-**Status:** engineering **A–D3 done** · product path **open** (see `doc/tiered-storage-and-fast-sync.md`)  
+**Status:** engineering **A–D3 done** · product P1 **~90% shipped** (map + CDN + WinHTTP + FastSyncDialog; see `doc/tiered-storage-and-fast-sync.md`)  
 **Depends on:** P0/P0.1 IBD telemetry, ASMAP, healthy single-chainstate  
 **Consensus impact:** none if done like Bitcoin (background full validation to the assume height)  
-**Related:** tiered storage / CDN / default prune product plan — **P1–P4** in `tiered-storage-and-fast-sync.md` (do not confuse with engineering Phase A)
+**Related:** tiered storage / CDN / default prune product plan — **P1–P4** in `tiered-storage-and-fast-sync.md` (do not confuse with engineering Phase A)  
+**Diagrams:** `html/docs/pages/diagrams.html` · `html/docs/assets/diagrams/assumeutxo-diagram.png`
 
 ### Implementation progress
 
@@ -19,8 +20,8 @@
 | **D1** Attestation gate + GUI progress | **Done** | `mapAssumeutxo` / `AssumeutxoData` in chainparams; activate if attested **or** `-assumeutxodev`; status-bar historical % |
 | **D2** Attestation workflow + hard collapse | **Done** | `dumptxoutset` → `hash_serialized` + snippet; `listassumeutxo`; hard-collapse background after prove |
 | **D3** Prune guard + regtest smoke | **Done** | refuse `pruneblockchain` during bg proof; `qa/rpc-tests/assumeutxo.py` |
-| **P1** Trust anchors + CDN stream-hash + Fast Sync UI | **Partial** | stream-hash + `fetchassumeutxo` / `fetchassumeutxomanifest` + GPE `latest.json` aliases + Options SoftSet; still open: mainnet `mapAssumeutxo` values, first-run modal, custom daemon on gpednode for dump |
-| **P2** Default prune-as-you-go product | **Open** | stock `-prune=` already works; make wallet-node default |
+| **P1** Trust anchors + CDN stream-hash + Fast Sync UI | **~90%** | Mainnet `mapAssumeutxo[6324519]`; GPE CDN + WinHTTP; `FastSyncDialog` + first-run; 1.14.102 packages. Open: mesh M2 multi-URL, more heights/mirrors, Linux HTTPS polish |
+| **P2** Default prune-as-you-go product | **Partial** | Fast path SoftSet prune; stock `-prune=` works; full default product still open |
 | **P3** Optional cold `blk` object CDN | **Open** | secondary fetch; never FUSE |
 | **P4** Hot KV engine (RocksDB/…) | **Open** | ops win; orthogonal to dual views |
 
@@ -93,7 +94,7 @@ Suggested structure (names illustrative):
 | `src/node/utxo_snapshot.h/.cpp` | **B1 done:** metadata + write/load |
 | RPC `dumptxoutset` / `loadtxoutset` | **B1 done:** dump active tip; load into background |
 | `chainstate_snapshot/` LevelDB | **B1 done:** separate from live `chainstate/` |
-| `chainparams` AssumeutxoData / `mapAssumeutxo` | **D1 done:** structure + empty maps (fill when attested hashes published) |
+| `chainparams` AssumeutxoData / `mapAssumeutxo` | **D1 done + mainnet filled:** structure + **height 6324519** attested; more heights as dumps publish |
 | `activatesnapshot` / `-assumeutxodev` | **B2+D1:** promote tip; attested height+hash skips `-assumeutxodev` |
 
 **B1 exit criteria (met):** dump + load round-trip; background reports `has_snapshot`; active tip unchanged.  
@@ -122,12 +123,12 @@ Suggested structure (names illustrative):
 - [x] GUI status-bar historical validation % (D1)  
 - [x] Attestation gate structure `mapAssumeutxo` / `AssumeutxoData` (D1–D2)  
 - [x] Prune interaction during bg proof (D3)  
-- [ ] **Published** mainnet/testnet map entries (values still empty)  
-- [ ] Stream-and-hash CDN download + first-run Fast Sync modal → **Product P1**  
-- [ ] Default prune product path → **Product P2**  
+- [x] **Published** mainnet map entry height **6324519** (more heights / testnet still open)  
+- [x] Stream-and-hash CDN download + first-run Fast Sync modal → **Product P1 ~90%**  
+- [ ] Default prune product path → **Product P2** (partial SoftSet only)  
 
-Full product architecture (CDN as dumb pipe, two-hash trust model, mermaid flows):  
-**`doc/tiered-storage-and-fast-sync.md`**.
+Full product architecture (CDN as dumb pipe, two-hash trust model, diagrams):  
+**`doc/tiered-storage-and-fast-sync.md`** · **`html/docs/pages/diagrams.html`**.
 
 ### Trust: two hashes (do not confuse)
 
@@ -152,8 +153,11 @@ Gemini-style “`hash_serialized` = SHA-256 of the file” is **wrong**. Both ch
 **Shipped (A–D3):**  
 `node/chainstate.*`, `node/utxo_snapshot.*`, `validation` dual paths, `rpc/blockchain` dump/load/list, `chainparams` map hooks, Qt status progress  
 
-**Product P1 still open:**  
-stream-hash downloader, manifest, GUI first-run modal, filled `mapAssumeutxo` values, release hosting  
+**Product P1 shipped (~90%):**  
+stream-hash downloader, manifest, GUI first-run modal, mainnet `mapAssumeutxo[6324519]`, GPE CDN hosting, WinHTTP Windows packages  
+
+**Product still open after P1 package:**  
+mesh M2 multi-URL failover, more attested heights / independent mirrors, Linux HTTPS polish, P2 default prune product  
 
 **Untouched (goal):**  
 `auxpow.*`, `pow.*` subsidy, script interpreter consensus  
@@ -161,9 +165,10 @@ stream-hash downloader, manifest, GUI first-run modal, filled `mapAssumeutxo` va
 ## 7. What engineering A–D did **not** include
 
 - RocksDB migration (Product **P4**)  
-- HTTP CDN snapshot fetch (Product **P1**)  
+- ~~HTTP CDN snapshot fetch (Product **P1**)~~ → **done** (WinHTTP + stream-hash)  
 - Default prune installer policy (Product **P2**)  
 - Cold `blk` object CDN (Product **P3**)  
+- Multi-operator mesh M2+ client failover  
 - Utreexo / ZK proofs  
 - Soft-forking a consensus-committed UTXO root  
 
@@ -177,14 +182,16 @@ stream-hash downloader, manifest, GUI first-run modal, filled `mapAssumeutxo` va
 | ASMAP peer diversity | Done |
 | IBD parallel download (P0.3) | Done |
 | AssumeUTXO dual path A–D3 | Done |
+| Fast Sync product P1 (map + CDN + dialog) | ~90% shipped |
 
 ## 9. Suggested next engineering (product)
 
 1. ~~Land P0.3 / engineering Phase A–D3~~  
-2. **Product P1:** testnet/regtest attestation fixture → stream-and-hash → GUI Fast Sync  
-3. Multi-party mainnet `dumptxoutset` agreement → fill `mapAssumeutxo`  
-4. **Product P2:** default prune for wallet-node installs  
-5. **P3/P4** as capacity allows  
+2. ~~**Product P1:** stream-and-hash + GUI Fast Sync + mainnet map entry~~  
+3. **Mesh M2:** multi-URL manifest + client failover; second independent mirror  
+4. More multi-party dumps → additional `mapAssumeutxo` heights  
+5. **Product P2:** default prune for wallet-node installs  
+6. **P3/P4** as capacity allows  
 
 **Attestation workflow:** `dumptxoutset` → `hash_serialized` + `assumeutxo_snippet` → PR into `mapAssumeutxo` → host artifact + **artifact digest** in manifest → releases accept that height without `-assumeutxodev`.
 

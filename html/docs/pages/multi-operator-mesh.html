@@ -24,9 +24,10 @@
         — without turning “the cloud” into consensus.
       </p>
       <div class="meta">
-        <span>Status: <strong>design + first operator live</strong></span>
+        <span>Status: <strong>M1 live · M2 next</strong></span>
         <span>Today: GPE CDN</span>
         <span>Related: <a href="fast-sync.html">Fast Sync explained</a></span>
+        <span>Diagrams: <a href="diagrams.html">architecture art</a></span>
         <span>Plan: <code>doc/tiered-storage-and-fast-sync.md</code></span>
       </div>
 
@@ -36,6 +37,28 @@
         mirror that matches the <em>same</em> digests and attestations. More operators =
         more bandwidth and geography, not a second ledger.
       </div>
+
+      <div class="callout info">
+        <strong>Where this sits on the master map</strong>
+        Mesh is the <em>External — future mirrors</em> strip under the Fast Sync /
+        AssumeUTXO architecture. CDN stays a dumb pipe; clients still fail-closed.
+        <a href="diagrams.html">Diagrams</a> ·
+        <a href="../assets/diagrams/master-diagram-latest.png">Master PNG</a>
+      </div>
+
+      <h2>Maturity at a glance (M0–M4)</h2>
+      <div class="flow">
+        <div class="flow-step"><strong>M0</strong> Eng only <span class="badge badge-done">Done</span></div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>M1</strong> GPE live <span class="badge badge-done">Live</span></div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>M2</strong> urls[] failover <span class="badge badge-todo">Next</span></div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>M3</strong> Multi-dumper</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>M4</strong> Diversity / cold blk</div>
+      </div>
+      <p class="diagram-caption">M0–M1 are live today. M2+ is client + operator work, not a consensus change.</p>
 
       <h2>Why this exists</h2>
       <p>

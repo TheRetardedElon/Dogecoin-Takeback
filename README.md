@@ -86,6 +86,9 @@ Product roadmap (doc/tiered-storage-and-fast-sync.md):
   P2  Default prune-as-you-go for wallet nodes             ← partial (Fast path defaults)
   P3  Optional cold blk object CDN
   P4  RocksDB-class hot engine (ops; not main space win)
+
+Mesh (html/docs/pages/multi-operator-mesh.html):
+  M0 eng · M1 GPE CDN live · M2 urls[] failover next · M3 multi-dumper · M4 diversity
 ```
 
 ### Fast Sync in plain English
@@ -114,6 +117,8 @@ Both must pass. You still need the network for background proof and new blocks a
 Full walkthrough: [`html/docs/pages/fast-sync.html`](html/docs/pages/fast-sync.html)  
 **Multi-operator mesh** (many CDNs / dumpers for speed + resilience, same fail-closed hashes):  
 [`html/docs/pages/multi-operator-mesh.html`](html/docs/pages/multi-operator-mesh.html)  
+**Architecture diagrams** (Eraser Freeform — master / sequence / dual chainstate):  
+[`html/docs/pages/diagrams.html`](html/docs/pages/diagrams.html)  
 Plan: `doc/tiered-storage-and-fast-sync.md`
 
 **Operator RPCs**
@@ -309,6 +314,8 @@ DOGECOIN_CHANGELOG.md   Heavy-update history
 | **AssumeUTXO code** | A→D engineered; regtest **1-node + 2-node** PE smokes green |
 | **Mainnet mapAssumeutxo** | **6324519** attested; more heights as dumps publish |
 | **Fast Sync product** | P1 ~90% — CDN + WinHTTP + dialog in `release/dogecoin-1.14.102-win64*` |
+| **Mesh** | M1 live (GPE); M2 multi-URL failover next |
+| **Docs / diagrams** | `html/docs/` + Eraser PNGs under `html/docs/assets/diagrams/` |
 | **GUI** | Pre-release — review before high-value merchant float |
 | **Upstream DNA** | Dogecoin Core / Bitcoin Core lineage |
 

@@ -53,7 +53,21 @@
         Plain-language walkthrough (what the button does, ~11 GB file, background prove,
         when <em>not</em> to use mid-IBD):
         <a href="fast-sync.html"><strong>Fast Sync explained</strong></a>.
+        Visuals: <a href="diagrams.html">Diagrams</a>.
       </div>
+
+      <h2>Dual chainstate diagram</h2>
+      <div class="diagram-frame">
+        <img
+          src="../assets/diagrams/assumeutxo-diagram.png"
+          alt="AssumeUTXO dual chainstate trust gates and background validation"
+        />
+      </div>
+      <p class="diagram-caption">
+        Trust gates → snapshot LevelDB → activate active tip · background prove
+        matches <code>hash_serialized</code> or fail closed.
+        <a href="diagrams.html">All diagrams</a>
+      </p>
 
       <h2>Goal vs today</h2>
       <table>
@@ -88,8 +102,8 @@
           <tr><td>D1</td><td><span class="badge badge-done">Done</span></td><td><code>mapAssumeutxo</code> gate; status-bar “historical validation %”</td></tr>
           <tr><td>D2</td><td><span class="badge badge-done">Done</span></td><td><code>listassumeutxo</code>; dump hash snippet; hard-collapse after prove</td></tr>
           <tr><td>D3</td><td><span class="badge badge-done">Done</span></td><td>Prune blocked during bg proof; <code>qa/rpc-tests/assumeutxo.py</code></td></tr>
-          <tr><td>P1</td><td><span class="badge badge-partial">~90%</span></td><td>Map + CDN + WinHTTP + Fast Sync dialog <strong>shipped</strong> in 1.14.102 package — <a href="storage-stack.html">tiered storage</a></td></tr>
-          <tr><td>P2</td><td><span class="badge badge-todo">Open</span></td><td>Default prune-as-you-go product (stock <code>-prune=</code>)</td></tr>
+          <tr><td>P1</td><td><span class="badge badge-partial">~90%</span></td><td>Map + CDN + WinHTTP + Fast Sync dialog <strong>shipped</strong> in 1.14.102 package — <a href="storage-stack.html">tiered storage</a> · <a href="fast-sync.html">guide</a></td></tr>
+          <tr><td>P2</td><td><span class="badge badge-partial">Partial</span></td><td>Fast path / Prefer Fast Sync SoftSet prune; full default-prune product still open</td></tr>
           <tr><td>P3–P4</td><td><span class="badge badge-todo">Later</span></td><td>Cold blk CDN; RocksDB-class hot engine</td></tr>
         </tbody>
       </table>
@@ -111,7 +125,7 @@
 sha256sum utxo.dat   # artifact digest for CDN manifest (P1)
 dogecoin-cli listassumeutxo   # compiled attestations (may be empty)</code></pre>
 
-      <h2>Fast Sync sequence (product P1 target)</h2>
+      <h2>Fast Sync sequence (product P1 — shipped)</h2>
       <div class="flow">
         <div class="flow-step"><strong>GUI</strong> Fast Sync</div>
         <span class="flow-arrow">→</span>
@@ -125,7 +139,10 @@ dogecoin-cli listassumeutxo   # compiled attestations (may be empty)</code></pre
         <span class="flow-arrow">→</span>
         <div class="flow-step"><strong>Tip = H</strong> + bg prove</div>
       </div>
-      <p class="diagram-caption">Mismatch at any step → fail closed (delete temp / refuse activate / offer full IBD).</p>
+      <p class="diagram-caption">
+        Mismatch at any step → fail closed (delete temp / refuse activate / offer full IBD).
+        Sequence art: <a href="../assets/diagrams/fastsync-diagram.png">fastsync-diagram.png</a>.
+      </p>
 
       <h2>Windows PE smoke scripts</h2>
       <p>
@@ -171,11 +188,13 @@ powershell -ExecutionPolicy Bypass -File scripts/smoke-assumeutxo-two-node.ps1</
       <ul>
         <li><strong>regtest</strong> — always allowed</li>
         <li><strong>Attested</strong> — height in <code>mapAssumeutxo</code> and <code>hash_serialized</code> matches snapshot coins hash</li>
-        <li><strong>-assumeutxodev=1</strong> — development override (mainnet/testnet when map empty)</li>
+        <li><strong>-assumeutxodev=1</strong> — development override when height is not in the map</li>
       </ul>
       <p>
-        Mainnet/testnet maps are currently <strong>empty</strong> until community-attested
-        heights are published. Structure is ready in <code>chainparams</code>.
+        <strong>Mainnet:</strong> height <strong>6324519</strong> is attested in this tree
+        (<code>mapAssumeutxo[6324519]</code>). Other mainnet heights and testnet entries
+        still need a new map entry (or <code>-assumeutxodev</code>) before activate without
+        the override. Structure lives in <code>chainparams</code>.
       </p>
 
       <h2>End-to-end operator flow</h2>

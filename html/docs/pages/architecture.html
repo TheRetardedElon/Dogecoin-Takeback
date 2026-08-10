@@ -59,10 +59,27 @@
         </tbody>
       </table>
 
+      <h2>Master diagram (canonical)</h2>
+      <p>
+        Eraser Freeform export — GUI shell, node core, dual chainstate, Fast Sync
+        pipeline, GPENode operator stack, and external non-consensus surfaces.
+        Full gallery: <a href="diagrams.html">Diagrams</a>.
+      </p>
+      <div class="diagram-frame">
+        <img
+          src="../assets/diagrams/master-diagram-latest.png"
+          alt="Dogecoin Core Pro Fast Sync / AssumeUTXO master architecture"
+        />
+      </div>
+      <p class="diagram-caption">
+        Same consensus · CDN is a dumb pipe · optional GPE APIs are not required for Fast Sync ·
+        mesh is multi-operator delivery, not a second ledger.
+      </p>
+
       <h2>Layer stack</h2>
       <pre><code>┌─────────────────────────────────────────────────────────┐
 │  Qt GUI  Core Pro: Home, Network, Business, Meme Stream,│
-│          Options, Arcade + themes + RPC console         │
+│          Options, Arcade + Fast Sync dialog + themes    │
 ├─────────────────────────────────────────────────────────┤
 │  Wallet  (keys, txs, coin control)  ← still BDB         │
 ├─────────────────────────────────────────────────────────┤
@@ -79,7 +96,8 @@
 └─────────────────────────────────────────────────────────┘</code></pre>
       <p>
         Bootstrap path: <a href="ibd-and-p2p.html">IBD &amp; P2P</a> ·
-        <a href="assumeutxo.html">AssumeUTXO</a>. Consensus box is intentionally
+        <a href="assumeutxo.html">AssumeUTXO</a> ·
+        <a href="fast-sync.html">Fast Sync</a>. Consensus box is intentionally
         unchanged by those workstreams.
       </p>
 

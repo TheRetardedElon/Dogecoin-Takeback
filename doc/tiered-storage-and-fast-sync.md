@@ -1,6 +1,6 @@
-# Tiered storage & fast sync — Dogecoin Core Pro (1.14.101)
+# Tiered storage & fast sync — Dogecoin Core Pro (1.14.102)
 
-**Status:** engineering AssumeUTXO A–D3 **done**; product P1 **~90%** (CDN + WinHTTP + **P1.7 FastSyncDialog shipped** in `dogecoin-1.14.102-win64` zip/setup)  
+**Status:** engineering AssumeUTXO A–D3 **done**; product P1 **~90%** (CDN + WinHTTP + **P1.7 FastSyncDialog shipped** in `dogecoin-1.14.102-win64` zip/setup); mesh **M1 live**, **M2** next  
 **Date:** 2026-08-09  
 **Audience:** implementers + release operators  
 
@@ -14,6 +14,8 @@ This document is the **authoritative product architecture** for:
 **Risk language (honest):** we do **not** claim zero corruption risk. We **detect** bad artifacts (hashes), **refuse** them, and **recover** (fallback IBD / re-fetch / reindex). Disks lie; networks drop; bitrot happens.
 
 **Plain-language user guide (HTML):** `html/docs/pages/fast-sync.html`  
+**Architecture diagrams (Eraser):** `html/docs/pages/diagrams.html` · assets in `html/docs/assets/diagrams/` · sources `-FlowDiagramLatest/`  
+**Multi-operator mesh:** `html/docs/pages/multi-operator-mesh.html`  
 **Root README** also carries a short Fast Sync section for GitHub readers.
 
 ### Fast Sync in one page (same story as the HTML guide)
@@ -180,43 +182,47 @@ flowchart TB
 
 ## 4. Product roadmap P1–P4
 
-### P1 — Trust anchors + stream-and-hash + Fast Sync UI  ← **NEXT**
+### P1 — Trust anchors + stream-and-hash + Fast Sync UI  ← **~90% shipped**
 
 **Goal:** attested height H; download multi‑GB snapshot without loading whole file into RAM; fail closed; wallet tip usable; background prove continues.
 
 | Work item | Notes |
 |-----------|--------|
-| P1.1 Publish attestation | Operator: full node at H → `dumptxoutset` → record `hash_serialized` → PR into `mapAssumeutxo` mainnet/testnet |
-| P1.2 Artifact hosting | CDN URL(s); multi‑GB expected (minutes of I/O, not “30 seconds”) |
-| P1.3 Manifest | **Done (parse + GPE aliases):** `ParseSnapshotArtifactManifest` / `ResolveSnapshotFromManifest`; official CDN `https://sync.doge.gopastearth.com/latest.json`; RPC `fetchassumeutxomanifest` |
-| P1.4 Stream-and-hash downloader | **Done:** `src/node/snapshot_fetch.*` + RPC `fetchassumeutxo`. **Windows PE daemon:** WinHTTP/Schannel linked (`scripts/relink-winhttp-dogecoind.sh`). **Linux:** libevent (plain HTTP; https may need local path or SSL-enabled libevent). |
-| P1.5 Wire to load path | **E2E PE smoke green (local path):** dump → fetch → load → activate → prove/collapse (`scripts/smoke-fetchassumeutxo-e2e.ps1`). HTTPS smoke against GPE CDN next. |
-| P1.6 Intro Fast path | **Scaffolded:** Intro UI Fast vs Archive; Fast → SoftSet `-prune=5500` + QSettings `fPreferFastSync`; Options SoftSet `-snapshotmanifest` / `-snapshoturl` / `-snapshotsha256` |
-| P1.6 Fail closed | Mismatch → delete temp, log critical, **fallback full IBD** (or abort with clear UI) |
-| P1.6b Package | **Done:** `release/dogecoin-1.14.102-win64.zip` + `-setup.exe` (`scripts/package-winhttp-release.sh`) |
-| P1.7 GUI modal | **Done in source:** `qt/fastsyncdialog.*` — Settings → Fast Sync from CDN; first-run offer after Intro Fast path when height ≤1000; progress + abort; load+activate |
-| P1.8 Docs / security FAQ | What we trust, for how long, background prove — HTML dashboard + this doc
+| P1.1 Publish attestation | **Done (mainnet H=6324519):** `mapAssumeutxo` filled; more heights as dumps publish |
+| P1.2 Artifact hosting | **Done (GPE):** `https://sync.doge.gopastearth.com/` ~11 GB object |
+| P1.3 Manifest | **Done:** `ParseSnapshotArtifactManifest` / `ResolveSnapshotFromManifest`; `latest.json`; RPC `fetchassumeutxomanifest` |
+| P1.4 Stream-and-hash downloader | **Done:** `src/node/snapshot_fetch.*` + `fetchassumeutxo`. **Windows PE:** WinHTTP/Schannel. **Linux:** libevent (HTTPS may need SSL-enabled libevent or local path) |
+| P1.5 Wire to load path | **Done:** PE E2E local path + WinHTTP HTTPS smoke vs GPE (`scripts/smoke-fetchassumeutxo-e2e.ps1`, `smoke-winhttp-https.ps1`) |
+| P1.6 Intro Fast path | **Done:** Intro Fast vs Archive; SoftSet `-prune=5500` + `fPreferFastSync`; Options snapshot fields |
+| P1.6 Fail closed | **Done:** mismatch → delete temp, log critical, refuse activate / offer IBD |
+| P1.6b Package | **Done:** `release/dogecoin-1.14.102-win64.zip` + `-setup.exe` (+ rebuilds under `release/latest/` when shipping fixes) |
+| P1.7 GUI modal | **Done:** `qt/fastsyncdialog.*` — Settings → Fast Sync from CDN; first-run offer; progress + abort; load+activate |
+| P1.8 Docs / security FAQ | **Done (living):** HTML Fast Sync + threat model + mesh + Eraser diagrams; keep in sync with code |
 
-**C++ surface (illustrative):**
+**Still open under the P1 umbrella (not blocking package use):**
+
+- Multi-URL manifest `urls[]` + client failover → **mesh M2**  
+- Additional independent mirrors / dumpers  
+- Linux HTTPS parity polish  
+- More attested heights as dumps rotate  
+
+**C++ surface:**
 
 | Area | Files / APIs |
 |------|----------------|
-| Anchors | `chainparams.cpp` fill `mapAssumeutxo` (struct **already exists**) |
-| Downloader | **`src/node/snapshot_fetch.h/.cpp`** (stream SHA-256, copy/HTTP, fail closed) |
-| RPC | **`fetchassumeutxo`** source, artifact_sha256, dest?, load? |
-| GUI | `dogecoingui` / modal overlay first-run (not started) |
+| Anchors | `chainparams` `mapAssumeutxo` (mainnet **6324519** filled) |
+| Downloader | `src/node/snapshot_fetch.h/.cpp` (stream SHA-256, WinHTTP/libevent, fail closed) |
+| RPC | `fetchassumeutxo`, `fetchassumeutxomanifest`, `loadtxoutset`, `activatesnapshot`, `listassumeutxo` |
+| GUI | `qt/fastsyncdialog.*`, Settings menu, Intro first-run offer |
 
 **Exit criteria:**
 
-- [ ] At least one **regtest/testnet** attested height end-to-end without `-assumeutxodev`  
-- [ ] Mainnet entry **or** explicit “mainnet pending community attestation” with empty map still documented  
-- [ ] Wrong artifact digest never activates  
-- [ ] Wrong coins hash never activates  
-- [ ] GUI can choose Fast vs Standard  
-
-**Implementation order inside P1:**  
-1) **Map real attestations** (or testnet fixture) → 2) stream-and-hash → 3) GUI.  
-Struct mapping alone is nearly done; **values + download path** are the work.
+- [x] Regtest PE smokes without relying on mainnet map (dump/load/activate/collapse)  
+- [x] Mainnet entry **6324519** documented and in map  
+- [x] Wrong artifact digest never activates  
+- [x] Wrong coins hash never activates  
+- [x] GUI can choose Fast vs Standard / Fast Sync dialog  
+- [ ] Mesh M2 multi-URL failover (tracked under multi-operator mesh, not blocking P1 package)
 
 ---
 
@@ -365,21 +371,29 @@ sha256sum /path/to/utxo-H.dat
 |----------|------|
 | **This file** | Product architecture P1–P4 |
 | `doc/assumeutxo-dogecoin-1.14.md` | Engineering A–D3 + product follow-ons |
+| `html/docs/pages/fast-sync.html` | Plain-language Fast Sync guide |
+| `html/docs/pages/multi-operator-mesh.html` | Mesh M0–M4 |
+| `html/docs/pages/fast-sync-threat-model.html` | CDN threat model vs GPE |
 | `html/docs/pages/assumeutxo.html` | Living AssumeUTXO status |
 | `html/docs/pages/storage-stack.html` | Engines + tiered storage |
-| `html/docs/pages/diagrams.html` | Flow diagrams |
+| `html/docs/pages/diagrams.html` | **Canonical Eraser diagrams** (master / sequence / dual chainstate) |
+| `html/docs/assets/diagrams/` | Published PNG/SVG assets |
+| `-FlowDiagramLatest/` | Source Eraser exports + `updatedmermaid.txt` |
 | `html/docs/pages/roadmap.html` | Phase checklist |
-| `DOGECOIN_ARCHITECTURE_MERMAID.md` | Layer diagram |
 | `DOGECOIN_CHANGELOG.md` | Heavy changelog |
 
 ---
 
-## 9. Immediate next engineering (when coding starts)
+## 9. Immediate next engineering (post–P1 package)
 
-1. **Testnet/regtest attestation fixture** with known `hash_serialized` (prove P1 without mainnet politics).  
-2. **Stream-and-hash HTTP(S) downloader** writing under datadir (`snapshots/` or `chainstate_snapshot/`).  
-3. **Manifest parse + fail closed**.  
-4. **GUI first-run modal**.  
-5. Only then mainnet `mapAssumeutxo` entries after multi-party dump agreement.
+P1 core path is **shipped** (~90%). Remaining work:
+
+1. ~~Stream-and-hash HTTPS downloader + manifest + fail closed~~  
+2. ~~GUI Fast Sync dialog + first-run offer~~  
+3. ~~Mainnet `mapAssumeutxo[6324519]` + GPE CDN hosting~~  
+4. **Mesh M2:** multi-URL `urls[]` + client failover; second independent mirror  
+5. **More dumps / heights** as operators schedule; keep map + manifests in sync  
+6. **Product P2:** default prune for wallet-node installs (partial SoftSet already)  
+7. **P3/P4** as capacity allows  
 
 Cloud remains a **pipe**. Math remains the **judge**. Local block storage remains the **hot path**.

@@ -27,11 +27,13 @@ No server required (`file://` works). Styles, diagrams, and nav are local under 
 | `pages/arcade.html` | Arcade tab (pure Qt) |
 | `pages/payment-layer.html` | Native DOGE merchants / Core Pro vs optional GPE |
 | `pages/pure-doge-strategy.html` | North-star strategy (no EVM product path) |
-| `pages/diagrams.html` | Flow diagrams + legacy post-migration art |
+| `pages/diagrams.html` | **Canonical diagrams** — master + Fast Sync sequence + dual chainstate (Eraser) |
 | `assets/styles.css` | Shared theme + flow styles |
 | `assets/nav.js` | **Shared sidebar** (auto-injected on every page) |
-| `assets/diagrams/` | PNG/SVG assets |
+| `assets/diagrams/` | PNG/SVG assets (`master-diagram-latest.png`, `fastsync-diagram.png`, `assumeutxo-diagram.png`, legacy post-migration) |
 | `assets/ui-reference/` | Core Pro screenshots |
+
+Source exports for re-render live in repo root **`-FlowDiagramLatest/`** (PNG + `updatedmermaid.txt`). After Eraser export, copy PNGs into both that folder and `assets/diagrams/`.
 
 Private operator planning for GPE deployment is intentionally **not** part of this public docs site (no infra secrets here).
 
@@ -51,6 +53,16 @@ Root **`DOGECOIN_CHANGELOG.md`** carries the heavy engineering changelog (2026 n
 - After a successful or failed build/release
 - When a feature is implemented or proven absent
 - When architecture understanding improves
+- When Eraser diagrams are re-exported (refresh `assets/diagrams/` + `diagrams.html` captions)
 - New pages: add HTML under `pages/` **and** a link in `assets/nav.js`
 
 Code wins arguments; these pages capture what we know so recovery is not only chat memory.
+
+## Status snapshot (2026-08-09)
+
+| Area | State |
+|------|--------|
+| AssumeUTXO eng A–D3 | Done |
+| Fast Sync product P1 | ~90% shipped (map 6324519, CDN, WinHTTP, FastSyncDialog, 1.14.102 packages) |
+| Mesh | M0–M1 live; M2 multi-URL failover next |
+| Diagrams | Master + sequence + dual chainstate published under `assets/diagrams/` |

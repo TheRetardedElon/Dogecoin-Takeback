@@ -19,32 +19,104 @@
     <main class="main">
       <h1>Diagrams</h1>
       <p class="lead">
-        Visual + HTML flow diagrams for Core Pro architecture and the node bootstrap path.
-        Prefer these over chat sketches when status is disputed.
+        Canonical Eraser Freeform renders for Fast Sync / AssumeUTXO architecture.
+        Prefer these over chat sketches when status is disputed. Source assets also
+        live under <code>-FlowDiagramLatest/</code> in the repo root.
       </p>
+      <div class="meta">
+        <span>Updated: <strong>2026-08-09</strong></span>
+        <span>Source: <code>-FlowDiagramLatest/</code></span>
+        <span>Published: <code>assets/diagrams/</code></span>
+        <span>Mermaid text: <code>-FlowDiagramLatest/updatedmermaid.txt</code></span>
+      </div>
 
-      <h2>Post-migration flow (legacy art)</h2>
+      <div class="callout ok">
+        <strong>Validated master story</strong>
+        Same mainnet consensus · dual chainstate · CDN as dumb pipe · operator
+        publishes only · client fail-closed verify · optional GPE APIs out of path ·
+        multi-operator mesh M0–M4 roadmap. Hard fork? <strong>No.</strong>
+      </div>
+
+      <h2>1. Master architecture (canonical)</h2>
       <p>
-        Source: <code>-FlowDiagramLatest/dogecoin-post-migration-diagram</code>
-        (PNG + SVG). Historical rebrand / layering visual — still useful as a map of
-        subsystems, but it does <strong>not</strong> show AssumeUTXO dual chainstate
-        (that work is newer; see below).
+        Full product map: users, GitHub distribution, Core Pro Qt shell, node core,
+        dual chainstate, Fast Sync pipeline, GPENode operator stack, and external
+        non-consensus surfaces (peers, optional GPE APIs, future mesh).
       </p>
       <div class="diagram-frame">
         <img
-          src="../assets/diagrams/dogecoin-post-migration-diagram.png"
-          alt="Dogecoin post-migration architecture flow diagram"
+          src="../assets/diagrams/master-diagram-latest.png"
+          alt="Dogecoin Core Pro Fast Sync / AssumeUTXO master architecture"
         />
       </div>
       <p>
-        <a href="../assets/diagrams/dogecoin-post-migration-diagram.svg">Open SVG</a>
+        <a href="../assets/diagrams/master-diagram-latest.png">Open PNG</a>
         ·
-        <a href="../assets/diagrams/dogecoin-post-migration-diagram.png">Open PNG</a>
+        Write-ups:
+        <a href="architecture.html">Architecture</a> ·
+        <a href="fast-sync.html">Fast Sync</a> ·
+        <a href="multi-operator-mesh.html">Mesh</a>
       </p>
 
-      <h2>Layer stack (current)</h2>
-      <p>Authoritative ASCII stack lives on <a href="architecture.html">Architecture</a>.</p>
-      <pre><code>Qt (Core Pro shell, Arcade, Business, Meme Stream)
+      <h2>2. Fast Sync sequence (user path)</h2>
+      <p>
+        Settings → Fast Sync from CDN: manifest → stream-hash → load →
+        <code>mapAssumeutxo</code> gate → activate → background prove over P2P while
+        tip stays usable.
+      </p>
+      <div class="diagram-frame">
+        <img
+          src="../assets/diagrams/fastsync-diagram.png"
+          alt="Fast Sync sequence diagram from dialog through CDN and dual chainstate"
+        />
+      </div>
+      <p>
+        <a href="../assets/diagrams/fastsync-diagram.png">Open PNG</a>
+        ·
+        <a href="fast-sync.html">Fast Sync explained</a>
+      </p>
+
+      <h2>3. Dual chainstate / AssumeUTXO (engineering)</h2>
+      <p>
+        Trust gates (file SHA-256 + <code>mapAssumeutxo</code>), snapshot LevelDB,
+        <code>activatesnapshot</code> into active tip, background
+        <code>ConnectBlock</code> → recompute <code>hash_serialized</code> → match
+        (dual collapse) or mismatch (fail closed).
+      </p>
+      <div class="diagram-frame">
+        <img
+          src="../assets/diagrams/assumeutxo-diagram.png"
+          alt="AssumeUTXO dual chainstate trust gates and background validation"
+        />
+      </div>
+      <p>
+        <a href="../assets/diagrams/assumeutxo-diagram.png">Open PNG</a>
+        ·
+        <a href="assumeutxo.html">AssumeUTXO</a>
+      </p>
+
+      <h2>4. Compact master (overview Freeform)</h2>
+      <p>
+        Compact four-box view used for decks: Core Pro node · CDN dumb pipe ·
+        GPENode operator · multi-operator mesh M0–M4. Same trust story as diagram 1.
+      </p>
+      <div class="flow">
+        <div class="flow-step"><strong>Node</strong> Dual chainstate · fail closed</div>
+        <span class="flow-arrow">↔</span>
+        <div class="flow-step"><strong>CDN</strong> Bytes only · HTTPS</div>
+        <span class="flow-arrow">←</span>
+        <div class="flow-step"><strong>Operator</strong> dumptxoutset · publish</div>
+        <span class="flow-arrow">│</span>
+        <div class="flow-step"><strong>Mesh</strong> M0 live … M2 next</div>
+      </div>
+      <p class="diagram-caption">
+        Source Freeform export: validate against diagram 1 above. Caption for talks:
+        “Hard fork? No. Same consensus. Software distribution ≠ protocol change.”
+      </p>
+
+      <h2>Layer stack (text)</h2>
+      <p>Authoritative ASCII stack also on <a href="architecture.html">Architecture</a>.</p>
+      <pre><code>Qt (Core Pro shell, Arcade, Business, Meme Stream, Fast Sync dialog)
 Wallet (BDB today)
 RPC / ZMQ
 P2P + net_processing (IBD rescue, ASMAP, historical fetch)
@@ -64,24 +136,7 @@ Storage: LevelDB chainstate + chainstate_snapshot + blk*.dat</code></pre>
       </div>
       <p class="diagram-caption">Full write-up: <a href="ibd-and-p2p.html">IBD &amp; P2P</a>.</p>
 
-      <h2>AssumeUTXO dual path (engineering — done)</h2>
-      <div class="flow">
-        <div class="flow-step"><strong>dumptxoutset</strong> Snapshot file</div>
-        <span class="flow-arrow">→</span>
-        <div class="flow-step"><strong>loadtxoutset</strong> chainstate_snapshot/</div>
-        <span class="flow-arrow">→</span>
-        <div class="flow-step"><strong>activatesnapshot</strong> Tip = H</div>
-        <span class="flow-arrow">→</span>
-        <div class="flow-step"><strong>Background</strong> ConnectBlock → H</div>
-        <span class="flow-arrow">→</span>
-        <div class="flow-step"><strong>Hash OK</strong> validated / collapse</div>
-      </div>
-
-      <h2>Tiered storage / Fast Sync (product P1–P4)</h2>
-      <p>
-        Plan: <code>doc/tiered-storage-and-fast-sync.md</code> ·
-        <a href="storage-stack.html">Storage stack</a>.
-      </p>
+      <h2>Product phases (P1–P4)</h2>
       <div class="flow">
         <div class="flow-step"><strong>CDN</strong> snapshot object</div>
         <span class="flow-arrow">→</span>
@@ -101,12 +156,17 @@ Storage: LevelDB chainstate + chainstate_snapshot + blk*.dat</code></pre>
         <div class="flow-step"><strong>Never</strong> LevelDB on FUSE/Drive</div>
       </div>
       <pre><code>Product phases (not engineering A–D):
-  P1  Trust anchors + stream-hash Fast Sync UI     ← NEXT
-  P2  Default prune-as-you-go for wallet nodes
+  P1  Trust anchors + stream-hash Fast Sync UI     ← ~90% shipped
+  P2  Default prune-as-you-go for wallet nodes     ← partial
   P3  Optional cold blk object CDN
   P4  RocksDB-class hot engine (ops, not space)</code></pre>
+      <p>
+        Plan: <code>doc/tiered-storage-and-fast-sync.md</code> ·
+        <a href="storage-stack.html">Storage stack</a> ·
+        <a href="roadmap.html">Roadmap Phase 8</a>.
+      </p>
 
-      <h2>Prune-as-you-go (stock Core — already exists)</h2>
+      <h2>Prune-as-you-go (stock Core)</h2>
       <div class="flow">
         <div class="flow-step"><strong>Fetch</strong> full block</div>
         <span class="flow-arrow">→</span>
@@ -117,39 +177,78 @@ Storage: LevelDB chainstate + chainstate_snapshot + blk*.dat</code></pre>
         <div class="flow-step"><strong>-prune=N</strong> drop old files</div>
       </div>
       <p class="diagram-caption">Mid-IBD prune is valid. Product P2 makes this the default for non-archival installs.</p>
-      <pre><code>        [ peers / blk*.dat ]
-                 │
-     ┌───────────┴───────────┐
-     ▼                       ▼
- ACTIVE snapshot          BACKGROUND ibd
- tip H…tip               ConnectBlock 0…H
- pcoinsTip snapshot      original chainstate/
- wallet / net            hash_serialized prove
-     │                       │
-     └──────── assumeutxo.dat ┘
-              (restart restore)</code></pre>
-      <p class="diagram-caption">Full write-up: <a href="assumeutxo.html">AssumeUTXO</a>.</p>
 
-      <h2>Mermaid sources (repo root)</h2>
+      <h2>Post-migration flow (legacy art)</h2>
       <p>
-        <code>DOGECOIN_ARCHITECTURE_MERMAID.md</code> — application graph (kept for export).
-        Render with any Mermaid viewer and drop PNG into <code>assets/diagrams/</code> if desired.
-        Prefer the HTML flows above for day-to-day accuracy (they track C2).
+        Historical rebrand / layering visual from earlier in the project. Still useful
+        as a broad subsystem map, but it does <strong>not</strong> show dual chainstate
+        or the Fast Sync CDN path — use diagrams 1–3 above for that.
+      </p>
+      <div class="diagram-frame">
+        <img
+          src="../assets/diagrams/dogecoin-post-migration-diagram.png"
+          alt="Dogecoin post-migration architecture flow diagram (legacy)"
+        />
+      </div>
+      <p>
+        <a href="../assets/diagrams/dogecoin-post-migration-diagram.svg">Open SVG</a>
+        ·
+        <a href="../assets/diagrams/dogecoin-post-migration-diagram.png">Open PNG</a>
+      </p>
+
+      <h2>Sources &amp; how to refresh</h2>
+      <table>
+        <thead>
+          <tr><th>Asset</th><th>Repo path</th><th>Docs path</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Master architecture</td>
+            <td><code>-FlowDiagramLatest/master-diagram-latest.png</code></td>
+            <td><code>assets/diagrams/master-diagram-latest.png</code></td>
+          </tr>
+          <tr>
+            <td>Fast Sync sequence</td>
+            <td><code>-FlowDiagramLatest/fastsync-diagram.png</code></td>
+            <td><code>assets/diagrams/fastsync-diagram.png</code></td>
+          </tr>
+          <tr>
+            <td>AssumeUTXO dual chainstate</td>
+            <td><code>-FlowDiagramLatest/assumeUXTO-diagram.png</code></td>
+            <td><code>assets/diagrams/assumeutxo-diagram.png</code></td>
+          </tr>
+          <tr>
+            <td>Mermaid paste sources</td>
+            <td colspan="2"><code>-FlowDiagramLatest/updatedmermaid.txt</code></td>
+          </tr>
+          <tr>
+            <td>Legacy post-migration</td>
+            <td colspan="2"><code>assets/diagrams/dogecoin-post-migration-diagram.{png,svg}</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        After re-exporting from Eraser: copy PNGs into both
+        <code>-FlowDiagramLatest/</code> and <code>html/docs/assets/diagrams/</code>,
+        then update captions on this page if the story changes.
       </p>
 
       <h2>Diagram backlog</h2>
       <ul class="checklist">
+        <li class="done">Master architecture (Eraser Freeform, validated)</li>
+        <li class="done">Fast Sync sequence (user path)</li>
+        <li class="done">AssumeUTXO dual chainstate + trust gates</li>
         <li class="done">IBD stall/rescue path (this page + IBD doc)</li>
-        <li class="done">AssumeUTXO dual chainstate + prove path</li>
+        <li class="done">Legacy post-migration art preserved</li>
         <li class="todo">Wallet open / encrypt / spend sequence</li>
         <li class="todo">Theme application order at startup</li>
         <li class="todo">Future SQLite migratewallet flow</li>
-        <li class="todo">Export updated post-migration SVG including node/chainstate</li>
       </ul>
 
       <div class="footer">
         Screenshots: Core Pro gallery under <code>assets/ui-reference/</code>
         (<a href="ui-reference-core-pro.html">UI reference</a>).
+        Updated 2026-08-09 with Eraser master + Fast Sync + AssumeUTXO renders.
       </div>
     </main>
   </div>
