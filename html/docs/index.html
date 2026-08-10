@@ -24,9 +24,9 @@
       </p>
       <div class="meta">
         <span>Workspace: <code>C:\dogedev</code></span>
-        <span>Client: <strong>1.14.102</strong></span>
+        <span>Client: <strong>1.14.102+</strong></span>
         <span>Docs: <code>html/docs/</code></span>
-        <span>Updated: 2026-08-08</span>
+        <span>Updated: 2026-08-09</span>
       </div>
 
       <div class="callout ok">
@@ -38,21 +38,27 @@
       </div>
 
       <div class="callout ok">
-        <strong>Node workstream (2026)</strong>
+        <strong>Node workstream (2026-08-09)</strong>
         IBD P0–P0.3 and AssumeUTXO engineering <strong>A–D3</strong> are in tree.
-        Next is <strong>product P1–P4</strong> (Fast Sync CDN, default prune, optional
-        cold blocks, RocksDB-class hot path). Details:
+        Product <strong>P1 ~90%</strong>: map + CDN + WinHTTP +
+        <strong>Fast Sync dialog shipped</strong>.
+        Guides:
+        <a href="pages/fast-sync.html">Fast Sync explained</a> ·
+        <a href="pages/multi-operator-mesh.html">Multi-operator mesh</a>.
+        P2 prune partial. Next: multi-URL client failover (mesh M2) / more dumps.
+        Details:
         <a href="pages/ibd-and-p2p.html">IBD &amp; P2P</a> ·
         <a href="pages/assumeutxo.html">AssumeUTXO</a> ·
         <a href="pages/storage-stack.html">Storage stack</a> ·
+        <a href="pages/roadmap.html">Roadmap</a> ·
         <code>doc/tiered-storage-and-fast-sync.md</code>.
       </div>
 
       <div class="callout warn">
-        <strong>AssumeUTXO is still dev-gated</strong>
-        Snapshot tip activation needs <code>-assumeutxodev=1</code> (except regtest)
-        until <code>mapAssumeutxo</code> is filled. Cloud = hash-checked CDN only —
-        never live LevelDB on Drive/FUSE. No “zero risk”; fail closed.
+        <strong>Cloud honesty</strong>
+        Cloud = <strong>CDN + hash fail-closed</strong> only — never live LevelDB on Drive/FUSE.
+        Mainnet attestation exists for height <strong>6324519</strong>; untrusted snapshots still
+        need care. No “zero risk”; detect, refuse, recover.
       </div>
 
       <h2>Status at a glance</h2>
@@ -61,7 +67,7 @@
           <h3>Core Pro UI</h3>
           <div class="stat">Live</div>
           <p>Home, Network, Business, Meme Stream, Options, Arcade</p>
-          <span class="badge badge-done">1.14.101</span>
+          <span class="badge badge-done">1.14.102</span>
         </div>
         <div class="card">
           <h3>IBD / P2P</h3>
@@ -78,8 +84,8 @@
         <div class="card">
           <h3>Fast Sync product</h3>
           <div class="stat">P1</div>
-          <p>Attestations + CDN stream-hash + GUI</p>
-          <span class="badge badge-todo">Next</span>
+          <p>CDN + WinHTTP + Fast Sync dialog in Windows package</p>
+          <span class="badge badge-partial">~90%</span>
         </div>
         <div class="card">
           <h3>Wallet DB</h3>
@@ -124,13 +130,13 @@
       </div>
       <div class="progress-row">
         <span>Fast Sync / tiered storage product</span>
-        <div class="progress-bar"><span style="width:15%"></span></div>
-        <span>15%</span>
+        <div class="progress-bar"><span style="width:90%"></span></div>
+        <span>90%</span>
       </div>
       <div class="progress-row">
         <span>Living HTML docs</span>
-        <div class="progress-bar"><span style="width:85%"></span></div>
-        <span>85%</span>
+        <div class="progress-bar"><span style="width:90%"></span></div>
+        <span>90%</span>
       </div>
       <div class="progress-row">
         <span>SQLite wallet backend</span>
@@ -145,6 +151,16 @@
 
       <h2>Read next</h2>
       <div class="card-grid">
+        <div class="card">
+          <h3>Fast Sync explained</h3>
+          <p>CDN, hashes, P2P prove — plain language</p>
+          <a class="card-link" href="pages/fast-sync.html">Open →</a>
+        </div>
+        <div class="card">
+          <h3>Multi-operator mesh</h3>
+          <p>Many mirrors/dumpers — faster delivery, same hashes</p>
+          <a class="card-link" href="pages/multi-operator-mesh.html">Open →</a>
+        </div>
         <div class="card">
           <h3>AssumeUTXO</h3>
           <p>Dual chainstate, RPCs, C2 restore</p>

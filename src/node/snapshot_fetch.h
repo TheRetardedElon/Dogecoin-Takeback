@@ -19,6 +19,13 @@
  * NOT double-SHA256 and NOT hash_serialized (UTXO set hash).
  */
 
+/**
+ * Optional progress for multi-GB CDN downloads (GUI Fast Sync).
+ * bytes_done = bytes written so far; expected_bytes = Content-Length or -1 if unknown.
+ * Return false to abort the download (fail closed; partial file removed).
+ */
+typedef bool (*SnapshotProgressFn)(uint64_t bytes_done, int64_t expected_bytes, void* ctx);
+
 /** Stream-hash an existing local file with single SHA-256. */
 bool HashFileSha256(const fs::path& path, uint256& hash_out, uint64_t& bytes_out, std::string& error);
 
@@ -40,8 +47,9 @@ bool CopyFileStreamHash(const fs::path& source,
 
 /**
  * HTTP(S) GET url → dest while hashing.
- * Uses libevent. Follows no custom auth. For https, requires platform SSL support
- * in libevent (same constraints as other HTTP client uses).
+ * Windows: WinHTTP + Schannel (full HTTPS for CDN Fast Sync).
+ * Non-Windows: libevent (plain HTTP; HTTPS needs SSL-enabled libevent or local path).
+ * Follows redirects on WinHTTP. No custom auth.
  *
  * On failure, dest partial is removed when possible.
  */
@@ -50,7 +58,9 @@ bool DownloadUrlStreamHash(const std::string& url,
                            uint256& hash_out,
                            uint64_t& bytes_out,
                            std::string& error,
-                           int timeout_sec = 600);
+                           int timeout_sec = 600,
+                           SnapshotProgressFn progress = 0,
+                           void* progress_ctx = 0);
 
 /**
  * Download or copy into dest, then require hash_out == expected.
@@ -64,7 +74,9 @@ bool FetchSnapshotArtifact(const std::string& source,
                            const uint256& expected_sha256,
                            uint64_t& bytes_out,
                            std::string& error,
-                           int timeout_sec = 600);
+                           int timeout_sec = 600,
+                           SnapshotProgressFn progress = 0,
+                           void* progress_ctx = 0);
 
 /**
  * Optional CDN manifest fields (JSON). Product P1.
@@ -94,7 +106,7 @@ bool ParseSnapshotArtifactManifest(const std::string& json, SnapshotArtifactMani
 
 /**
  * Download a small text body (manifest JSON) via HTTP(S).
- * Same libevent constraints as DownloadUrlStreamHash (https may need local file).
+ * Windows: WinHTTP (HTTPS OK). Non-Windows: same constraints as DownloadUrlStreamHash.
  */
 bool DownloadUrlToString(const std::string& url,
                          std::string& body_out,

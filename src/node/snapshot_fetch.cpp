@@ -14,12 +14,21 @@
 
 #include <cstdio>
 #include <cstring>
+#include <string>
 #include <vector>
 
 #include <event2/buffer.h>
 #include <event2/event.h>
 #include <event2/http.h>
 #include <event2/keyvalq_struct.h>
+
+#ifdef WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <winhttp.h>
+#endif
 
 namespace {
 
@@ -71,8 +80,14 @@ struct HttpDownloadCtx {
     bool failed;
     bool done;
     int http_status;
+    SnapshotProgressFn progress;
+    void* progress_ctx;
+    uint64_t last_report;
+    int64_t expected_bytes;
 
-    HttpDownloadCtx() : file(NULL), hasher(NULL), bytes(0), failed(false), done(false), http_status(0) {}
+    HttpDownloadCtx()
+        : file(NULL), hasher(NULL), bytes(0), failed(false), done(false), http_status(0),
+          progress(0), progress_ctx(0), last_report(0), expected_bytes(-1) {}
 };
 
 // libevent chunked callback: drain input buffer into file + hasher
@@ -100,6 +115,14 @@ static void SnapshotDownloadChunk(struct evhttp_request* req, void* arg)
         }
         ctx->hasher->Write(tmp, got);
         ctx->bytes += got;
+        if (ctx->progress && (ctx->bytes - ctx->last_report >= STREAM_BUF || ctx->bytes < STREAM_BUF)) {
+            ctx->last_report = ctx->bytes;
+            if (!ctx->progress(ctx->bytes, ctx->expected_bytes, ctx->progress_ctx)) {
+                ctx->failed = true;
+                ctx->error = "Download aborted by user";
+                return;
+            }
+        }
     }
 }
 
@@ -257,24 +280,242 @@ bool CopyFileStreamHash(const fs::path& source,
     return true;
 }
 
-bool DownloadUrlStreamHash(const std::string& url,
-                           const fs::path& dest,
-                           uint256& hash_out,
-                           uint64_t& bytes_out,
-                           std::string& error,
-                           int timeout_sec)
+#ifdef WIN32
+/** Windows HTTPS/HTTP via WinHTTP (Schannel) — required for CDN Fast Sync on PE builds. */
+static bool DownloadUrlStreamHashWinHttp(const std::string& url,
+                                         const fs::path& dest,
+                                         uint256& hash_out,
+                                         uint64_t& bytes_out,
+                                         std::string& error,
+                                         int timeout_sec,
+                                         SnapshotProgressFn progress,
+                                         void* progress_ctx)
 {
     std::string host, path;
     int port = 80;
     bool ssl = false;
     if (!ParseUrl(url, host, port, path, ssl, error))
         return false;
-    if (ssl) {
-        // libevent without openssl wrapper in this tree: prefer http for now or fail clearly.
-        // Many CDN URLs are https — try anyway via evhttp (may fail without bufferevent openssl).
-        // Document limitation; operators can place file locally and use path fetch.
+
+    auto to_wide = [](const std::string& s) -> std::wstring {
+        if (s.empty())
+            return std::wstring();
+        int n = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, NULL, 0);
+        if (n <= 0)
+            return std::wstring();
+        std::wstring w(static_cast<size_t>(n), L'\0');
+        MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, &w[0], n);
+        if (!w.empty() && w.back() == L'\0')
+            w.pop_back();
+        return w;
+    };
+    std::wstring whost = to_wide(host);
+    std::wstring wpath = to_wide(path);
+    if (whost.empty() || wpath.empty()) {
+        error = "Failed to convert URL to UTF-16 for WinHTTP";
+        return false;
     }
 
+    fs::path partial = dest;
+    partial += ".partial";
+    FILE* out = fsbridge::fopen(partial, "wb");
+    if (!out) {
+        error = strprintf("Cannot create partial download file: %s", partial.string());
+        return false;
+    }
+
+    HINTERNET hSession = NULL;
+    HINTERNET hConnect = NULL;
+    HINTERNET hRequest = NULL;
+    bool ok = false;
+    CSHA256 hasher;
+    int64_t expected_bytes = -1;
+    bytes_out = 0;
+
+    hSession = WinHttpOpen(L"DogecoinCore-Pro-snapshot-fetch/1.14",
+                           WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                           WINHTTP_NO_PROXY_NAME,
+                           WINHTTP_NO_PROXY_BYPASS,
+                           0);
+    if (!hSession) {
+        error = strprintf("WinHttpOpen failed (%lu)", GetLastError());
+        fclose(out);
+        boost::system::error_code ec;
+        fs::remove(partial, ec);
+        return false;
+    }
+
+    int to_ms = timeout_sec > 0 ? timeout_sec * 1000 : 600000;
+    WinHttpSetTimeouts(hSession, to_ms, to_ms, to_ms, to_ms);
+
+    hConnect = WinHttpConnect(hSession, whost.c_str(), static_cast<INTERNET_PORT>(port), 0);
+    if (!hConnect) {
+        error = strprintf("WinHttpConnect failed (%lu)", GetLastError());
+        goto winhttp_cleanup;
+    }
+
+    {
+        DWORD flags = ssl ? WINHTTP_FLAG_SECURE : 0;
+        hRequest = WinHttpOpenRequest(hConnect, L"GET", wpath.c_str(),
+                                      NULL, WINHTTP_NO_REFERER,
+                                      WINHTTP_DEFAULT_ACCEPT_TYPES, flags);
+    }
+    if (!hRequest) {
+        error = strprintf("WinHttpOpenRequest failed (%lu)", GetLastError());
+        goto winhttp_cleanup;
+    }
+
+    {
+        DWORD redir = WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS;
+        WinHttpSetOption(hRequest, WINHTTP_OPTION_REDIRECT_POLICY, &redir, sizeof(redir));
+    }
+
+    if (!WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+                            WINHTTP_NO_REQUEST_DATA, 0, 0, 0)) {
+        error = strprintf("WinHttpSendRequest failed (%lu)", GetLastError());
+        goto winhttp_cleanup;
+    }
+    if (!WinHttpReceiveResponse(hRequest, NULL)) {
+        error = strprintf("WinHttpReceiveResponse failed (%lu)", GetLastError());
+        goto winhttp_cleanup;
+    }
+
+    {
+        DWORD status = 0;
+        DWORD statusSize = sizeof(status);
+        if (!WinHttpQueryHeaders(hRequest,
+                                 WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                                 WINHTTP_HEADER_NAME_BY_INDEX, &status, &statusSize,
+                                 WINHTTP_NO_HEADER_INDEX)) {
+            error = strprintf("WinHttpQueryHeaders status failed (%lu)", GetLastError());
+            goto winhttp_cleanup;
+        }
+        if (status < 200 || status >= 300) {
+            error = strprintf("HTTP error status %lu (WinHTTP)", status);
+            goto winhttp_cleanup;
+        }
+    }
+
+    {
+        wchar_t clen_buf[64];
+        DWORD clen_size = sizeof(clen_buf);
+        if (WinHttpQueryHeaders(hRequest,
+                                WINHTTP_QUERY_CONTENT_LENGTH,
+                                WINHTTP_HEADER_NAME_BY_INDEX,
+                                clen_buf, &clen_size,
+                                WINHTTP_NO_HEADER_INDEX)) {
+            // Content-Length as wide decimal string
+            std::string clen;
+            for (wchar_t* p = clen_buf; *p; ++p) {
+                if (*p >= L'0' && *p <= L'9')
+                    clen.push_back(static_cast<char>(*p));
+            }
+            if (!clen.empty()) {
+                expected_bytes = static_cast<int64_t>(strtoull(clen.c_str(), NULL, 10));
+            }
+        }
+    }
+
+    {
+        std::vector<unsigned char> buf(STREAM_BUF);
+        uint64_t last_report = 0;
+        for (;;) {
+            DWORD avail = 0;
+            if (!WinHttpQueryDataAvailable(hRequest, &avail)) {
+                error = strprintf("WinHttpQueryDataAvailable failed (%lu)", GetLastError());
+                goto winhttp_cleanup;
+            }
+            if (avail == 0)
+                break;
+            DWORD to_read = avail;
+            if (to_read > STREAM_BUF)
+                to_read = static_cast<DWORD>(STREAM_BUF);
+            DWORD got = 0;
+            if (!WinHttpReadData(hRequest, buf.data(), to_read, &got)) {
+                error = strprintf("WinHttpReadData failed (%lu)", GetLastError());
+                goto winhttp_cleanup;
+            }
+            if (got == 0)
+                break;
+            if (fwrite(buf.data(), 1, got, out) != got) {
+                error = "Failed writing WinHTTP download to disk";
+                goto winhttp_cleanup;
+            }
+            hasher.Write(buf.data(), got);
+            bytes_out += got;
+            // Report every ~1 MiB (or always if small) so GUI progress stays live
+            if (progress && (bytes_out - last_report >= STREAM_BUF || bytes_out < STREAM_BUF)) {
+                last_report = bytes_out;
+                if (!progress(bytes_out, expected_bytes, progress_ctx)) {
+                    error = "Download aborted by user";
+                    goto winhttp_cleanup;
+                }
+            }
+        }
+        if (progress) {
+            if (!progress(bytes_out, expected_bytes, progress_ctx)) {
+                error = "Download aborted by user";
+                goto winhttp_cleanup;
+            }
+        }
+    }
+
+    ok = true;
+
+winhttp_cleanup:
+    if (hRequest)
+        WinHttpCloseHandle(hRequest);
+    if (hConnect)
+        WinHttpCloseHandle(hConnect);
+    if (hSession)
+        WinHttpCloseHandle(hSession);
+
+    if (fclose(out) != 0 && ok) {
+        error = "Failed closing partial download file";
+        ok = false;
+    }
+    if (!ok) {
+        boost::system::error_code ec;
+        fs::remove(partial, ec);
+        return false;
+    }
+
+    HashToUint256(hasher, hash_out);
+    boost::system::error_code ec;
+    fs::remove(dest, ec);
+    fs::rename(partial, dest, ec);
+    if (ec) {
+        error = strprintf("Failed to finalize download: %s", ec.message());
+        fs::remove(partial, ec);
+        return false;
+    }
+    return true;
+}
+#endif // WIN32
+
+bool DownloadUrlStreamHash(const std::string& url,
+                           const fs::path& dest,
+                           uint256& hash_out,
+                           uint64_t& bytes_out,
+                           std::string& error,
+                           int timeout_sec,
+                           SnapshotProgressFn progress,
+                           void* progress_ctx)
+{
+    std::string host, path;
+    int port = 80;
+    bool ssl = false;
+    if (!ParseUrl(url, host, port, path, ssl, error))
+        return false;
+
+#ifdef WIN32
+    // Prefer WinHTTP (Schannel) for http(s) on Windows — libevent has no SSL here.
+    return DownloadUrlStreamHashWinHttp(url, dest, hash_out, bytes_out, error, timeout_sec,
+                                        progress, progress_ctx);
+#else
+    (void)host;
+    (void)port;
+    // libevent path (typically plain HTTP only unless built with SSL)
     fs::path partial = dest;
     partial += ".partial";
     FILE* out = fsbridge::fopen(partial, "wb");
@@ -287,6 +528,9 @@ bool DownloadUrlStreamHash(const std::string& url,
     HttpDownloadCtx ctx;
     ctx.file = out;
     ctx.hasher = &hasher;
+    ctx.progress = progress;
+    ctx.progress_ctx = progress_ctx;
+    ctx.last_report = 0;
 
     try {
         raii_event_base base = obtain_event_base();
@@ -349,6 +593,7 @@ bool DownloadUrlStreamHash(const std::string& url,
         return false;
     }
     return true;
+#endif
 }
 
 bool FetchSnapshotArtifact(const std::string& source,
@@ -356,15 +601,20 @@ bool FetchSnapshotArtifact(const std::string& source,
                            const uint256& expected_sha256,
                            uint64_t& bytes_out,
                            std::string& error,
-                           int timeout_sec)
+                           int timeout_sec,
+                           SnapshotProgressFn progress,
+                           void* progress_ctx)
 {
     uint256 got;
     bool ok = false;
     if (IsHttpUrl(source)) {
-        ok = DownloadUrlStreamHash(source, dest, got, bytes_out, error, timeout_sec);
+        ok = DownloadUrlStreamHash(source, dest, got, bytes_out, error, timeout_sec,
+                                   progress, progress_ctx);
     } else {
         fs::path src(source);
         ok = CopyFileStreamHash(src, dest, got, bytes_out, error);
+        if (ok && progress)
+            progress(bytes_out, static_cast<int64_t>(bytes_out), progress_ctx);
     }
     if (!ok)
         return false;

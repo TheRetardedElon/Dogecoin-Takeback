@@ -81,12 +81,40 @@ Engineering (done):
   Phase C  Background ConnectBlock + hash fail-closed + persist/restore
   Phase D  Attestation map hooks + GUI status + prune guard + tests
 
-Product next (doc/tiered-storage-and-fast-sync.md):
-  P1  Trust anchors + CDN stream-hash Fast Sync UI
-  P2  Default prune-as-you-go for wallet nodes
+Product roadmap (doc/tiered-storage-and-fast-sync.md):
+  P1  Trust anchors + CDN stream-hash + Fast Sync UI     ← ~90% shipped
+  P2  Default prune-as-you-go for wallet nodes             ← partial (Fast path defaults)
   P3  Optional cold blk object CDN
   P4  RocksDB-class hot engine (ops; not main space win)
 ```
+
+### Fast Sync in plain English
+
+**Normal IBD:** peers send blocks; you rebuild the UTXO set from history; wallet tip is usable late.
+
+**Fast Sync:** you download a pre-built UTXO snapshot (~11 GB) from a public HTTPS CDN, verify hashes fail-closed, load/activate near height **H** so the wallet can be usable sooner, then **your node** re-proves genesis→H over **P2P in the background**. The CDN is a dumb file host — not your ongoing verifier.
+
+```text
+CDN file ──file SHA-256──► load UTXOs at H ──activate──► wallet near tip
+                                 │
+                                 └── background P2P 0→H ──re-prove hash_serialized
+                                 └── P2P keeps tip moving past H
+```
+
+| Hash | Meaning |
+|------|---------|
+| **File SHA-256** | Integrity of the downloaded `.dat` |
+| **`hash_serialized`** | Hash of the UTXO *set* at H (attested in `mapAssumeutxo`) |
+
+Both must pass. You still need the network for background proof and new blocks after H.
+
+**In the GUI (1.14.102 package):** **Settings → Fast Sync from CDN…**  
+**Do not** start the multi‑GB pull on a datadir already mid-IBD — use a new/empty datadir.
+
+Full walkthrough: [`html/docs/pages/fast-sync.html`](html/docs/pages/fast-sync.html)  
+**Multi-operator mesh** (many CDNs / dumpers for speed + resilience, same fail-closed hashes):  
+[`html/docs/pages/multi-operator-mesh.html`](html/docs/pages/multi-operator-mesh.html)  
+Plan: `doc/tiered-storage-and-fast-sync.md`
 
 **Operator RPCs**
 
@@ -95,25 +123,23 @@ Product next (doc/tiered-storage-and-fast-sync.md):
 | `dumptxoutset` | Snapshot UTXO set + `hash_serialized` + **chainparams snippet** |
 | `loadtxoutset` | Load into background (`activate` optional) |
 | `activatesnapshot` | Promote snapshot tip (regtest / attested / `-assumeutxodev`) |
+| `fetchassumeutxo` / `fetchassumeutxomanifest` | Stream-hash download (HTTPS WinHTTP on Windows) |
 | `listassumeutxo` | Compiled attestation heights |
 | `getchainstates` | Dual-state visibility |
 | `getibdinfo` | IBD + AssumeUTXO progress / collapse flags |
 | `stepbackgroundvalidation` | Manual proof steps |
 
-**Proven on Windows PE (regtest)**
+**Proven on Windows PE (regtest + HTTPS smoke)**
 
 ```powershell
-# Same machine — full dump → load → activate → collapse
 powershell -ExecutionPolicy Bypass -File scripts/smoke-assumeutxo-regtest.ps1
-
-# Producer dumps tip; consumer loads snapshot + proves history over P2P
 powershell -ExecutionPolicy Bypass -File scripts/smoke-assumeutxo-two-node.ps1
+powershell -ExecutionPolicy Bypass -File scripts/smoke-winhttp-https.ps1
 ```
 
 Also: `qa/rpc-tests/assumeutxo.py` (native Linux `dogecoind` with AssumeUTXO built-in).
 
-> **Honest status:** mainnet/testnet `mapAssumeutxo` entries are **empty until community-attested heights + hashes are published**.  
-> The **pipeline is real**. Product **P1** (CDN stream-hash + Fast Sync GUI + filled map) is the next chapter — see `doc/tiered-storage-and-fast-sync.md`.  
+> **Honest status (2026-08-09):** mainnet `mapAssumeutxo[6324519]` is filled; GPE CDN + WinHTTP + Fast Sync dialog are packaged.  
 > Cloud = hash-checked CDN only; never live LevelDB on Drive/FUSE.
 
 ---
@@ -166,6 +192,8 @@ Open **[`html/docs/index.html`](html/docs/index.html)** in a browser (no server)
 | [UI reference](html/docs/pages/ui-reference-core-pro.html) | Screenshots + layout contract |
 | [IBD & P2P](html/docs/pages/ibd-and-p2p.html) | Telemetry, rescue, parallelism |
 | [AssumeUTXO](html/docs/pages/assumeutxo.html) | Dual chainstate A–D3 + product P1 |
+| [Fast Sync explained](html/docs/pages/fast-sync.html) | Plain-language CDN bootstrap + trust model |
+| [Multi-operator mesh](html/docs/pages/multi-operator-mesh.html) | Many dumpers/mirrors → faster, resilient delivery |
 | [Storage stack](html/docs/pages/storage-stack.html) | Tiered storage / prune / CDN plan |
 | [Tiered storage plan](doc/tiered-storage-and-fast-sync.md) | Authoritative P1–P4 architecture |
 | [Roadmap](html/docs/pages/roadmap.html) | Phases 0–7 checklist |
@@ -279,7 +307,8 @@ DOGECOIN_CHANGELOG.md   Heavy-update history
 |--|--|
 | **Branch** | `master` — active integration |
 | **AssumeUTXO code** | A→D engineered; regtest **1-node + 2-node** PE smokes green |
-| **Mainnet mapAssumeutxo** | Empty until attested heights published |
+| **Mainnet mapAssumeutxo** | **6324519** attested; more heights as dumps publish |
+| **Fast Sync product** | P1 ~90% — CDN + WinHTTP + dialog in `release/dogecoin-1.14.102-win64*` |
 | **GUI** | Pre-release — review before high-value merchant float |
 | **Upstream DNA** | Dogecoin Core / Bitcoin Core lineage |
 

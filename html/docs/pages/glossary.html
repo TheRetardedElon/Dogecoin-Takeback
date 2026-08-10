@@ -38,6 +38,22 @@
             <td>UTXO / tip index data used for validation; currently LevelDB-backed.</td>
           </tr>
           <tr>
+            <td><strong>Fast Sync</strong></td>
+            <td>Bootstrap via attested UTXO snapshot from CDN (stream-hash, fail closed), then background P2P prove. See <a href="fast-sync.html">Fast Sync explained</a>.</td>
+          </tr>
+          <tr>
+            <td><strong>Multi-operator mesh</strong></td>
+            <td>Independent dumpers + CDN mirrors for the same hash-checked artifacts (geo, capacity, failover). Not extra consensus trust. See <a href="multi-operator-mesh.html">Multi-operator mesh</a>.</td>
+          </tr>
+          <tr>
+            <td><strong>hash_serialized</strong></td>
+            <td>Hash of the UTXO <em>set</em> at height H (not the snapshot file bytes).</td>
+          </tr>
+          <tr>
+            <td><strong>Artifact SHA-256</strong></td>
+            <td>SHA-256 of the CDN snapshot <em>file</em> bytes (sha256sum style).</td>
+          </tr>
+          <tr>
             <td><strong>CDBWrapper</strong></td>
             <td>Abstraction over the KV store for chainstate/index (obfuscation + cache hooks).</td>
           </tr>

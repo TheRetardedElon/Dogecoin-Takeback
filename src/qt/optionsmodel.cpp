@@ -91,18 +91,26 @@ void OptionsModel::Init(bool resetSettings)
     // If SoftSetArg() or SoftSetBoolArg() return false we were overridden
     // by command-line and show this in the UI.
 
-    // Main
-    if (!settings.contains("bPrune"))
-        settings.setValue("bPrune", false);
-    if (!settings.contains("nPruneSize"))
-        settings.setValue("nPruneSize", DEFAULT_PRUNE_TARGET_GB);
+    // Product P1/P2 defaults (before prune SoftSet so wallet-node path stays bounded)
+    if (!settings.contains("fPreferFastSync"))
+        settings.setValue("fPreferFastSync", true);
+
+    // Main — P2: wallet-node default prune when Fast Sync preferred (archival is opt-out)
+    if (!settings.contains("bPrune")) {
+        const bool preferFast = settings.value("fPreferFastSync", true).toBool();
+        settings.setValue("bPrune", preferFast);
+    }
+    if (!settings.contains("nPruneSize")) {
+        // ~6 GB UI target (~5500 MiB SoftSet path from Intro); smoother than bare minimum
+        settings.setValue("nPruneSize", qMax(DEFAULT_PRUNE_TARGET_GB, 6));
+    }
     // Convert prune size to MiB:
     const uint64_t nPruneSizeMiB = PruneGBtoMiB(settings.value("nPruneSize").toInt());
     if (!SoftSetArg("-prune", settings.value("bPrune").toBool() ? std::to_string(nPruneSizeMiB) : "0")) {
       addOverriddenOption("-prune");
     }
 
-    // Product P1 Fast Sync: SoftSet snapshot source for RPC/CLI (does not auto-fetch).
+    // Product P1 Fast Sync: SoftSet snapshot source for RPC/CLI (dialog auto-fetch is separate).
     {
         if (!settings.contains("fPreferFastSync"))
             settings.setValue("fPreferFastSync", true);

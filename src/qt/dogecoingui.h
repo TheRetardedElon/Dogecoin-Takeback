@@ -129,6 +129,7 @@ private:
     QAction *receiveCoinsAction;
     QAction *receiveCoinsMenuAction;
     QAction *optionsAction;
+    QAction *fastSyncAction;
     QAction *toggleHideAction;
     QAction *encryptWalletAction;
     QAction *backupWalletAction;
@@ -244,6 +245,10 @@ private Q_SLOTS:
 #endif // ENABLE_WALLET
     /** Show configuration dialog */
     void optionsClicked();
+    /** Product P1.7: Fast Sync CDN snapshot dialog */
+    void showFastSyncDialog();
+    /** First-run offer when Intro chose Fast path */
+    void maybeOfferFastSync();
     /** Show about dialog */
     void aboutClicked();
     /** Show debug window */

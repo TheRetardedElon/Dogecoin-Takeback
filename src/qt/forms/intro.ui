@@ -212,7 +212,7 @@
       <item>
        <widget class="QRadioButton" name="syncFast">
         <property name="text">
-         <string>Fast path (recommended) — prune old blocks to save disk; use attested UTXO snapshot when available (Product P1/P2)</string>
+         <string>Fast path (recommended) — prune + download attested UTXO snapshot from CDN when the wallet starts (Product P1)</string>
         </property>
         <property name="checked">
          <bool>true</bool>
@@ -232,7 +232,7 @@
          <string notr="true">QLabel { color: #555; font-size: 11px; }</string>
         </property>
         <property name="text">
-         <string>Fast path enables automatic prune (~5.5 GB block target). Snapshot CDN download lands when mapAssumeutxo attestations ship; until then you still sync over P2P with a bounded disk.</string>
+         <string>Fast path enables automatic prune (~5.5 GB block target) and will offer a one-click Fast Sync download from sync.doge.gopastearth.com (multi‑GB, SHA-256 fail-closed). You can skip and use normal P2P sync anytime.</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>

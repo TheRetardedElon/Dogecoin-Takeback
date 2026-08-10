@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fast Sync explained — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav></nav>
+    </aside>
+
+    <main class="main">
+      <h1>Fast Sync explained (plain language)</h1>
+      <p class="lead">
+        What happens when you use <strong>Settings → Fast Sync from CDN…</strong>,
+        what the ~11 GB file is, what you still need P2P for, and what “background
+        verification” actually means. No marketing fog.
+      </p>
+      <div class="meta">
+        <span>Product: <strong>P1 ~90%</strong></span>
+        <span>CDN: <code>sync.doge.gopastearth.com</code></span>
+        <span>Attested height: <code>6324519</code></span>
+        <span>Engineering: <a href="assumeutxo.html">AssumeUTXO</a></span>
+      </div>
+
+      <div class="callout ok">
+        <strong>One sentence</strong>
+        Fast Sync downloads a pre-built UTXO snapshot, checks hashes fail-closed,
+        makes the wallet tip usable near height H, then <em>your node</em> re-proves
+        history over P2P in the background. The cloud is a dumb download pipe — not
+        your ongoing verifier.
+      </div>
+
+      <h2>Two ways to get a full node</h2>
+      <table>
+        <thead>
+          <tr><th></th><th>Normal IBD (P2P)</th><th>Fast Sync</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>What you download</strong></td>
+            <td>Many blocks from peers, over days</td>
+            <td>One ~11 GB snapshot file over HTTPS, then peers as needed</td>
+          </tr>
+          <tr>
+            <td><strong>When wallet tip is usable</strong></td>
+            <td>Late — after most history is applied</td>
+            <td>Sooner — after load/activate at attested height H</td>
+          </tr>
+          <tr>
+            <td><strong>How you know UTXOs are honest</strong></td>
+            <td>You built them yourself from genesis</td>
+            <td>File SHA-256 + attested <code>hash_serialized</code> + background prove</td>
+          </tr>
+          <tr>
+            <td><strong>Still need the network?</strong></td>
+            <td>Yes, always</td>
+            <td>Yes — for proof, new blocks after H, normal node life</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>What “the cloud” is (and is not)</h2>
+      <p>
+        Public CDN: <code>https://sync.doge.gopastearth.com/</code>
+      </p>
+      <ul>
+        <li><code>latest.json</code> — small manifest (URL, file SHA-256, height, notes)</li>
+        <li><code>utxo-….dat</code> — multi‑GB UTXO snapshot artifact</li>
+      </ul>
+      <p><strong>It does:</strong> serve static files over HTTPS.</p>
+      <p><strong>It does not:</strong> run your wallet, validate your spends, replace consensus,
+        or stay mounted as live <code>chainstate/</code>. Live data always stays on
+        <strong>local disk</strong> (NVMe / real block volume). Never put the datadir on
+        Drive/Dropbox/FUSE and expect LevelDB to be safe.
+      </p>
+
+      <h2>What the button does (step by step)</h2>
+      <div class="flow">
+        <div class="flow-step"><strong>1</strong> Resolve <code>latest.json</code></div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>2</strong> Stream-hash ~11 GB file</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>3</strong> File SHA-256 OK?</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>4</strong> Load UTXOs</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>5</strong> Activate tip at H</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>6</strong> Background prove 0→H</div>
+      </div>
+      <ol>
+        <li><strong>Manifest</strong> — download tiny JSON; read artifact URL + expected digests.</li>
+        <li><strong>Download</strong> — stream to <code>datadir/snapshots/</code> while hashing (WinHTTP on Windows).</li>
+        <li><strong>File digest</strong> — must match manifest SHA-256 or the file is deleted (fail closed).</li>
+        <li><strong>Load</strong> — install UTXO set into snapshot chainstate (local LevelDB).</li>
+        <li><strong>Activate</strong> — if height is in <code>mapAssumeutxo</code> and coins hash matches, tip can jump near H so the wallet is usable.</li>
+        <li><strong>Background prove</strong> — node still fetches/applies historical blocks over <strong>P2P</strong> and re-checks <code>hash_serialized</code>. Mismatch → fail closed.</li>
+      </ol>
+
+      <h2>Two hashes (do not mix them up)</h2>
+      <table>
+        <thead>
+          <tr><th>Hash</th><th>Covers</th><th>When checked</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>File SHA-256</strong></td>
+            <td>Bytes of the CDN <code>.dat</code> file</td>
+            <td>During / after download</td>
+          </tr>
+          <tr>
+            <td><strong><code>hash_serialized</code></strong></td>
+            <td>Canonical hash of the <em>UTXO set</em> at height H</td>
+            <td>At activate + after background prove</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Both must pass. Neither is “the cloud signed your coins forever.”</p>
+
+      <h2>“So I don’t finish P2P?”</h2>
+      <div class="callout info">
+        <strong>Partly true</strong>
+        You skip waiting for classic full IBD <em>before</em> the wallet tip is near current height.
+        You do <strong>not</strong> leave the network.
+      </div>
+      <p>You still use P2P for:</p>
+      <ul>
+        <li>Headers / historical blocks to <strong>prove</strong> the snapshot (background)</li>
+        <li><strong>New blocks after H</strong> (chain keeps moving)</li>
+        <li>Peers, mempool, normal full-node duties</li>
+      </ul>
+
+      <h2>Trust model (honest)</h2>
+      <ul>
+        <li>CDN can host a bad file → caught by file SHA-256 if the manifest is correct.</li>
+        <li>Wrong UTXO set → caught by <code>mapAssumeutxo</code> / <code>hash_serialized</code> (this build attests <strong>6324519</strong>).</li>
+        <li>Final safety = background prove + normal consensus afterward.</li>
+        <li>There is no “zero risk.” There is <strong>detect, refuse, recover</strong>.</li>
+      </ul>
+
+      <h2>When to use it (and when not to)</h2>
+      <table>
+        <thead>
+          <tr><th>Situation</th><th>Recommendation</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>New install / empty datadir</td>
+            <td><span class="badge badge-done">Good</span> — Intro Fast path + dialog, or Settings menu</td>
+          </tr>
+          <tr>
+            <td>Second datadir for testing</td>
+            <td><span class="badge badge-done">Good</span></td>
+          </tr>
+          <tr>
+            <td>Already mid-IBD on same datadir (~50–80%)</td>
+            <td><span class="badge badge-todo">Avoid</span> — fights disk/CPU/network; messy mix</td>
+          </tr>
+          <tr>
+            <td>Want full archival history forever</td>
+            <td>Use Full archive path; don’t prune; optional skip Fast Sync</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>How to run it in the client</h2>
+      <ol>
+        <li>Install <code>dogecoin-1.14.102-win64-setup.exe</code> (or zip) from <code>release/</code>.</li>
+        <li><strong>Settings → Fast Sync from CDN…</strong></li>
+        <li>Click <strong>Download &amp; activate snapshot</strong> (progress + Abort available).</li>
+        <li>Or on first-run Intro: choose Fast path — dialog may auto-offer when height ≤ 1000.</li>
+      </ol>
+      <p>Console equivalents (advanced):</p>
+      <pre><code>listassumeutxo
+help fetchassumeutxomanifest
+fetchassumeutxomanifest "https://sync.doge.gopastearth.com/latest.json"</code></pre>
+      <p class="muted">
+        Full manifest fetch pulls the multi‑GB file. Prefer the GUI dialog on a clean datadir.
+      </p>
+
+      <h2>Picture</h2>
+      <pre><code>NORMAL IBD
+  genesis ──────────────────────────► tip
+  (slow; wallet late)
+
+FAST SYNC
+  CDN file ──file SHA-256──► load UTXOs at H ──activate──► wallet near tip
+                                   │
+                                   └── background P2P 0→H ──re-prove hash_serialized
+                                   └── P2P keeps tip moving past H</code></pre>
+
+      <h2>Multi-operator mesh (why more hosts help)</h2>
+      <p>
+        One CDN is a good start; many independent operators hosting the
+        <em>same hash-checked</em> artifact make downloads faster (geo, bandwidth)
+        and harder to take offline. That is <strong>not</strong> “trust more clouds” —
+        clients still require matching digests and background prove.
+      </p>
+      <p>
+        Full design: <a href="multi-operator-mesh.html"><strong>Multi-operator mesh</strong></a>
+        (roles, daisy-chain mirrors, maturity M0–M4, operator checklist).
+        CDN security: <a href="fast-sync-threat-model.html"><strong>Fast Sync threat model</strong></a>
+        (what’s real on GPE today vs overkill).
+      </p>
+
+      <h2>Related docs</h2>
+      <ul>
+        <li><a href="assumeutxo.html">AssumeUTXO</a> — dual chainstate engineering A–D3</li>
+        <li><a href="multi-operator-mesh.html">Multi-operator mesh</a> — multi-CDN speed + resilience</li>
+        <li><a href="storage-stack.html">Storage stack</a> — tiers, prune, CDN honesty</li>
+        <li><a href="roadmap.html">Roadmap</a> — Phase 8 checklist</li>
+        <li><code>doc/tiered-storage-and-fast-sync.md</code> — authoritative product plan</li>
+        <li>Root <code>README.md</code> — same story for GitHub readers</li>
+      </ul>
+
+      <div class="footer">
+        Updated 2026-08-09 · Package: dogecoin-1.14.102-win64 (WinHTTP + FastSyncDialog)
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

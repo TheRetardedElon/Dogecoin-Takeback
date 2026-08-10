@@ -13,6 +13,7 @@
 #include "clientmodel.h"
 #include "guiconstants.h"
 #include "guiutil.h"
+#include "fastsyncdialog.h"
 #include "modaloverlay.h"
 #include "networkstyle.h"
 #include "notificator.h"
@@ -34,6 +35,8 @@
 #include <QProgressBar>
 #include <QStatusBar>
 #include <QLabel>
+#include <QSettings>
+#include <QTimer>
 
 #ifdef ENABLE_WALLET
 #include "walletframe.h"
@@ -124,6 +127,7 @@ DogecoinGUI::DogecoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle
     receiveCoinsAction(0),
     receiveCoinsMenuAction(0),
     optionsAction(0),
+    fastSyncAction(0),
     toggleHideAction(0),
     encryptWalletAction(0),
     backupWalletAction(0),
@@ -1638,6 +1642,9 @@ void DogecoinGUI::createActions()
     optionsAction->setStatusTip(tr("Modify configuration options for %1").arg(tr(PACKAGE_NAME)));
     optionsAction->setMenuRole(QAction::PreferencesRole);
     optionsAction->setEnabled(false);
+    fastSyncAction = new QAction(platformStyle->TextColorIcon(":/icons/tx_mined"), tr("&Fast Sync from CDN…"), this);
+    fastSyncAction->setStatusTip(tr("Download an attested UTXO snapshot over HTTPS (stream-hash, fail closed)"));
+    fastSyncAction->setEnabled(false);
     toggleHideAction = new QAction(platformStyle->TextColorIcon(":/icons/about"), tr("&Show / Hide"), this);
     toggleHideAction->setStatusTip(tr("Show or hide the main Window"));
 
@@ -1679,6 +1686,7 @@ void DogecoinGUI::createActions()
     connect(aboutAction, SIGNAL(triggered()), this, SLOT(aboutClicked()));
     connect(aboutQtAction, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
     connect(optionsAction, SIGNAL(triggered()), this, SLOT(optionsClicked()));
+    connect(fastSyncAction, SIGNAL(triggered()), this, SLOT(showFastSyncDialog()));
     connect(toggleHideAction, SIGNAL(triggered()), this, SLOT(toggleHidden()));
     connect(showHelpMessageAction, SIGNAL(triggered()), this, SLOT(showHelpMessageClicked()));
     connect(openRPCConsoleAction, SIGNAL(triggered()), this, SLOT(showDebugWindow()));
@@ -1740,6 +1748,7 @@ void DogecoinGUI::createMenuBar()
         settings->addSeparator();
     }
     settings->addAction(optionsAction);
+    settings->addAction(fastSyncAction);
 
     QMenu *help = appMenuBar->addMenu(tr("&Help"));
     if(walletFrame)
@@ -1821,6 +1830,10 @@ void DogecoinGUI::setClientModel(ClientModel *_clientModel)
             // initialize the disable state of the tray icon with the current value in the model.
             setTrayIconVisible(optionsModel->getHideTrayIcon());
         }
+        if (fastSyncAction)
+            fastSyncAction->setEnabled(true);
+        // First-run Fast Sync offer (Intro set fPendingFastSyncOffer)
+        QTimer::singleShot(1500, this, SLOT(maybeOfferFastSync()));
         qWarning("DogecoinGUI::setClientModel: done");
     } else {
         // Disable possibility to show main window via action
@@ -1961,6 +1974,32 @@ void DogecoinGUI::optionsClicked()
 
     OptionsDialog dlg(this, enableWallet);
     dlg.setModel(clientModel->getOptionsModel());
+    dlg.exec();
+}
+
+void DogecoinGUI::showFastSyncDialog()
+{
+    if (!clientModel)
+        return;
+    FastSyncDialog dlg(this);
+    dlg.exec();
+}
+
+void DogecoinGUI::maybeOfferFastSync()
+{
+    if (!clientModel)
+        return;
+    QSettings settings;
+    if (!settings.value("fPendingFastSyncOffer", false).toBool())
+        return;
+    // Only auto-offer early in chain growth (empty / brand-new datadir)
+    if (clientModel->getNumBlocks() > 1000)
+        return;
+    if (clientModel->isAssumeUtxoActive()) {
+        settings.setValue("fPendingFastSyncOffer", false);
+        return;
+    }
+    FastSyncDialog dlg(this);
     dlg.exec();
 }
 
@@ -2441,6 +2480,9 @@ void DogecoinGUI::showEvent(QShowEvent *event)
     }
     if (optionsAction) {
     optionsAction->setEnabled(true);
+    }
+    if (fastSyncAction) {
+    fastSyncAction->setEnabled(true);
     }
 }
 

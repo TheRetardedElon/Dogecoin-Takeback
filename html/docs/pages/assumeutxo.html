@@ -26,15 +26,18 @@
       <div class="meta">
         <span>Design: <code>doc/assumeutxo-dogecoin-1.14.md</code></span>
         <span>Engineering: <strong>A–D3 done</strong></span>
-        <span>Product: <strong>P1 open</strong> (attestation + CDN Fast Sync)</span>
-        <span>Flag: <code>-assumeutxodev</code> until map filled</span>
+        <span>Product: <strong>P1 ~90%</strong> (CDN + dialog packaged)</span>
+        <span>Attested: <code>mapAssumeutxo[6324519]</code></span>
       </div>
 
-      <div class="callout warn">
-        <strong>Dev activation only (for now)</strong>
-        Promoting a snapshot to the active tip requires <code>-assumeutxodev=1</code>
-        except on regtest or an <strong>attested</strong> height in <code>mapAssumeutxo</code>
-        (maps still empty on mainnet/testnet). Do not use untrusted snapshots with real funds.
+      <div class="callout ok">
+        <strong>Mainnet attestation (2026-08-09)</strong>
+        Height <strong>6324519</strong> is in <code>mapAssumeutxo</code> with
+        <code>hash_serialized=a2fde0b7…c6762a</code>.
+        CDN artifact (~11 GB):
+        <code>https://sync.doge.gopastearth.com/utxo-6324517-20260809T065442Z.dat</code>
+        · file SHA-256 <code>0c407452…0ad026</code>.
+        Other heights still need <code>-assumeutxodev=1</code> or a new map entry.
         Product plan: <code>doc/tiered-storage-and-fast-sync.md</code>.
       </div>
 
@@ -43,6 +46,13 @@
         <code>hash_serialized</code> = hash of the <em>UTXO set</em> at height H (already in
         <code>AssumeutxoData</code>). CDN <em>artifact digest</em> = hash of the snapshot
         <em>file bytes</em> (Product P1 stream-and-hash). Both must pass; fail closed.
+      </div>
+
+      <div class="callout info">
+        <strong>New here? Read the user guide first</strong>
+        Plain-language walkthrough (what the button does, ~11 GB file, background prove,
+        when <em>not</em> to use mid-IBD):
+        <a href="fast-sync.html"><strong>Fast Sync explained</strong></a>.
       </div>
 
       <h2>Goal vs today</h2>
@@ -78,7 +88,7 @@
           <tr><td>D1</td><td><span class="badge badge-done">Done</span></td><td><code>mapAssumeutxo</code> gate; status-bar “historical validation %”</td></tr>
           <tr><td>D2</td><td><span class="badge badge-done">Done</span></td><td><code>listassumeutxo</code>; dump hash snippet; hard-collapse after prove</td></tr>
           <tr><td>D3</td><td><span class="badge badge-done">Done</span></td><td>Prune blocked during bg proof; <code>qa/rpc-tests/assumeutxo.py</code></td></tr>
-          <tr><td>P1</td><td><span class="badge badge-todo">Next</span></td><td>Fill map + CDN stream-hash + Fast Sync GUI — <a href="storage-stack.html">tiered storage</a></td></tr>
+          <tr><td>P1</td><td><span class="badge badge-partial">~90%</span></td><td>Map + CDN + WinHTTP + Fast Sync dialog <strong>shipped</strong> in 1.14.102 package — <a href="storage-stack.html">tiered storage</a></td></tr>
           <tr><td>P2</td><td><span class="badge badge-todo">Open</span></td><td>Default prune-as-you-go product (stock <code>-prune=</code>)</td></tr>
           <tr><td>P3–P4</td><td><span class="badge badge-todo">Later</span></td><td>Cold blk CDN; RocksDB-class hot engine</td></tr>
         </tbody>
@@ -132,9 +142,26 @@ dogecoin-cli listassumeutxo   # compiled attestations (may be empty)</code></pre
           producer dumps tip; consumer syncs headers, activates snapshot,
           fetches historical blocks over P2P, validates and dual-collapses
         </li>
+        <li>
+          <code>scripts/smoke-fetchassumeutxo-e2e.ps1</code> —
+          stream-hash fetch (local path) → load → activate
+        </li>
       </ul>
       <pre><code>powershell -ExecutionPolicy Bypass -File scripts/smoke-assumeutxo-regtest.ps1
 powershell -ExecutionPolicy Bypass -File scripts/smoke-assumeutxo-two-node.ps1</code></pre>
+      <div class="callout ok">
+        <strong>WinHTTP HTTPS (2026-08-09) — smoke green</strong>
+        PE <code>dogecoind.exe</code> links <code>WINHTTP.dll</code> for CDN
+        <code>https://</code> downloads (fixes libevent HTTP&nbsp;400).
+        <code>scripts/smoke-winhttp-https.ps1</code> proves fail-closed + OK against
+        <code>https://sync.doge.gopastearth.com/latest.json</code> (small body;
+        multi‑GB path is the same stream-hash). Package:
+        <code>release/dogecoin-1.14.102-win64.zip</code> +
+        <code>dogecoin-1.14.102-win64-setup.exe</code> (daemon + Qt both import
+        <code>WINHTTP.dll</code>). <strong>P1.7 shipped:</strong>
+        <code>Settings → Fast Sync from CDN…</code> + first-run offer in
+        <code>release/dogecoin-1.14.102-win64-setup.exe</code>.
+      </div>
       <p class="muted">
         Also available: <code>qa/rpc-tests/assumeutxo.py</code> (needs a native
         Linux <code>dogecoind</code> with AssumeUTXO RPCs built).

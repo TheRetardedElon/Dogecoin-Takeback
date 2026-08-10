@@ -20,6 +20,9 @@ No server required (`file://` works). Styles, diagrams, and nav are local under 
 | `pages/` | Workstream and architecture pages |
 | `pages/ibd-and-p2p.html` | IBD telemetry, stall rescue, ASMAP, parallelism |
 | `pages/assumeutxo.html` | AssumeUTXO dual chainstate A–D3 + product P1 |
+| `pages/fast-sync.html` | **Plain-language Fast Sync** (CDN, hashes, P2P, when to use) |
+| `pages/multi-operator-mesh.html` | Multi-operator dumpers + CDN mirrors (speed, failover, trust) |
+| `pages/fast-sync-threat-model.html` | CDN threat model vs live GPE layout (no overkill) |
 | `pages/storage-stack.html` | Engines + tiered storage / CDN plan |
 | `pages/arcade.html` | Arcade tab (pure Qt) |
 | `pages/payment-layer.html` | Native DOGE merchants / Core Pro vs optional GPE |

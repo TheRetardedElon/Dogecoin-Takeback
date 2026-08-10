@@ -26,7 +26,8 @@
       </p>
       <div class="meta">
         <span>Plan: <code>doc/tiered-storage-and-fast-sync.md</code></span>
-        <span>Updated: 2026-08-08</span>
+        <span>Updated: 2026-08-09</span>
+        <span>CDN: <code>sync.doge.gopastearth.com</code></span>
       </div>
 
       <div class="callout warn">
@@ -34,6 +35,8 @@
         Object storage (S3/R2) is a <em>dumb CDN</em>: download, hash, fail closed,
         then write local. Never mount Drive/Dropbox/FUSE as live <code>chainstate/</code>.
         There is no “zero corruption risk” — only detect, refuse, recover.
+        User guide: <a href="fast-sync.html">Fast Sync explained</a>.
+        Multi-CDN speed: <a href="multi-operator-mesh.html">Multi-operator mesh</a>.
       </div>
 
       <h2>Tiered model (target product)</h2>
@@ -52,7 +55,7 @@
             <td>Bootstrap</td>
             <td>UTXO snapshot artifact</td>
             <td>CDN object → stream-hash → local temp → load</td>
-            <td><strong>P1</strong> (next)</td>
+            <td><strong>P1 ~90%</strong> (CDN + WinHTTP + Fast Sync dialog packaged)</td>
           </tr>
           <tr>
             <td>Warm/cold history</td>
@@ -75,6 +78,45 @@
         Space win = prune (+ not archiving). Ops win = P4. Time-to-usable = P1 AssumeUTXO + CDN.
         Engineering AssumeUTXO A–D3 is already done — see <a href="assumeutxo.html">AssumeUTXO</a>.
       </p>
+
+      <h2>Fast Sync download status (2026-08-09)</h2>
+      <table>
+        <thead>
+          <tr><th>Surface</th><th>Status</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GPE CDN + <code>latest.json</code></td>
+            <td><span class="badge badge-done">Live</span></td>
+            <td><code>https://sync.doge.gopastearth.com/</code> — ~11&nbsp;GB mainnet dump height 6324519</td>
+          </tr>
+          <tr>
+            <td>Stream-and-hash (local path)</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><code>fetchassumeutxo</code> / <code>FetchSnapshotArtifact</code></td>
+          </tr>
+          <tr>
+            <td>Windows HTTPS CDN pull</td>
+            <td><span class="badge badge-done">Smoke OK</span></td>
+            <td>WinHTTP in PE daemon; <code>scripts/smoke-winhttp-https.ps1</code> fail-closed + OK vs GPE CDN</td>
+          </tr>
+          <tr>
+            <td>Linux HTTPS CDN pull</td>
+            <td><span class="badge badge-partial">Partial</span></td>
+            <td>libevent path; plain HTTP OK; HTTPS may need SSL libevent or local file workaround</td>
+          </tr>
+          <tr>
+            <td>Qt installer package</td>
+            <td><span class="badge badge-done">Shipped</span></td>
+            <td><code>dogecoin-1.14.102-win64.zip</code> + <code>-setup.exe</code>; both PE binaries import <code>WINHTTP.dll</code></td>
+          </tr>
+          <tr>
+            <td>First-run Fast Sync modal</td>
+            <td><span class="badge badge-done">P1.7</span></td>
+            <td><code>FastSyncDialog</code> — progress/abort/load/activate; menu + first-run offer</td>
+          </tr>
+        </tbody>
+      </table>
 
       <h2>Current state</h2>
       <table>

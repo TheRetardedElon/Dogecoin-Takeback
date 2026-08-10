@@ -1,6 +1,6 @@
 # Tiered storage & fast sync — Dogecoin Core Pro (1.14.101)
 
-**Status:** engineering AssumeUTXO A–D3 **done**; product P1 **partial** (manifest resolve + Options SoftSet; CDN hostname live; mainnet attestation + dump binary still open)  
+**Status:** engineering AssumeUTXO A–D3 **done**; product P1 **~90%** (CDN + WinHTTP + **P1.7 FastSyncDialog shipped** in `dogecoin-1.14.102-win64` zip/setup)  
 **Date:** 2026-08-09  
 **Audience:** implementers + release operators  
 
@@ -12,6 +12,27 @@ This document is the **authoritative product architecture** for:
 4. Leaving room for **RocksDB-class** hot engines later (ops win, not the main space win)
 
 **Risk language (honest):** we do **not** claim zero corruption risk. We **detect** bad artifacts (hashes), **refuse** them, and **recover** (fallback IBD / re-fetch / reindex). Disks lie; networks drop; bitrot happens.
+
+**Plain-language user guide (HTML):** `html/docs/pages/fast-sync.html`  
+**Root README** also carries a short Fast Sync section for GitHub readers.
+
+### Fast Sync in one page (same story as the HTML guide)
+
+| | Normal IBD | Fast Sync |
+|--|------------|-----------|
+| Download | Many blocks from peers | ~11 GB snapshot over HTTPS CDN + later peers |
+| Wallet tip usable | Late | Sooner, after load/activate at attested H |
+| Trust | You built UTXOs yourself | File SHA-256 + `mapAssumeutxo` + **background P2P prove** |
+| Cloud role | None | Dumb file host only |
+
+```text
+CDN file ──file SHA-256──► load UTXOs at H ──activate──► wallet near tip
+                                 │
+                                 └── background P2P 0→H ──re-prove hash_serialized
+                                 └── P2P keeps tip moving past H
+```
+
+**Do not** start multi‑GB Fast Sync on a datadir already mid classic IBD. Prefer empty/new datadir.
 
 ---
 
@@ -35,17 +56,39 @@ Gemini/chat sometimes call “Phase A: Trust Anchors.” That maps to **Product 
 | Activate tip (dev-gated) | `activatesnapshot`, `-assumeutxodev` |
 | Background prove to `hash_serialized` | fail-closed on mismatch |
 | Session restore | `assumeutxo.dat` |
-| Attestation **structure** | `AssumeutxoData` + `mapAssumeutxo` in `chainparams` — **maps empty on mainnet/testnet** |
+| Attestation **structure** | `AssumeutxoData` + `mapAssumeutxo` in `chainparams` |
+| Mainnet attestation | **`mapAssumeutxo[6324519]`** from gpednode dump (live) |
+| GPE CDN | `https://sync.doge.gopastearth.com/latest.json` + multi‑GB `.dat` |
+| Stream-and-hash + RPC | `src/node/snapshot_fetch.*`, `fetchassumeutxo`, `fetchassumeutxomanifest` |
+| Windows HTTPS | **WinHTTP/Schannel** path; smoke-proven (`scripts/smoke-winhttp-https.ps1` vs GPE CDN) |
 | Auto prune-as-you-go | Stock Core: `-prune=<MiB>` (not invented by Pro) |
 | Prune blocked during bg proof | D3 |
 
 **What is missing for users:**
 
-- Published mainnet/testnet **attested heights** in `mapAssumeutxo`  
-- Hosted **snapshot artifacts** + **stream-and-hash download**  
-- First-boot **Fast Sync** GUI  
-- Product default **prune** for non-archival installs  
-- Optional **cold `blk` object CDN** (later)
+- Product default **prune** for non-archival installs (P2 polish)  
+- Optional **cold `blk` object CDN** (later / mesh M4)  
+- Multi-operator mesh **M2+** (multi-URL failover code; second independent mirror)
+
+**Mesh design (plain language + stages):** `html/docs/pages/multi-operator-mesh.html`
+
+---
+
+## 1b. Multi-operator mesh (how speed scales without new consensus)
+
+**Problem:** one CDN region/org is a bottleneck (latency, capacity, outages).  
+**Solution:** many operators host the **same hash-checked** artifacts; clients failover across `urls[]`.
+
+| Role | Job |
+|------|-----|
+| Dump / settlement node | `dumptxoutset` at H; publish digests |
+| CDN / mirror | Static HTTPS `latest.json` + `.dat` (and later optional blk objects) |
+| Client | Stream-hash; require file SHA-256 + `mapAssumeutxo`; background prove |
+
+**Why faster:** geographic mirrors, more aggregate bandwidth, failover, fresher multi-dumper schedules (less tip catch-up after H).  
+**Why still safe:** wrong mirror fails SHA-256; wrong UTXO fails attestation/prove. More operators ≠ automatic trust.
+
+**Maturity:** M1 = first public operator (GPE, live) → M2 multi-URL client failover → M3 multi-dumper → M4 cold blk CDN (P3).
 
 ---
 
@@ -146,12 +189,13 @@ flowchart TB
 | P1.1 Publish attestation | Operator: full node at H → `dumptxoutset` → record `hash_serialized` → PR into `mapAssumeutxo` mainnet/testnet |
 | P1.2 Artifact hosting | CDN URL(s); multi‑GB expected (minutes of I/O, not “30 seconds”) |
 | P1.3 Manifest | **Done (parse + GPE aliases):** `ParseSnapshotArtifactManifest` / `ResolveSnapshotFromManifest`; official CDN `https://sync.doge.gopastearth.com/latest.json`; RPC `fetchassumeutxomanifest` |
-| P1.4 Stream-and-hash downloader | **Done (local):** `src/node/snapshot_fetch.*` + RPC `fetchassumeutxo`; smokes green. HTTP best-effort (https SSL may need local path on some builds). |
-| P1.5 Wire to load path | **E2E PE smoke green:** dump → fetch → load → activate → prove/collapse (`scripts/smoke-fetchassumeutxo-e2e.ps1`) |
+| P1.4 Stream-and-hash downloader | **Done:** `src/node/snapshot_fetch.*` + RPC `fetchassumeutxo`. **Windows PE daemon:** WinHTTP/Schannel linked (`scripts/relink-winhttp-dogecoind.sh`). **Linux:** libevent (plain HTTP; https may need local path or SSL-enabled libevent). |
+| P1.5 Wire to load path | **E2E PE smoke green (local path):** dump → fetch → load → activate → prove/collapse (`scripts/smoke-fetchassumeutxo-e2e.ps1`). HTTPS smoke against GPE CDN next. |
 | P1.6 Intro Fast path | **Scaffolded:** Intro UI Fast vs Archive; Fast → SoftSet `-prune=5500` + QSettings `fPreferFastSync`; Options SoftSet `-snapshotmanifest` / `-snapshoturl` / `-snapshotsha256` |
 | P1.6 Fail closed | Mismatch → delete temp, log critical, **fallback full IBD** (or abort with clear UI) |
-| P1.7 GUI modal | First empty datadir: **Fast Sync (Recommended)** vs **Standard Sync** |
-| P1.8 Docs / security FAQ | What we trust, for how long, background prove |
+| P1.6b Package | **Done:** `release/dogecoin-1.14.102-win64.zip` + `-setup.exe` (`scripts/package-winhttp-release.sh`) |
+| P1.7 GUI modal | **Done in source:** `qt/fastsyncdialog.*` — Settings → Fast Sync from CDN; first-run offer after Intro Fast path when height ≤1000; progress + abort; load+activate |
+| P1.8 Docs / security FAQ | What we trust, for how long, background prove — HTML dashboard + this doc
 
 **C++ surface (illustrative):**
 
@@ -183,8 +227,8 @@ Struct mapping alone is nearly done; **values + download path** are the work.
 | Work item | Notes |
 |-----------|--------|
 | P2.1 Document stock behavior | `-prune=<MiB>` already auto-prunes mid-IBD |
-| P2.2 Installer / first-run default | Recommend e.g. `prune=5500`+ for “wallet node” |
-| P2.3 Archival checkbox | Advanced: full history, no prune |
+| P2.2 Installer / first-run default | **Partial:** Intro Fast path SoftSets `-prune=5500` + Options `bPrune` when `fPreferFastSync` (2026-08-09) |
+| P2.3 Archival checkbox | Intro “Full archive” + Options uncheck prune |
 | P2.4 Interaction with AssumeUTXO | Keep D3 rules; after prove, prune remaining policy documented |
 
 **Exit criteria:** new user path defaults to bounded disk; archival is opt-in.
@@ -281,6 +325,8 @@ flowchart LR
 ---
 
 ## 6. Operator runbook (attestation)
+
+Also see multi-operator checklist: `html/docs/pages/multi-operator-mesh.html`.
 
 When a community/operator is ready to publish height H:
 

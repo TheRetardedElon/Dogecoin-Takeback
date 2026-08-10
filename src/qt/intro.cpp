@@ -224,9 +224,15 @@ bool Intro::pickDataDirectory()
             // Stock Core auto prune-as-you-go; ~5.5 GiB block target (Dogecoin tip).
             // SoftSet so dogecoin.conf can still override if the user sets -prune explicitly.
             SoftSetArg("-prune", "5500");
-            settings.setValue("nPrune", 5500);
+            settings.setValue("bPrune", true);
+            settings.setValue("nPruneSize", 6); // Options UI units: GB
+            settings.setValue("nPrune", 5500);  // legacy key some paths read
+            // Offer CDN Fast Sync modal once the GUI is up (P1.7).
+            settings.setValue("fPendingFastSyncOffer", true);
         } else {
+            settings.setValue("bPrune", false);
             settings.setValue("nPrune", 0);
+            settings.setValue("fPendingFastSyncOffer", false);
         }
     }
     /* Only override -datadir if different from the default, to make it possible to

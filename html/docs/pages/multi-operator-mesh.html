@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multi-operator mesh — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav></nav>
+    </aside>
+
+    <main class="main">
+      <h1>Multi-operator mesh</h1>
+      <p class="lead">
+        How <strong>many independent orgs</strong> can host Fast Sync snapshots (and later
+        cold block objects) so bootstrap is <strong>faster, closer, and harder to knock offline</strong>
+        — without turning “the cloud” into consensus.
+      </p>
+      <div class="meta">
+        <span>Status: <strong>design + first operator live</strong></span>
+        <span>Today: GPE CDN</span>
+        <span>Related: <a href="fast-sync.html">Fast Sync explained</a></span>
+        <span>Plan: <code>doc/tiered-storage-and-fast-sync.md</code></span>
+      </div>
+
+      <div class="callout ok">
+        <strong>One sentence</strong>
+        Operators run full nodes + publish hash-checked static files; clients pick any
+        mirror that matches the <em>same</em> digests and attestations. More operators =
+        more bandwidth and geography, not a second ledger.
+      </div>
+
+      <h2>Why this exists</h2>
+      <p>
+        A single CDN (even a good one) has limits: one region’s latency, one org’s
+        bandwidth bill, one outage window. Fast Sync already makes bootstrap <em>possible</em>
+        without a week of pure IBD. The mesh makes it <em>resilient and faster for more people</em>:
+      </p>
+      <ul>
+        <li><strong>Closer bytes</strong> — pick a mirror near the user (lower RTT, better throughput)</li>
+        <li><strong>Parallel capacity</strong> — many pipes serve the same ~11 GB object</li>
+        <li><strong>No single choke point</strong> — one host down → try the next URL</li>
+        <li><strong>Open participation</strong> — any serious org can dump + host; GPE is first, not exclusive</li>
+      </ul>
+      <p>
+        Speed comes from <strong>object delivery</strong> (HTTPS mirrors + optional multi-source),
+        not from relaxing verification. Verification stays local and fail-closed.
+      </p>
+
+      <h2>Three roles (keep them separate)</h2>
+      <table>
+        <thead>
+          <tr><th>Role</th><th>What they run</th><th>What they publish</th><th>What they must not do</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Settlement / dump node</strong></td>
+            <td>Full (or pruned-with-care) Dogecoin node at tip; Core Pro with <code>dumptxoutset</code></td>
+            <td><code>hash_serialized</code>, height, bestblock; snapshot <code>.dat</code></td>
+            <td>Serve live LevelDB over the internet; claim “trust me without hashes”</td>
+          </tr>
+          <tr>
+            <td><strong>CDN / mirror host</strong></td>
+            <td>Static HTTPS (nginx, R2, S3, …)</td>
+            <td><code>latest.json</code> + multi‑GB <code>.dat</code> (and later optional <code>blk</code> objects)</td>
+            <td>Act as consensus; run wallet RPC for the public; FUSE-mount as datadir</td>
+          </tr>
+          <tr>
+            <td><strong>Client (wallet node)</strong></td>
+            <td>dogecoin-qt / dogecoind</td>
+            <td>Nothing required</td>
+            <td>Activate on digest mismatch; skip background prove for real funds blindly</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        One org can wear dump + CDN hats (GPE today). Mesh maturity is when
+        <strong>dumpers ≠ only one CDN</strong> and clients have a list of mirrors.
+      </p>
+
+      <h2>How it makes things faster (concrete)</h2>
+      <table>
+        <thead>
+          <tr><th>Mechanism</th><th>What improves</th><th>What does not change</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Geographic mirrors</strong></td>
+            <td>Download Mbps for users far from the first host</td>
+            <td>UTXO validity rules</td>
+          </tr>
+          <tr>
+            <td><strong>Multiple simultaneous hosts</strong></td>
+            <td>Aggregate capacity; less queueing on one pipe</td>
+            <td>Need for file SHA-256 + <code>hash_serialized</code></td>
+          </tr>
+          <tr>
+            <td><strong>Failover URL list</strong></td>
+            <td>Time-to-first-byte when primary is down</td>
+            <td>Attestation source of truth (compiled map / community process)</td>
+          </tr>
+          <tr>
+            <td><strong>Fresher dumps (many dumpers)</strong></td>
+            <td>H closer to tip → less catch-up after activate</td>
+            <td>Background prove still required for honesty</td>
+          </tr>
+          <tr>
+            <td><strong>Later: cold <code>blk</code> CDN (P3)</strong></td>
+            <td>Historical block fetch when peers are weak</td>
+            <td>Peers remain first-class; CDN is assist only</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Trust model (same as single CDN — scaled out)</h2>
+      <div class="callout warn">
+        <strong>More operators ≠ more trust by default</strong>
+        You do not “trust operator B because they’re big.” You trust
+        <strong>matching digests</strong> and <strong>your local prove</strong>.
+      </div>
+      <ol>
+        <li><strong>File SHA-256</strong> — every mirror must serve bytes that hash to the manifest digest.</li>
+        <li><strong><code>hash_serialized</code> / <code>mapAssumeutxo[H]</code></strong> — UTXO set must match the attestation in the client binary (or a documented community process for new heights).</li>
+        <li><strong>Background prove</strong> — client still walks history over P2P and re-checks.</li>
+        <li><strong>Fail closed</strong> — wrong file or wrong coins → refuse activate / abort path.</li>
+      </ol>
+      <p>
+        A malicious mirror can only waste your bandwidth or serve a wrong file that
+        <strong>fails hash check</strong>. A malicious dumper who publishes a bad
+        <code>hash_serialized</code> only hurts people who ship that value without review —
+        the map entry is a release/governance decision, not “whatever the CDN says today.”
+      </p>
+
+      <h2>Daisy-chain / mirror graph</h2>
+      <pre><code>                    mapAssumeutxo[H]  (in client release)
+                              │
+                              │  must match coins
+                              ▼
+┌─────────────┐   dumptxoutset    ┌──────────────┐
+│ Dump node A │ ───────────────► │ Artifact .dat │
+│ (settlement)│                  │ + digests     │
+└─────────────┘                  └──────┬───────┘
+                                        │ copy / rsync / pull
+              ┌─────────────────────────┼─────────────────────────┐
+              ▼                         ▼                         ▼
+       ┌────────────┐            ┌────────────┐            ┌────────────┐
+       │ CDN / GPE  │            │ Mirror Org │            │ Mirror Org │
+       │ latest.json│            │ B          │            │ C          │
+       └─────┬──────┘            └─────┬──────┘            └─────┬──────┘
+             │                         │                         │
+             └─────────────────────────┴─────────────────────────┘
+                                       │
+                         client tries urls[] until one
+                         stream-hashes to the SAME sha256
+                                       │
+                                       ▼
+                              load + activate + bg prove
+</code></pre>
+      <p>
+        “Daisy-chain” means: operator B can pull A’s verified artifact (or re-dump
+        independently at the same H) and host it. Clients do not need a private
+        relationship with every host — only a list of HTTPS URLs and one expected digest.
+      </p>
+
+      <h2>Manifest shape (target multi-URL)</h2>
+      <p>Today (GPE, single primary URL) works as:</p>
+      <pre><code>{
+  "network": "main",
+  "url": "https://sync.doge.gopastearth.com/utxo-….dat",
+  "sha256": "…",
+  "blocks": 6324519,
+  "hash_serialized": "…",
+  "bytes": 11498129241
+}</code></pre>
+      <p>Mesh-ready extension (product direction):</p>
+      <pre><code>{
+  "network": "main",
+  "sha256": "…",
+  "blocks": 6324519,
+  "hash_serialized": "…",
+  "bytes": 11498129241,
+  "urls": [
+    "https://sync.doge.gopastearth.com/utxo-….dat",
+    "https://mirror.example.org/dogecoin/utxo-….dat",
+    "https://cdn2.example.net/utxo-….dat"
+  ],
+  "mirrors": [
+    { "url": "https://…", "region": "eu-west", "operator": "ExampleOrg" }
+  ]
+}</code></pre>
+      <p>
+        Client policy (target): try URLs in order (or by latency probe); first
+        successful stream-hash wins; never accept a different sha256 from a “faster” host.
+      </p>
+
+      <h2>Maturity stages</h2>
+      <table>
+        <thead>
+          <tr><th>Stage</th><th>What exists</th><th>Speed / resilience</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>M0</strong> Engineering only</td>
+            <td>dump/load/activate, no public CDN</td>
+            <td>Regtest / private files</td>
+            <td><span class="badge badge-done">Done</span></td>
+          </tr>
+          <tr>
+            <td><strong>M1</strong> First public operator</td>
+            <td>GPE dump node + <code>sync.doge.gopastearth.com</code> + client WinHTTP/GUI</td>
+            <td>One fast path vs pure IBD</td>
+            <td><span class="badge badge-done">Live</span></td>
+          </tr>
+          <tr>
+            <td><strong>M2</strong> Multi-mirror same artifact</td>
+            <td><code>urls[]</code> / operator list; clients failover</td>
+            <td>Geo + capacity + uptime</td>
+            <td><span class="badge badge-todo">Next mesh code</span></td>
+          </tr>
+          <tr>
+            <td><strong>M3</strong> Multi-dumper schedule</td>
+            <td>Several orgs publish dumps at H (or rotating H); map entries via release process</td>
+            <td>Fresher H, less single-org dump risk</td>
+            <td><span class="badge badge-todo">Open</span></td>
+          </tr>
+          <tr>
+            <td><strong>M4</strong> Cold blk assist (P3)</td>
+            <td>Content-addressed historical blocks as optional HTTPS objects</td>
+            <td>Faster reindex / weak-peer regions</td>
+            <td><span class="badge badge-todo">Later</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>What an operator must do (checklist)</h2>
+      <ol>
+        <li>Run a honest full node; reach a stable tip; prefer not mid-corrupt migrate.</li>
+        <li><code>dumptxoutset</code> → record <code>hash_serialized</code>, height, bestblock, file SHA-256, size.</li>
+        <li>Host <code>.dat</code> + <code>latest.json</code> over <strong>HTTPS</strong> with correct Content-Length / stable URLs.</li>
+        <li>Publish operator notes (region, contact, retention policy). No secrets in public docs.</li>
+        <li>Optional: pull another operator’s artifact and re-host <em>only if</em> digests match (daisy-chain mirror).</li>
+        <li>For new heights: propose mapAssumeutxo entry via the project’s release process — do not expect clients to soft-trust unsigned JSON alone for activation.</li>
+      </ol>
+
+      <h2>What clients will do (target behavior)</h2>
+      <ol>
+        <li>Resolve manifest (default GPE URL, or Options custom, or future operator directory).</li>
+        <li>Build candidate URL list (<code>url</code> + <code>urls[]</code>).</li>
+        <li>Download with stream-hash; on failure/timeout, next URL; same expected sha256 always.</li>
+        <li>Load + activate only if attestation / policy allows.</li>
+        <li>Background prove; keep pruning policy (P2) so disk stays bounded.</li>
+      </ol>
+      <p>
+        Today’s client already does the single-URL path well. Mesh work is mainly
+        <strong>manifest multi-URL + client failover</strong> and <strong>operator runbooks</strong> —
+        not a new consensus subsystem.
+      </p>
+
+      <h2>Relation to IBD / P2P speed</h2>
+      <ul>
+        <li><strong>Fast Sync (P1)</strong> removes most “download every block before tip is usable.”</li>
+        <li><strong>Mesh (this page)</strong> makes that snapshot download faster/more available.</li>
+        <li><strong>IBD P0–P0.3</strong> still matters for: people who skip Fast Sync, background prove, tip catch-up, archival nodes.</li>
+        <li><strong>P3 blk CDN</strong> later helps prove/reindex when peers suck — still hash-checked objects.</li>
+      </ul>
+
+      <h2>Non-goals</h2>
+      <ul>
+        <li>No “operator-signed consensus” replacing PoW.</li>
+        <li>No mandatory GPE account for Fast Sync.</li>
+        <li>No live remote chainstate (S3-as-LevelDB).</li>
+        <li>No requirement that every operator run merchant/GPE stack — dump+CDN is enough.</li>
+      </ul>
+
+      <h2>Implementation sketch (when we code M2)</h2>
+      <table>
+        <thead>
+          <tr><th>Surface</th><th>Change</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>SnapshotArtifactManifest</code></td>
+            <td>Parse <code>urls[]</code> / optional <code>mirrors[]</code>; keep GPE single <code>url</code></td>
+          </tr>
+          <tr>
+            <td><code>FetchSnapshotArtifact</code> / GUI worker</td>
+            <td>Iterate URLs; shared expected sha256; progress UI shows which mirror</td>
+          </tr>
+          <tr>
+            <td>Options</td>
+            <td>Optional extra mirror list; still SoftSet manifest URL</td>
+          </tr>
+          <tr>
+            <td>Operator doc</td>
+            <td>This page + sample <code>latest.json</code> + pull script for mirrors</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Where we are / where we’re going</h2>
+      <div class="callout info">
+        <strong>Now (M1)</strong>
+        GPE settlement dump + public CDN + client Fast Sync dialog/WinHTTP.
+        One strong operator path proving the model.
+      </div>
+      <div class="callout warn">
+        <strong>Next (M2–M3)</strong>
+        Multi-URL manifests, client failover, second independent mirror, then multi-dumper
+        schedule + clearer attestation release process for new heights.
+      </div>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="fast-sync.html">Fast Sync explained</a> — user-facing bootstrap story</li>
+        <li><a href="assumeutxo.html">AssumeUTXO</a> — dual chainstate engineering</li>
+        <li><a href="storage-stack.html">Storage stack</a> — tiers and honesty rules</li>
+        <li><a href="roadmap.html">Roadmap</a> — Phase 8 checklist</li>
+        <li><code>doc/tiered-storage-and-fast-sync.md</code> — authoritative product plan</li>
+      </ul>
+
+      <div class="footer">
+        Updated 2026-08-09 · Mesh is delivery + resilience; consensus stays Dogecoin L1.
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

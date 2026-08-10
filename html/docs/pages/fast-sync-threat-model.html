@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fast Sync CDN threat model — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav></nav>
+    </aside>
+
+    <main class="main">
+      <h1>Fast Sync CDN threat model</h1>
+      <p class="lead">
+        What a public snapshot CDN adds to the attack surface — verified against the
+        live GPE layout (static <code>sync.doge…</code>, dump node, app box). Not
+        overkill; not panic.
+      </p>
+      <div class="meta">
+        <span>Updated: 2026-08-09</span>
+        <span>Related: <a href="fast-sync.html">Fast Sync explained</a></span>
+        <span><a href="multi-operator-mesh.html">Multi-operator mesh</a></span>
+      </div>
+
+      <div class="callout ok">
+        <strong>Bottom line</strong>
+        CDN does <strong>not</strong> invent a “hack the chain / print DOGE” path if
+        Core Pro keeps fail-closed file SHA-256 + <code>mapAssumeutxo</code> + background
+        prove. It <strong>does</strong> add hosting, bandwidth, DNS, and
+        <strong>who can write the snapshot files</strong> risk. Serious line =
+        publish path + client verification — not “obfuscate the CDN.”
+      </div>
+
+      <h2>Mental model (GPE today)</h2>
+      <table>
+        <thead>
+          <tr><th>Place</th><th>Role</th><th>Trust</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>sync.doge.gopastearth.com</code></td>
+            <td>Static files only (<code>latest.json</code>, <code>.dat</code>, tiny HTML)</td>
+            <td>Dumb pipe</td>
+          </tr>
+          <tr>
+            <td>gpednode1</td>
+            <td>Dump / settlement (<code>dogecoind</code> localhost RPC)</td>
+            <td>Integrity source of dumps</td>
+          </tr>
+          <tr>
+            <td>GPE app box</td>
+            <td>Dashboard / POS / APIs; also origin for CDN files on same OS</td>
+            <td>App + CDN origin co-located</td>
+          </tr>
+          <tr>
+            <td>Core Pro client</td>
+            <td>Fail-closed hash / map / prove</td>
+            <td>Final judge</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>A. Integrity / supply chain</h2>
+      <table>
+        <thead>
+          <tr><th>Attack</th><th>Here?</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Replace <code>.dat</code> with garbage</td>
+            <td>Only with root/SSH on GPE or dump node</td>
+            <td>No public write; no app “publish snapshot” button; publish = rsync/cron pull</td>
+          </tr>
+          <tr>
+            <td>Evil <code>latest.json</code> only</td>
+            <td>Same write path if host compromised</td>
+            <td>JSON points at CDN + full <code>sha256</code> + <code>hash_serialized</code>; client must enforce digests</td>
+          </tr>
+          <tr>
+            <td>Bad <code>mapAssumeutxo</code> in a release</td>
+            <td>Client release process</td>
+            <td><strong>Real long-term risk</strong> — not nginx; protect GitHub / signing</td>
+          </tr>
+          <tr>
+            <td>Social “download wallet from CDN”</td>
+            <td>Process</td>
+            <td>CDN is UTXO artifacts; binaries stay on GitHub + hashes</td>
+          </tr>
+        </tbody>
+      </table>
+      <p><strong>Integrity risk = who can write the sync tree and gpednode — not random GET users.</strong></p>
+
+      <h2>B. Availability (DoS)</h2>
+      <table>
+        <thead>
+          <tr><th>Item</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Multi‑GB flood / hotlink</td>
+            <td><strong>Real residual</strong> — no rate limit / WAF / edge on sync vhost yet</td>
+          </tr>
+          <tr>
+            <td>Origin down</td>
+            <td>Fast Sync fails → IBD fallback (OK if client handles it)</td>
+          </tr>
+          <tr>
+            <td>Cert expiry</td>
+            <td>LE auto-renew in place (monitor)</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="muted">Optional later: Cloudflare in front of <code>sync.doge…</code>, or nginx <code>limit_req</code> / conn limits. Fine to skip until traffic hurts.</p>
+
+      <h2>C. DNS / TLS</h2>
+      <table>
+        <thead>
+          <tr><th>Item</th><th>Status (verified ops)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>HTTPS</td><td>Yes, dedicated cert</td></tr>
+          <tr><td>HTTP → HTTPS</td><td>301</td></tr>
+          <tr><td>Directory listing</td><td>Off</td></tr>
+          <tr><td>HSTS on sync</td><td>Missing (small gap; not urgent)</td></tr>
+          <tr><td>Subdomain takeover</td><td>Unlikely while live A + nginx + cert exist</td></tr>
+        </tbody>
+      </table>
+
+      <h2>D. Role mix (app vs CDN)</h2>
+      <table>
+        <thead>
+          <tr><th>Claim</th><th>Reality</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Same server = website + CDN origin</td>
+            <td>Yes on GPE app box — static root, not the Node app, but same OS/root</td>
+          </tr>
+          <tr>
+            <td>Website XSS → rewrite <code>latest.json</code></td>
+            <td>Only after shell/root; no CMS publish button for snapshots</td>
+          </tr>
+          <tr>
+            <td><code>DOGE_RPC_*</code> on web tier</td>
+            <td>Yes for POS — localhost tunnel, not public; high impact for money if app box owned; separate from CDN integrity if clients hash-check</td>
+          </tr>
+          <tr>
+            <td>Dump node RPC public</td>
+            <td><strong>No</strong> — gpednode <code>127.0.0.1</code> only</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Confused deputy is <strong>reduced</strong> (static CDN vhost, no RPC on CDN host name)
+        but not perfect isolation (app + CDN origin co-located). Good enough for now;
+        full split is a later ops upgrade.
+      </p>
+
+      <h2>E. Client-side (Core Pro)</h2>
+      <p>CDN side already: small <code>latest.json</code>, versioned immutable <code>.dat</code> name, size declared.</p>
+      <p>Client must: size caps, strict JSON, fixed datadir paths, fail-closed SHA-256, map gate, background prove. Nginx cannot replace that.</p>
+
+      <h2>How scared? (this setup)</h2>
+      <table>
+        <thead>
+          <tr><th>Concern</th><th>Level</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>CDN alone prints DOGE / forces fork</td><td><strong>Low</strong> if fail-closed + map + prove</td></tr>
+          <tr><td>CDN / DNS DoS or confusion</td><td><strong>Medium</strong> (no rate limit yet)</td></tr>
+          <tr><td>Dump node or publish SSH stolen</td><td><strong>High</strong> for download integrity</td></tr>
+          <tr><td>Main site app hacked</td><td><strong>High</strong> for money/app; CDN rewrite only after host compromise</td></tr>
+          <tr><td>Fake “Core wallet” malware</td><td><strong>Social</strong> — pin GitHub releases + hashes</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Checklist — already good</h2>
+      <ul class="checklist">
+        <li class="done">Static-only sync vhost (no PHP/Node on that host name)</li>
+        <li class="done">HTTPS + redirect; no directory listing</li>
+        <li class="done">Small <code>latest.json</code> + versioned <code>.dat</code> + full digests</li>
+        <li class="done">Dump node RPC localhost; not public</li>
+        <li class="done">Dump node separate machine from public web app</li>
+        <li class="done">No CMS “publish snapshot” feature</li>
+        <li class="done">Binaries on GitHub; CDN = UTXO artifacts</li>
+      </ul>
+
+      <h2>Checklist — residual / later</h2>
+      <ul class="checklist">
+        <li class="todo">Rate limit / edge (Cloudflare or nginx limits) when traffic hurts</li>
+        <li class="todo">HSTS on sync vhost</li>
+        <li class="todo">Bandwidth monitoring / alerts</li>
+        <li class="partial">Publish path: root SSH + cron OK for now; dedicated deploy user later</li>
+        <li class="todo">Optional: split CDN origin off app box</li>
+        <li class="todo">Mesh M2 multi-URL failover (availability)</li>
+      </ul>
+
+      <h2>What not to do right now</h2>
+      <ul>
+        <li>No full WAF rebuild overnight</li>
+        <li>No emergency CDN move “for paranoia”</li>
+        <li>No multi-CDN mesh until product needs it</li>
+        <li>No freezing Fast Sync features for CDN theater</li>
+      </ul>
+
+      <div class="callout info">
+        <strong>Keep shipping</strong>
+        Noted and real, not bananas. Treat “who can write the snapshot + client fail-closed”
+        as the serious line. Product can move; ops upgrades are incremental.
+      </div>
+
+      <div class="footer">
+        Verified against live GPE layout discussion 2026-08-09 · No infra secrets in this page
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

@@ -41,9 +41,12 @@
   html += '<div class="nav-section">Node performance</div>';
   html += link(p + "ibd-and-p2p.html", "IBD &amp; P2P");
   html += link(p + "assumeutxo.html", "AssumeUTXO");
+  html += link(p + "fast-sync.html", "Fast Sync explained");
+  html += link(p + "multi-operator-mesh.html", "Multi-operator mesh");
 
   html += '<div class="nav-section">Storage &amp; security</div>';
   html += link(p + "storage-stack.html", "Storage stack");
+  html += link(p + "fast-sync-threat-model.html", "Fast Sync threat model");
   html += link(p + "sqlite-wallet-plan.html", "SQLite wallet plan");
   html += link(p + "security-hardening.html", "Security hardening");
   html += link(p + "security-audit-core.html", "Core attack audit");

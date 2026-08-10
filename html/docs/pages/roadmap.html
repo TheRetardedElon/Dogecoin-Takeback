@@ -71,7 +71,7 @@
         <li class="done">Network page: disconnect / ban / unban context menus (parity with console)</li>
         <li class="done">Options open crash fixed (ThemeSwitcher load no longer polishes mid-build dialog)</li>
         <li class="done">Arcade tab — Retr-Doge Shibe Blaster (pure Qt)</li>
-        <li class="done">Release branding 1.14.101</li>
+        <li class="done">Release branding 1.14.101 → <strong>1.14.102</strong></li>
       </ul>
 
       <h2>Phase 4 — External features <span class="badge badge-partial">In client</span></h2>
@@ -125,23 +125,32 @@
         <li class="done">Docs: <a href="assumeutxo.html">AssumeUTXO</a> + <code>doc/assumeutxo-dogecoin-1.14.md</code></li>
       </ul>
 
-      <h2>Phase 8 — Tiered storage &amp; Fast Sync (product) <span class="badge badge-todo">P1 next</span></h2>
+      <h2>Phase 8 — Tiered storage &amp; Fast Sync (product) <span class="badge badge-partial">P1 ~90%</span></h2>
       <p>
         Authoritative plan: <code>doc/tiered-storage-and-fast-sync.md</code>
-        · <a href="storage-stack.html">Storage stack</a>.
+        · <a href="storage-stack.html">Storage stack</a> ·
+        <a href="assumeutxo.html">AssumeUTXO</a>.
         Cloud = <strong>CDN + hash fail-closed</strong>, never live LevelDB on Drive/FUSE.
-        Do not confuse Product P1 with engineering Phase A (already shipped).
       </p>
       <ul class="checklist">
-        <li class="todo"><strong>P1.1</strong> Publish testnet/regtest + later mainnet <code>mapAssumeutxo</code> values (<code>hash_serialized</code> = UTXO set hash)</li>
-        <li class="todo"><strong>P1.2</strong> CDN artifact hosting + manifest (height, coins hash, <em>artifact</em> SHA-256, URLs)</li>
-        <li class="done"><strong>P1.3</strong> Stream-and-hash + RPC <code>fetchassumeutxo</code>; smoke <code>smoke-fetchassumeutxo.ps1</code></li>
-        <li class="done"><strong>P1.4</strong> E2E dump→fetch→load→activate: <code>smoke-fetchassumeutxo-e2e.ps1</code></li>
-        <li class="partial"><strong>P1.5</strong> Intro Fast path UI + prune SoftSet; CDN auto-download + Qt rebuild still open</li>
-        <li class="todo"><strong>P2</strong> Default prune-as-you-go for wallet-node installs (stock <code>-prune=</code>)</li>
-        <li class="todo"><strong>P3</strong> Optional cold <code>blk</code> object CDN (secondary to peers)</li>
-        <li class="todo"><strong>P4</strong> RocksDB-class hot engine (ops; small chainstate space only)</li>
+        <li class="done"><strong>P1.1–P1.6b</strong> mapAssumeutxo + GPE CDN + stream-hash RPCs + WinHTTP + Windows package</li>
+        <li class="done"><strong>P1.7</strong> Fast Sync dialog (progress/abort/load/activate) + first-run offer + menu</li>
+        <li class="done"><strong>P1.7b</strong> Shipped in <code>release/dogecoin-1.14.102-win64.zip</code> + <code>-setup.exe</code> (Qt strings: “Fast Sync from CDN”)</li>
+        <li class="partial"><strong>P2</strong> Default prune for Fast path / Prefer Fast Sync (Intro + Options); archival opt-out</li>
+        <li class="todo"><strong>P3</strong> Optional cold <code>blk</code> object CDN</li>
+        <li class="todo"><strong>P4</strong> RocksDB-class hot engine</li>
+        <li class="partial"><strong>Open multi-operator mesh</strong> — design + M1 (GPE) live; docs: <a href="multi-operator-mesh.html">multi-operator-mesh</a>; code next: multi-URL failover (M2)</li>
       </ul>
+      <div class="callout info">
+        <strong>Where we stand (2026-08-09)</strong>
+        Install the new setup/zip, then use <strong>Settings → Fast Sync from CDN…</strong>
+        (or accept the first-run offer on a new datadir). Mid-IBD wallets should not
+        pull the multi‑GB dump on the same datadir without planning a bootstrap.
+      </div>
+      <div class="callout warn">
+        <strong>Where we are going next</strong>
+        P2 default prune product defaults; multi-operator mesh docs; more scheduled dumps.
+      </div>
 
       <h2>Working agreement</h2>
       <div class="callout info">
@@ -153,8 +162,7 @@
       </div>
 
       <div class="footer">
-        Next product focus: <strong>P1</strong> trust anchors + stream-hash Fast Sync
-        (<code>doc/tiered-storage-and-fast-sync.md</code>).
+        Next: mesh M2 multi-URL failover; second independent mirror; more dumps.
       </div>
     </main>
   </div>
