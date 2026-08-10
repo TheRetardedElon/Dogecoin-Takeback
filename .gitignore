@@ -171,3 +171,14 @@ scripts/fix-linux-dogecoind-link.sh
 scripts/build-linux-daemon-gpe.sh
 scripts/make-setup-1.14.101.sh
 scripts/make-setup-1.14.101.sh
+scripts/update-roadmap-phase8.py
+scripts/update-roadmap-p2.py
+scripts/update-roadmap-mesh.py
+scripts/smoke-winhttp-https.ps1
+scripts/relink-winhttp-dogecoind.sh
+scripts/package-winhttp-release.sh
+scripts/package-fastsync-release.sh
+scripts/fix-winbuild-snapshot-makefile.py
+scripts/finish-fastsync-package.sh
+scripts/compile-winhttp-snapshot.sh
+scripts/compile-fastsync-check.sh
