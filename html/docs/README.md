@@ -21,6 +21,7 @@ No server required (`file://` works). Styles, diagrams, and nav are local under 
 | `pages/ibd-and-p2p.html` | IBD telemetry, stall rescue, ASMAP, parallelism |
 | `pages/assumeutxo.html` | AssumeUTXO dual chainstate A–D3 + product P1 |
 | `pages/fast-sync.html` | **Plain-language Fast Sync** (CDN, hashes, P2P, when to use) |
+| `pages/gpenode.html` | **GPENode operator** — dump + CDN roles, mesh M1, clean kit (no secrets) |
 | `pages/multi-operator-mesh.html` | Multi-operator dumpers + CDN mirrors (speed, failover, trust) |
 | `pages/fast-sync-threat-model.html` | CDN threat model vs live GPE layout (no overkill) |
 | `pages/storage-stack.html` | Engines + tiered storage / CDN plan |
@@ -35,7 +36,8 @@ No server required (`file://` works). Styles, diagrams, and nav are local under 
 
 Source exports for re-render live in repo root **`-FlowDiagramLatest/`** (PNG + `updatedmermaid.txt`). After Eraser export, copy PNGs into both that folder and `assets/diagrams/`.
 
-Private operator planning for GPE deployment is intentionally **not** part of this public docs site (no infra secrets here).
+Private operator secrets (IPs, passwords, keys) are **not** part of this public docs site.
+GPENode ops scripts live in the GPENode worktree `deploy/` (see public page `gpenode.html` for the product shape).
 
 ## Design notes in `doc/` (markdown)
 

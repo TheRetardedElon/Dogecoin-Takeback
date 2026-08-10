@@ -182,3 +182,8 @@ scripts/fix-winbuild-snapshot-makefile.py
 scripts/finish-fastsync-package.sh
 scripts/compile-winhttp-snapshot.sh
 scripts/compile-fastsync-check.sh
+
+# Operator secrets (never commit)
+serverdetails.txt
+**/serverdetails.txt
+

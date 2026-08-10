@@ -42,8 +42,60 @@
         <strong>Where this sits on the master map</strong>
         Mesh is the <em>External — future mirrors</em> strip under the Fast Sync /
         AssumeUTXO architecture. CDN stays a dumb pipe; clients still fail-closed.
+        First live operator stack: <a href="gpenode.html"><strong>GPENode</strong></a>
+        (dump node + GPE CDN).
         <a href="diagrams.html">Diagrams</a> ·
         <a href="../assets/diagrams/master-diagram-latest.png">Master PNG</a>
+      </div>
+
+      <h2>How the mesh system works (end-to-end)</h2>
+      <p>
+        Think of three layers that must stay separate. Confusing them is how people
+        invent “cloud consensus” by accident.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Layer</th><th>Job</th><th>Who</th><th>Failure mode if wrong</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1. Attestation</strong></td>
+            <td>Declare “height H has UTXO set hash X”</td>
+            <td>Compiled <code>mapAssumeutxo</code> in Core Pro releases (governance / multi-party dumps)</td>
+            <td>Bad map entry = clients can activate a bad set until prove fails — treat as release-critical</td>
+          </tr>
+          <tr>
+            <td><strong>2. Delivery mesh</strong></td>
+            <td>Move multi‑GB bytes close to users</td>
+            <td>Dump nodes + CDN mirrors (GPENode first; others later)</td>
+            <td>Outage or slow download — <em>not</em> silent wrong balances if digests enforced</td>
+          </tr>
+          <tr>
+            <td><strong>3. Client verify</strong></td>
+            <td>Stream-hash file, load, activate, background prove</td>
+            <td>Every Core Pro node</td>
+            <td>Mismatch → fail closed; user falls back to IBD / re-fetch</td>
+          </tr>
+        </tbody>
+      </table>
+      <p><strong>Data plane (what moves):</strong></p>
+      <ol>
+        <li>Operator A’s dump node reaches tip (or chosen H) and runs <code>dumptxoutset</code>.</li>
+        <li>Operator writes <code>latest.json</code> with file SHA-256, height, <code>hash_serialized</code>, and one or more HTTPS URLs.</li>
+        <li>CDN/mirrors host <em>immutable objects</em>. Daisy-chain: Operator B may rsync A’s artifact <em>only if</em> digests match, or re-dump independently at the same H.</li>
+        <li>Client resolves manifest → builds candidate URL list → downloads with stream-hash → first success with <strong>expected</strong> sha256 wins.</li>
+        <li>Client activates only if map/policy allows; then proves genesis→H over P2P while the tip stays usable.</li>
+      </ol>
+      <p><strong>Control plane (what does <em>not</em> move to the CDN):</strong></p>
+      <ul>
+        <li>No “vote” of CDNs on validity.</li>
+        <li>No live chainstate on the wire.</li>
+        <li>No requirement that every operator run GPE merchant software — dump+CDN is enough for Fast Sync.</li>
+      </ul>
+      <div class="callout ok">
+        <strong>Speed vs trust</strong>
+        Mesh optimizes <em>time-to-bytes</em> (geo, capacity, failover). Trust stays
+        <em>time-to-proof</em> on the client (hashes + background ConnectBlock).
       </div>
 
       <h2>Maturity at a glance (M0–M4)</h2>
@@ -341,7 +393,9 @@
 
       <h2>Related</h2>
       <ul>
+        <li><a href="gpenode.html">GPENode operator</a> — first live dump + CDN stack</li>
         <li><a href="fast-sync.html">Fast Sync explained</a> — user-facing bootstrap story</li>
+        <li><a href="fast-sync-threat-model.html">Threat model</a> — CDN attack surface</li>
         <li><a href="assumeutxo.html">AssumeUTXO</a> — dual chainstate engineering</li>
         <li><a href="storage-stack.html">Storage stack</a> — tiers and honesty rules</li>
         <li><a href="roadmap.html">Roadmap</a> — Phase 8 checklist</li>
@@ -349,7 +403,7 @@
       </ul>
 
       <div class="footer">
-        Updated 2026-08-09 · Mesh is delivery + resilience; consensus stays Dogecoin L1.
+        Updated 2026-08-10 · Mesh is delivery + resilience; consensus stays Dogecoin L1.
       </div>
     </main>
   </div>

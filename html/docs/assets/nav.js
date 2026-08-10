@@ -42,6 +42,7 @@
   html += link(p + "ibd-and-p2p.html", "IBD &amp; P2P");
   html += link(p + "assumeutxo.html", "AssumeUTXO");
   html += link(p + "fast-sync.html", "Fast Sync explained");
+  html += link(p + "gpenode.html", "GPENode operator");
   html += link(p + "multi-operator-mesh.html", "Multi-operator mesh");
 
   html += '<div class="nav-section">Storage &amp; security</div>';

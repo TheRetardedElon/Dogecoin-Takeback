@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GPENode operator — Dogecoin Dev Docs</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav></nav>
+    </aside>
+
+    <main class="main">
+      <h1>GPENode — operator stack</h1>
+      <p class="lead">
+        What a <strong>GPENode</strong> is, what it is not, and how it plugs into
+        Fast Sync and the multi-operator mesh. Public product docs only —
+        <strong>no host secrets, passwords, or private keys</strong>.
+      </p>
+      <div class="meta">
+        <span>Status: <strong>M1 live</strong> (first public operator)</span>
+        <span>CDN: <code>sync.doge.gopastearth.com</code></span>
+        <span>Attested H: <code>6324519</code></span>
+        <span>Updated: 2026-08-10</span>
+      </div>
+
+      <div class="callout ok">
+        <strong>One sentence</strong>
+        GPENode is a <em>headless Dogecoin operator host</em>: run an honest full
+        (or carefully pruned) node, dump UTXO snapshots, publish static files to a
+        CDN, and optionally serve GPE merchant RPC over a private path. It is
+        <strong>not</strong> consensus, not a second chain, and not Core Pro GUI.
+      </div>
+
+      <div class="callout warn">
+        <strong>Secrets stay offline</strong>
+        IPs, SSH passwords, RPC credentials, and wallet material live only in
+        operator-local files (e.g. gitignored <code>serverdetails.txt</code> /
+        <code>local/</code>). Never paste them into this HTML site, public git, or chat logs.
+      </div>
+
+      <h2>Two machines, two jobs (do not merge them)</h2>
+      <table>
+        <thead>
+          <tr><th>Role</th><th>What it runs</th><th>Public surface</th><th>Private surface</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Settlement / dump node</strong><br/><span class="muted">“GPENode” / noderunner</span></td>
+            <td>Headless <code>dogecoind</code> (custom build with <code>dumptxoutset</code>); NVMe datadir; snapshot scripts</td>
+            <td>P2P only (optional); <strong>no public RPC</strong></td>
+            <td>RPC on <code>127.0.0.1</code>; SSH for ops; snapshot export dir</td>
+          </tr>
+          <tr>
+            <td><strong>CDN host</strong><br/><span class="muted">GPE app / static box</span></td>
+            <td>nginx (or object storage) serving static files</td>
+            <td><code>https://sync.doge.gopastearth.com/</code> — <code>latest.json</code> + <code>.dat</code></td>
+            <td>Deploy key / rsync pull from dump node</td>
+          </tr>
+          <tr>
+            <td><strong>Client</strong></td>
+            <td>Core Pro <code>dogecoin-qt</code> / <code>dogecoind</code></td>
+            <td>Downloads snapshot; verifies hashes; background prove</td>
+            <td>Local datadir only</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        One org (GPE today) can own both dump + CDN. Mesh maturity is when
+        <strong>other orgs</strong> can dump and/or mirror the same digests.
+        Full mesh design: <a href="multi-operator-mesh.html">Multi-operator mesh</a>.
+      </p>
+
+      <h2>What GPENode is for</h2>
+      <ul>
+        <li><strong>Fast Sync producer</strong> — <code>dumptxoutset</code> → file SHA-256 + <code>hash_serialized</code> → publish</li>
+        <li><strong>Honest tip</strong> — mainnet (or regtest lab) node that stays synced</li>
+        <li><strong>Optional GPE settlement RPC</strong> — private path for merchant watchers (addresses, received amounts) — <em>not</em> required for Fast Sync clients</li>
+      </ul>
+      <h2>What GPENode is not</h2>
+      <ul>
+        <li>Not Core Pro desktop (no Qt, Arcade, Meme Stream on the server)</li>
+        <li>Not a consensus authority or “trusted cloud chainstate”</li>
+        <li>Not a place to expose RPC on the public internet</li>
+        <li>Not live LevelDB on FUSE/Drive/object storage</li>
+        <li>Not mandatory for end users — clients only need HTTPS + hashes</li>
+      </ul>
+
+      <h2>Operator loop (production Fast Sync)</h2>
+      <div class="flow">
+        <div class="flow-step"><strong>1</strong> Synced tip</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>2</strong> dumptxoutset</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>3</strong> latest.json + digests</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>4</strong> rsync → CDN</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>5</strong> Clients Fast Sync</div>
+      </div>
+      <ol>
+        <li>Keep <code>dogecoind</code> at tip on real block storage (NVMe / cloud block volume).</li>
+        <li>Run snapshot script (e.g. <code>make_utxo_snapshot.sh</code>) → multi‑GB <code>.dat</code> + <code>latest.json</code>.</li>
+        <li>Publish to CDN docroot over HTTPS (pull preferred: CDN host rsyncs from node).</li>
+        <li>Clients: stream-hash file SHA-256 → load → <code>mapAssumeutxo</code> → activate → background prove.</li>
+        <li>For a <em>new</em> height: map entry goes through the release process — CDN JSON alone is not the activation authority.</li>
+      </ol>
+
+      <h2>Where GPENode sits in the mesh</h2>
+      <pre><code>                    mapAssumeutxo[H]   ← in Core Pro release (trust anchor)
+                              │
+              ┌───────────────┴───────────────┐
+              ▼                               ▼
+     ┌─────────────────┐             ┌─────────────────┐
+     │ GPENode (dump)  │  optional   │ Operator B dump │  M3+
+     │ dumptxoutset    │             │ independent H   │
+     └────────┬────────┘             └────────┬────────┘
+              │ artifact + digests            │
+              ▼                               ▼
+     ┌─────────────────┐             ┌─────────────────┐
+     │ GPE CDN (M1)    │◄──rsync/───►│ Mirror CDNs     │  M2+
+     │ latest.json     │   pull      │ same sha256     │
+     └────────┬────────┘             └────────┬────────┘
+              │         urls[] failover        │
+              └───────────────┬───────────────┘
+                              ▼
+                    Core Pro client (fail closed)
+</code></pre>
+      <table>
+        <thead>
+          <tr><th>Stage</th><th>GPENode’s job</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>M0</strong></td>
+            <td>Private dump/load only</td>
+            <td><span class="badge badge-done">Done</span></td>
+          </tr>
+          <tr>
+            <td><strong>M1</strong></td>
+            <td>First public dump + CDN path (this is GPE today)</td>
+            <td><span class="badge badge-done">Live</span></td>
+          </tr>
+          <tr>
+            <td><strong>M2</strong></td>
+            <td>Publish multi-URL manifests; others mirror your bytes</td>
+            <td><span class="badge badge-todo">Next</span></td>
+          </tr>
+          <tr>
+            <td><strong>M3</strong></td>
+            <td>Schedule independent dumps; more map heights via release process</td>
+            <td><span class="badge badge-todo">Open</span></td>
+          </tr>
+          <tr>
+            <td><strong>M4</strong></td>
+            <td>Optional cold <code>blk</code> objects (still hash-checked)</td>
+            <td><span class="badge badge-todo">Later</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Binary requirement</h2>
+      <p>
+        Snapshot production needs a <strong>custom Core Pro / GPE daemon</strong> with
+        AssumeUTXO RPCs (<code>dumptxoutset</code>, etc.). Stock upstream 1.14.9 alone
+        is not enough for the dump path. Clients use the Windows (or other) Core Pro
+        package with Fast Sync + WinHTTP.
+      </p>
+
+      <h2>Public CDN contract</h2>
+      <p>Hostname: <code>https://sync.doge.gopastearth.com/</code></p>
+      <ul>
+        <li><code>latest.json</code> — pointer (url, sha256, blocks, hash_serialized, bytes, …)</li>
+        <li><code>utxo-HEIGHT-TIMESTAMP.dat</code> — multi‑GB artifact</li>
+        <li>Optional <code>.sha256</code> sidecar and short status <code>index.html</code></li>
+      </ul>
+      <p>
+        Mesh-ready manifests may add <code>urls[]</code> / <code>mirrors[]</code> while keeping the same
+        <code>sha256</code>. Clients never accept a different digest from a “faster” host.
+        See <a href="multi-operator-mesh.html">mesh page</a>.
+      </p>
+
+      <h2>Operator kit (repo layout)</h2>
+      <p>
+        Private ops live in the GPENode worktree (<code>C:\dogedevGPEnode</code> when used),
+        not mixed into end-user Core Pro docs:
+      </p>
+      <table>
+        <thead>
+          <tr><th>Path</th><th>Keep for</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>deploy/</code></td>
+            <td>Bootstrap, firewall, NVMe, snapshot, CDN handoff, conf examples</td>
+          </tr>
+          <tr>
+            <td><code>deploy/make_utxo_snapshot.sh</code></td>
+            <td>Production dump → digests → <code>latest.json</code></td>
+          </tr>
+          <tr>
+            <td><code>deploy/install_custom_dogecoind.sh</code></td>
+            <td>Install daemon that has dump RPCs</td>
+          </tr>
+          <tr>
+            <td><code>scripts/ssh_cmd.py</code>, <code>node_status.py</code>, <code>run_remote_snapshot.py</code>, …</td>
+            <td>Remote ops helpers (GPE-only)</td>
+          </tr>
+          <tr>
+            <td><code>local/</code>, <code>serverdetails.txt</code></td>
+            <td>Secrets — gitignored; never open-source</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="muted">
+        Win build scripts and Qt packaging that sync in from dogedev are
+        <strong>Core Pro client noise</strong> on a pure operator tree — prefer
+        <code>scripts/sync-dogedev-to-gpenode.ps1</code> rules that preserve
+        <code>deploy/</code> and GPE-only paths, and do not treat the full client
+        build farm as part of the public operator kit.
+      </p>
+
+      <h2>Open-source later (clean kit)</h2>
+      <p>When publishing an operator kit without secrets, ship only:</p>
+      <ul>
+        <li><code>deploy/*.sh</code> examples with placeholders (no real IPs/passwords)</li>
+        <li><code>dogecoin.conf.example</code> (localhost RPC, prune guidance)</li>
+        <li>CDN nginx sketch + sample <code>latest.json</code></li>
+        <li>This HTML page + mesh + Fast Sync threat model</li>
+        <li>Checklist: dump → publish → verify curl/sha256</li>
+      </ul>
+      <p>Do <strong>not</strong> ship: <code>serverdetails.txt</code>, wallets, live conf with rpcpassword, private keys.</p>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="multi-operator-mesh.html">Multi-operator mesh</a> — how many operators scale delivery</li>
+        <li><a href="fast-sync.html">Fast Sync explained</a> — client path</li>
+        <li><a href="fast-sync-threat-model.html">Threat model</a> — CDN attack surface</li>
+        <li><a href="assumeutxo.html">AssumeUTXO</a> — dual chainstate</li>
+        <li><a href="diagrams.html">Diagrams</a> — master architecture (GPENode box)</li>
+        <li><a href="payment-layer.html">Payment layer</a> — optional GPE merchant path (native DOGE)</li>
+      </ul>
+
+      <div class="footer">
+        Updated 2026-08-10 · GPENode = dump + optional private settlement · CDN = dumb pipe · clients verify.
+      </div>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>
