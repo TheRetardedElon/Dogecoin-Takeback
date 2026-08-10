@@ -91,8 +91,18 @@ void MemeStreamRail::setupUi()
 void MemeStreamRail::setWalletModel(WalletModel* model)
 {
     walletModel = model;
+    if (!model)
+        stopActivity();
     if (headerStatus && headerStatus->text().isEmpty())
         headerStatus->setText(tr("Click ↻ to load feed"));
+}
+
+void MemeStreamRail::stopActivity()
+{
+    if (autoRefresh)
+        autoRefresh->stop();
+    if (client)
+        client->abortPending();
 }
 
 void MemeStreamRail::refresh()

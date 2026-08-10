@@ -152,6 +152,9 @@ void WalletView::setClientModel(ClientModel *_clientModel)
     sendCoinsPage->setClientModel(_clientModel);
     if (networkPage)
         networkPage->setClientModel(_clientModel);
+    // Stop Meme Stream network activity before ClientModel is destroyed on quit.
+    if (!_clientModel && memeStreamRail)
+        memeStreamRail->stopActivity();
 }
 
 void WalletView::setWalletModel(WalletModel *_walletModel)

@@ -35,6 +35,8 @@ public:
     void setWalletModel(WalletModel* walletModel);
     /** Fetch feed (call when Home is shown). */
     void refresh();
+    /** Stop timers and abort HTTP before wallet/client teardown (Windows shutdown safety). */
+    void stopActivity();
 
 Q_SIGNALS:
     void tipRequested(const QString& address);

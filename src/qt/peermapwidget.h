@@ -22,6 +22,12 @@ class QNetworkReply;
 class QLabel;
 class QFrame;
 class QTimer;
+class QHideEvent;
+class QShowEvent;
+class QResizeEvent;
+class QPaintEvent;
+class QMouseEvent;
+class QEvent;
 QT_END_NAMESPACE
 
 /**
@@ -67,6 +73,7 @@ protected:
     void leaveEvent(QEvent* event);
     void resizeEvent(QResizeEvent* event);
     void showEvent(QShowEvent* event);
+    void hideEvent(QHideEvent* event);
 
 private Q_SLOTS:
     void onPeerModelReset();

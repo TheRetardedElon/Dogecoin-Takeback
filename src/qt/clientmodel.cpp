@@ -53,6 +53,12 @@ ClientModel::ClientModel(OptionsModel *_optionsModel, QObject *parent) :
 
 ClientModel::~ClientModel()
 {
+    // Stop GUI poll timers before tearing down peer models (Windows shutdown
+    // heap corruption 0xc0000374 when auto-refresh outlived the model).
+    if (pollTimer)
+        pollTimer->stop();
+    if (peerTableModel)
+        peerTableModel->stopAutoRefresh();
     unsubscribeFromCoreSignals();
 }
 

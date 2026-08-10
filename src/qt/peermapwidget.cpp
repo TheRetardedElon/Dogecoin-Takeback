@@ -22,6 +22,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QSettings>
+#include <QHideEvent>
 #include <QShowEvent>
 #include <QSizePolicy>
 #include <QTimer>
@@ -100,9 +101,16 @@ PeerMapWidget::PeerMapWidget(QWidget* parent)
 
 void PeerMapWidget::setClientModel(ClientModel* model)
 {
+    // Always stop peer-table auto-refresh before dropping the model. Leaving it
+    // running into ClientModel teardown caused STATUS_HEAP_CORRUPTION (0xc0000374)
+    // on Windows shutdown (ntdll heap).
     if (clientModel && clientModel->getPeerTableModel()) {
+        clientModel->getPeerTableModel()->stopAutoRefresh();
         disconnect(clientModel->getPeerTableModel(), 0, this, 0);
     }
+    if (refreshTimer)
+        refreshTimer->stop();
+
     clientModel = model;
     if (clientModel && clientModel->getPeerTableModel()) {
         connect(clientModel->getPeerTableModel(), SIGNAL(layoutChanged()),
@@ -119,8 +127,6 @@ void PeerMapWidget::setClientModel(ClientModel* model)
             refreshFromPeers();
         }
     } else {
-        if (refreshTimer)
-            refreshTimer->stop();
         refreshFromPeers();
     }
 }
@@ -605,4 +611,13 @@ void PeerMapWidget::showEvent(QShowEvent* event)
             refreshTimer->start();
         refreshFromPeers();
     }
+}
+
+void PeerMapWidget::hideEvent(QHideEvent* event)
+{
+    QWidget::hideEvent(event);
+    if (refreshTimer)
+        refreshTimer->stop();
+    if (clientModel && clientModel->getPeerTableModel())
+        clientModel->getPeerTableModel()->stopAutoRefresh();
 }

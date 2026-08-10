@@ -75,6 +75,9 @@ public:
     /** Load defaults from -memestreambaseurl / -memestreamkey. */
     void loadFromArgs();
 
+    /** Abort in-flight HTTP replies (call before ClientModel/wallet teardown). */
+    void abortPending();
+
 Q_SIGNALS:
     void feedReceived(const QList<MemeStreamItem>& items);
     void feedFailed(const QString& error);

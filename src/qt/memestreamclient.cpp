@@ -135,6 +135,25 @@ void MemeStreamClient::setPublishKey(const QString& key)
     m_publishKey = key;
 }
 
+void MemeStreamClient::abortPending()
+{
+    if (m_feedReply) {
+        m_feedReply->abort();
+        m_feedReply->deleteLater();
+        m_feedReply = 0;
+    }
+    if (m_publishReply) {
+        m_publishReply->abort();
+        m_publishReply->deleteLater();
+        m_publishReply = 0;
+    }
+    if (m_likeReply) {
+        m_likeReply->abort();
+        m_likeReply->deleteLater();
+        m_likeReply = 0;
+    }
+}
+
 QUrl MemeStreamClient::apiUrl(const QString& path) const
 {
     QString p = path;

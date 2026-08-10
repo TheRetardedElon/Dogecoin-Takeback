@@ -44,7 +44,10 @@
 #include <boost/thread.hpp>
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QDebug>
+#include <QEvent>
+#include <QEventLoop>
 #include <QLibraryInfo>
 #include <QLocale>
 #include <QMessageBox>
@@ -419,8 +422,13 @@ void DogecoinApplication::requestShutdown()
     qDebug() << __func__ << ": Requesting shutdown";
     startThread();
     window->hide();
+    // Clear models first so Network/MemeStream/PeerMap stop timers and abort HTTP
+    // before ClientModel is destroyed (avoids STATUS_HEAP_CORRUPTION 0xc0000374 on Windows).
     window->setClientModel(0);
     pollShutdownTimer->stop();
+    // Drain Qt deleteLater / aborted QNetworkReply cleanups while models still valid graph.
+    QCoreApplication::sendPostedEvents(0, QEvent::DeferredDelete);
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
 #ifdef ENABLE_WALLET
     window->removeAllWallets();

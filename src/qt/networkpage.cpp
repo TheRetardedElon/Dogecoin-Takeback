@@ -132,9 +132,9 @@ void NetworkPage::setupUi()
 
     pollTimer = new QTimer(this);
     connect(pollTimer, SIGNAL(timeout()), this, SLOT(updateStats()));
-    // Stats poll is cheap; start after a short delay so core GUI finishes first.
+    // Only start when the page is shown (see showEvent). Eager start left the
+    // timer running into ClientModel teardown → Windows heap corruption on exit.
     pollTimer->setInterval(2000);
-    QTimer::singleShot(1500, pollTimer, SLOT(start()));
 }
 
 void NetworkPage::setupContextMenus()
@@ -150,6 +150,12 @@ void NetworkPage::setClientModel(ClientModel* model)
     // If map already exists (user visited Network before), re-bind.
     if (peerMap)
         peerMap->setClientModel(model);
+    if (!model) {
+        if (pollTimer)
+            pollTimer->stop();
+    } else if (isVisible() && pollTimer && !pollTimer->isActive()) {
+        pollTimer->start();
+    }
     // Do not start PeerTableModel auto-refresh here — only when map is live.
     updateStats();
 }
