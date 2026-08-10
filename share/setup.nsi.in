@@ -28,16 +28,28 @@ SetCompressor /SOLID lzma
 # Included files
 !include Sections.nsh
 !include MUI2.nsh
+!include LogicLib.nsh
 !if "@WINDOWS_BITS@" == "64"
 !include x64.nsh
 !endif
 
-# Variables
+# Variables (must be before nsis-rpc-credentials.nsh so $RpcUser etc. resolve)
 Var StartMenuGroup
+Var RpcPassword
+Var RpcUser
+Var RpcAckCheckbox
+Var RpcDlg
+Var RpcPassEdit
+Var DogecoinDataDir
+
+# Unique RPC password page (shared with GPENode installer pattern)
+!include "@abs_top_srcdir@/share/nsis-rpc-credentials.nsh"
+ReserveFile "@abs_top_srcdir@/share/gen-rpc-password.ps1"
 
 # Installer pages
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
+Page custom RpcCredentialsPage RpcCredentialsPageLeave
 !insertmacro MUI_PAGE_STARTMENU Application $StartMenuGroup
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
@@ -89,10 +101,19 @@ Section -post SEC0001
     WriteRegStr HKCU "${REGKEY}" Path $INSTDIR
     SetOutPath $INSTDIR
     WriteUninstaller $INSTDIR\uninstall.exe
+    ; Unique RPC credentials helper scripts
+    File "@abs_top_srcdir@/share/write-install-conf.ps1"
+    File "@abs_top_srcdir@/share/gen-rpc-password.ps1"
+    ; Write dogecoin.conf into %APPDATA%\Dogecoin if missing (unique password per install)
+    CreateDirectory "$DogecoinDataDir"
+    nsExec::ExecToLog 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\write-install-conf.ps1" -DataDir "$DogecoinDataDir" -RpcUser "$RpcUser" -RpcPassword "$RpcPassword" -Profile core'
+    Pop $1
+    DetailPrint "write-install-conf exit=$1"
     !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
     CreateDirectory $SMPROGRAMS\$StartMenuGroup
     CreateShortcut "$SMPROGRAMS\$StartMenuGroup\$(^Name).lnk" $INSTDIR\@DOGECOIN_GUI_NAME@@EXEEXT@
     CreateShortcut "$SMPROGRAMS\$StartMenuGroup\@PACKAGE_NAME@ (testnet, @WINDOWS_BITS@-bit).lnk" "$INSTDIR\@DOGECOIN_GUI_NAME@@EXEEXT@" "-testnet" "$INSTDIR\@DOGECOIN_GUI_NAME@@EXEEXT@" 1
+    CreateShortcut "$SMPROGRAMS\$StartMenuGroup\RPC credentials.lnk" notepad.exe "$DogecoinDataDir\RPC-CREDENTIALS.txt"
     CreateShortcut "$SMPROGRAMS\$StartMenuGroup\Uninstall $(^Name).lnk" $INSTDIR\uninstall.exe
     !insertmacro MUI_STARTMENU_WRITE_END
     WriteRegStr HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" DisplayName "$(^Name)"
@@ -167,6 +188,18 @@ Function .onInit
       Abort
     ${EndIf}
 !endif
+    ; Default Core datadir on Windows
+    ReadEnvStr $0 "APPDATA"
+    ${If} $0 == ""
+      StrCpy $DogecoinDataDir "$PROFILE\AppData\Roaming\Dogecoin"
+    ${Else}
+      StrCpy $DogecoinDataDir "$0\Dogecoin"
+    ${EndIf}
+    ; Unique password every install — never a shared default
+    StrCpy $RpcUser "dogecoin"
+    Call GenerateRpcPassword
+    ; Override default user for Core GUI installs
+    StrCpy $RpcUser "dogecoin"
 FunctionEnd
 
 # Uninstaller functions

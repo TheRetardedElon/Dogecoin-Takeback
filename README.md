@@ -1,140 +1,216 @@
-# Ð Dogecoin Takeback — **Core Pro**
+# Dogecoin Core Pro (Takeback)
 
 ### [github.com/TheRetardedElon/Dogecoin-Takeback](https://github.com/TheRetardedElon/Dogecoin-Takeback)
 
-> **Not a meme coin wrapper. Not an EVM “DOGE app layer.”**  
-> A full **Dogecoin Core (1.14 DNA)** node + wallet — rebranded, re-shelled, productized, and upgraded for real operators — while **consensus stays pure DOGE** (AuxPoW, subsidy, scripts: **untouched**).
+> **Not a meme-coin wrapper. Not an EVM “DOGE app layer.”**  
+> Full **Dogecoin Core (1.14 DNA)** node + wallet — modern Pro shell, Fast Sync, merchant tools — while **consensus stays pure DOGE** (AuxPoW, subsidy, scripts: **untouched**).
 
-If you open this repo expecting another “to the moon” landing page: wrong door.  
-If you open it expecting **a client that actually ships full-node infrastructure + merchant UX on native DOGE**: **welcome.**
+<p align="center">
+  <img src="https://i.imgur.com/mS6ObYd.png" alt="Dogecoin Core Pro splash" width="420" />
+</p>
 
----
-
-## Holyyyyy — what did you *do* to Dogecoin Core?
-
-We took Dogecoin Core’s **1.14 line** and turned it into **Dogecoin Core Pro**: identity, product surface, IBD/P2P muscle, and a full **AssumeUTXO dual-chainstate pipeline** — without inventing a second ledger.
-
-| Pillar | What landed |
-|--------|-------------|
-| **Identity** | Full Dogecoin rebrand path: binaries, Qt, locales, consensus package names, RPC strings — Core DNA, DOGE name |
-| **Shell** | Modern **sidebar Pro UI** (Home / Send / Receive / History / **Network** / **Doge Business** / **Meme Stream** / **Arcade** / Console) |
-| **Merchant** | **Doge Business**: invoices, POS keypad, QR, auto-mark paid when the wallet receives |
-| **Social tips** | **Meme Stream**: feed / publish / like; **tips are on-chain** to the creator’s Dogecoin address |
-| **Network UX** | Live network page + world peer map (lazy-loaded) + full debug console parity |
-| **IBD / P2P** | `getibdinfo`, stall rescue, flush policy, ASMAP, parallel block download — **1.14.101** |
-| **AssumeUTXO** | Dual chainstate **A→D**: dump / load / activate / background prove / persist / attestation hooks / prune guard / smokes |
-| **Docs** | Living HTML docs under `html/docs/` — open `index.html` offline |
-| **Windows** | Full PE build story, smoke scripts, crash hardening for Pro shell |
-
-**Settlement rule (non-negotiable):** money that matters is **native DOGE on Dogecoin L1.**  
-No wrap token. No “pro version of DOGE” ERC-20. No second chain for payments.
+<p align="center"><b>Dogecoin Core Pro</b> · v1.14.x · same mainnet · better product surface</p>
 
 ---
 
-## Feature map — open the box
+## What you get
 
-### Full node (still the real thing)
+| Pillar | What shipped |
+|--------|----------------|
+| **Identity** | Full Dogecoin rebrand path — Core DNA, DOGE name |
+| **Shell** | Modern sidebar: Home · Send · Receive · Transactions · Network · **Doge Business** · **Meme Stream** · **Arcade** · Console |
+| **Merchant** | Invoices, POS, QR — keys stay in **this** wallet |
+| **Tips** | Meme Stream tips are **on-chain DOGE** to creator addresses |
+| **Fast Sync** | Attested UTXO snapshot from HTTPS CDN + fail-closed SHA-256 + background prove |
+| **IBD / P2P** | `getibdinfo`, stall rescue, ASMAP, parallel download |
+| **AssumeUTXO** | Dual chainstate A→D on **1.14 DNA** (not a Bitcoin-24 paste) |
+| **Windows** | PE packages, installers, optional **unique RPC password** per install |
 
-```text
-dogecoind      — full node + RPC
-dogecoin-cli   — control plane
-dogecoin-tx    — raw tx toolkit
-dogecoin-qt    — Core Pro GUI wallet
-```
+**Settlement rule:** money that matters is **native DOGE on Dogecoin L1.** No wrap token. No second chain for payments.
 
-Same job as Core: validate, relay, wallet, mine (if you want).  
-Different experience: **Pro product surface + serious IBD/AssumeUTXO tooling.**
+---
 
-### Core Pro GUI (the “wait what” UI)
+## Screenshots
 
-- **Modern nav shell** — dark Pro chrome, not 2013 Bitcoin Qt cosplay  
-- **Home** — overview + Meme Stream rail  
-- **Doge Business** — dashboard / invoices / POS (keys stay in *this* wallet)  
-- **Meme Stream** — full page + media; tip → creator DOGE address  
-- **Network** — connections, headers/blocks, IBD telemetry, peer map  
-- **Arcade** — Retr-Doge mini-game tab (pure Qt — zero consensus)  
-- **Themes** — ThemeManager + Options → Theme (Preview / custom swatches / Pro shell CSS)  
-- **Options** — Main / Wallet / Network / Window / Display / Theme restored  
-- **Debug window** — Information / Console / Traffic / Peers  
+### Home — balances, tips, Meme Stream rail
 
-### IBD & P2P (1.14.101 — measure, unstick, parallelize)
+<p align="center">
+  <img src="https://i.imgur.com/l4aKHH9.png" alt="Core Pro Home with Meme Stream" width="900" />
+</p>
 
-Because multi-hour sync without telemetry is flying blind:
+### Sync progress (be patient — or use Fast Sync)
 
-| Capability | Why it matters |
-|------------|----------------|
-| **`getibdinfo` + `IBDStats`** | Flush / stall / rescue / connect timing in one RPC |
-| **Stall rescue (`-ibdrescue`)** | Don’t die forever on a stuck peer |
-| **Flush policy + prune tips** | Fewer thrash flushes mid-IBD |
-| **ASMAP (`-asmap`)** | ASN-aware peer groups |
-| **Parallel IBD download** | More blocks in flight / more header peers |
-| **Header vs block progress UI** | Status + modal finally agree during “Syncing Headers…” |
+<p align="center">
+  <img src="https://i.imgur.com/NgHYxwU.png" alt="Wallet sync progress dialog" width="720" />
+</p>
 
-### AssumeUTXO on **1.14 DNA** (this is the big one)
+Until headers/blocks catch up, balances and recent txs can lag. **Do not spend against incomplete history.**
 
-Not a Bitcoin Core 24+ paste. **Dogecoin-shaped** dual chainstate:
+### Fast Sync from CDN (recommended for new wallets)
 
-```text
-Engineering (done):
-  Phase A  Dual chainstate foundation (active + background)
-  Phase B  dumptxoutset / loadtxoutset / activatesnapshot
-  Phase C  Background ConnectBlock + hash fail-closed + persist/restore
-  Phase D  Attestation map hooks + GUI status + prune guard + tests
+**Settings → Fast Sync from CDN…**
 
-Product roadmap (doc/tiered-storage-and-fast-sync.md):
-  P1  Trust anchors + CDN stream-hash + Fast Sync UI     ← ~90% shipped
-  P2  Default prune-as-you-go for wallet nodes             ← partial (Fast path defaults)
-  P3  Optional cold blk object CDN
-  P4  RocksDB-class hot engine (ops; not main space win)
+<p align="center">
+  <img src="https://i.imgur.com/dfKu4oF.png" alt="Settings menu with Fast Sync" width="360" />
+  &nbsp;
+  <img src="https://i.imgur.com/tMyYTa4.png" alt="Fast Sync dialog" width="520" />
+</p>
 
-Mesh (html/docs/pages/multi-operator-mesh.html):
-  M0 eng · M1 GPE CDN live · M2 urls[] failover next · M3 multi-dumper · M4 diversity
-```
+**What it does (plain English):**
 
-### Fast Sync in plain English
+1. Download an **attested UTXO snapshot** from a public HTTPS CDN (default: `sync.doge.gopastearth.com`)  
+2. Verify **file SHA-256** fail-closed  
+3. Load/activate near height **H** so the wallet can be usable sooner  
+4. **Your node** still re-proves history over **P2P in the background**  
 
-**Normal IBD:** peers send blocks; you rebuild the UTXO set from history; wallet tip is usable late.
-
-**Fast Sync:** you download a pre-built UTXO snapshot (~11 GB) from a public HTTPS CDN, verify hashes fail-closed, load/activate near height **H** so the wallet can be usable sooner, then **your node** re-proves genesis→H over **P2P in the background**. The CDN is a dumb file host — not your ongoing verifier.
-
-```text
-CDN file ──file SHA-256──► load UTXOs at H ──activate──► wallet near tip
-                                 │
-                                 └── background P2P 0→H ──re-prove hash_serialized
-                                 └── P2P keeps tip moving past H
-```
+CDN = dumb file host. **Not** your ongoing verifier.
 
 | Hash | Meaning |
 |------|---------|
 | **File SHA-256** | Integrity of the downloaded `.dat` |
-| **`hash_serialized`** | Hash of the UTXO *set* at H (attested in `mapAssumeutxo`) |
+| **`hash_serialized`** | Hash of the UTXO set at H (attested in `mapAssumeutxo`) |
 
-Both must pass. You still need the network for background proof and new blocks after H.
+**Tips for Fast Sync**
 
-**In the GUI (1.14.102 package):** **Settings → Fast Sync from CDN…**  
-**Do not** start the multi‑GB pull on a datadir already mid-IBD — use a new/empty datadir.
+- Prefer a **new/empty datadir** — don’t start a multi‑GB snapshot mid-IBD.  
+- Snapshot is multi‑GB; home internet can take a while.  
+- You can always **Continue with normal sync (P2P)** instead.  
+- Keep the wallet data directory **off** OneDrive/Google Drive/Dropbox.
 
-Full walkthrough: [`html/docs/pages/fast-sync.html`](html/docs/pages/fast-sync.html)  
-**Multi-operator mesh** (many CDNs / dumpers for speed + resilience, same fail-closed hashes):  
-[`html/docs/pages/multi-operator-mesh.html`](html/docs/pages/multi-operator-mesh.html)  
-**Architecture diagrams** (Eraser Freeform — master / sequence / dual chainstate):  
-[`html/docs/pages/diagrams.html`](html/docs/pages/diagrams.html)  
-Plan: `doc/tiered-storage-and-fast-sync.md`
+### Options — prune, Fast Sync preference, themes
 
-**Operator RPCs**
+<p align="center">
+  <img src="https://i.imgur.com/sKdvgSf.png" alt="Options Main — prune and Fast Sync" width="720" />
+</p>
+
+**Prune tip:** Dogecoin mainnet wants enough headroom. A target like **~2.8 GB is too tight** and can thrash I/O:
+
+<p align="center">
+  <img src="https://i.imgur.com/UX2Xuqt.png" alt="Prune target warning" width="560" />
+</p>
+
+Prefer **`-prune=5500`** (≈5.5 GB) or higher for fewer disk spikes. Raising prune later can require **`-reindex`**.
+
+<p align="center">
+  <img src="https://i.imgur.com/S91gYwn.png" alt="Theme options" width="720" />
+</p>
+
+Themes: Light / Dark / Dogecoin / Neon / Matrix / … plus custom swatches.
+
+### Doge Business — invoices & POS (keys in Core)
+
+<p align="center">
+  <img src="https://i.imgur.com/kMrdIFT.png" alt="Doge Business Center invoices" width="900" />
+</p>
+
+Create invoices with labels, amounts, QR/URI. Payment detection uses **this wallet** — not an external custodial wallet.
+
+### Arcade — pure client fun
+
+<p align="center">
+  <img src="https://i.imgur.com/zzP1dqJ.png" alt="Retr-Doge Shibe Blaster Arcade" width="900" />
+</p>
+
+**Retr-Doge Shibe Blaster** — no wallet and no network required. Consensus is not involved.
+
+---
+
+## Binaries
+
+```text
+dogecoin-qt    — Core Pro GUI wallet (this product)
+dogecoind      — full node + RPC
+dogecoin-cli   — control plane
+dogecoin-tx    — raw tx toolkit
+```
+
+| Port | mainnet | testnet | regtest |
+|------|--------:|--------:|--------:|
+| P2P | 22556 | 44556 | 18444 |
+| RPC | 22555 | 44555 | 18332 |
+
+**Never expose RPC to the public internet.**
+
+### Windows install notes
+
+- Packages under `release/` (e.g. `dogecoin-1.14.102-win64-setup.exe` / zip).  
+- Optional **rpcsecure** installer builds generate a **unique `rpcpassword` per install** (no shared default) and write `%APPDATA%\Dogecoin\RPC-CREDENTIALS.txt` when conf is new.  
+- Without `rpcpassword` in conf, Core uses **cookie auth** (`.cookie`) for local RPC — also not a fixed default password.
+
+### Headless operators (dump nodes / CDN)
+
+If you run **snapshot producers** or a **Windows Service** dump node, use **[Dogecoin-GPENode](https://github.com/TheRetardedElon/Dogecoin-GPENode)** — same consensus DNA, headless packaging, operator TUI, unique RPC passwords.
+
+---
+
+## Examples
+
+### Run GUI (mainnet)
+
+```bash
+./src/qt/dogecoin-qt
+# or Windows:
+# "C:\Program Files\Dogecoin\dogecoin-qt.exe"
+```
+
+### Daemon + CLI
+
+```bash
+./src/dogecoind -daemon
+./src/dogecoin-cli getblockchaininfo
+./src/dogecoin-cli getibdinfo
+./src/dogecoin-cli getchainstates
+```
+
+### Useful conf snippets
+
+**Safer prune (wallet PC, bounded disk):**
+
+```ini
+# dogecoin.conf — example only; tune for your disk
+server=1
+listen=1
+prune=5500
+dbcache=1024
+rpcbind=127.0.0.1
+rpcallowip=127.0.0.1
+```
+
+**Prefer Fast Sync path (also set in Options → Main):** GUI checkbox *Prefer Fast Sync when available*.
+
+**Custom snapshot URL** (advanced — you must supply the matching **artifact SHA-256**):
+
+```text
+Settings → Options → Main
+  Custom snapshot URL:  https://your-cdn.example/utxo-H.dat
+  Artifact SHA-256:     <64 hex chars>
+```
+
+### AssumeUTXO operator RPCs
 
 | RPC | Job |
 |-----|-----|
-| `dumptxoutset` | Snapshot UTXO set + `hash_serialized` + **chainparams snippet** |
-| `loadtxoutset` | Load into background (`activate` optional) |
+| `dumptxoutset` | Snapshot UTXO set + `hash_serialized` |
+| `loadtxoutset` | Load into background chainstate |
 | `activatesnapshot` | Promote snapshot tip (regtest / attested / `-assumeutxodev`) |
-| `fetchassumeutxo` / `fetchassumeutxomanifest` | Stream-hash download (HTTPS WinHTTP on Windows) |
+| `fetchassumeutxo` | Stream-hash download (HTTPS; WinHTTP on Windows) |
 | `listassumeutxo` | Compiled attestation heights |
 | `getchainstates` | Dual-state visibility |
-| `getibdinfo` | IBD + AssumeUTXO progress / collapse flags |
-| `stepbackgroundvalidation` | Manual proof steps |
+| `getibdinfo` | IBD + AssumeUTXO progress |
 
-**Proven on Windows PE (regtest + HTTPS smoke)**
+**Regtest dump/load:**
+
+```bash
+dogecoin-cli -regtest dumptxoutset utxo.dat
+# fresh node, headers first, then:
+dogecoin-cli -regtest loadtxoutset utxo.dat
+dogecoin-cli -regtest activatesnapshot
+dogecoin-cli -regtest getibdinfo
+```
+
+Mainnet activate without attestation requires `-assumeutxodev=1` (**dev only** — not for untrusted snapshots with real funds).
+
+### Windows PE smokes
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/smoke-assumeutxo-regtest.ps1
@@ -142,14 +218,9 @@ powershell -ExecutionPolicy Bypass -File scripts/smoke-assumeutxo-two-node.ps1
 powershell -ExecutionPolicy Bypass -File scripts/smoke-winhttp-https.ps1
 ```
 
-Also: `qa/rpc-tests/assumeutxo.py` (native Linux `dogecoind` with AssumeUTXO built-in).
-
-> **Honest status (2026-08-09):** mainnet `mapAssumeutxo[6324519]` is filled; GPE CDN + WinHTTP + Fast Sync dialog are packaged.  
-> Cloud = hash-checked CDN only; never live LevelDB on Drive/FUSE.
-
 ---
 
-## Architecture snapshot
+## Architecture (one ledger)
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -159,17 +230,13 @@ Also: `qa/rpc-tests/assumeutxo.py` (native Linux `dogecoind` with AssumeUTXO bui
                             │ RPC / signals
 ┌───────────────────────────▼─────────────────────────────────┐
 │  dogecoind  — validation · wallet · mempool · P2P           │
-│  ┌─────────────────────┐   ┌──────────────────────────────┐ │
-│  │ Active chainstate   │   │ Background / snapshot path   │ │
-│  │ (IBD or snapshot)   │   │ load → prove → collapse      │ │
-│  └─────────────────────┘   └──────────────────────────────┘ │
-│  getibdinfo · IBDStats · ASMAP · parallel download          │
+│  Active chainstate  +  Background / snapshot path           │
+│  getibdinfo · AssumeUTXO · ASMAP · parallel download        │
 └─────────────────────────────────────────────────────────────┘
-                            │
               Native DOGE  ·  AuxPoW consensus  ·  one ledger
 ```
 
-**What we refuse to change:** consensus rules, AuxPoW, subsidy schedule, “just make DOGE an EVM chain” nonsense.
+**What we refuse to change:** consensus rules, AuxPoW, subsidy schedule, “make DOGE an EVM chain.”
 
 ---
 
@@ -178,46 +245,42 @@ Also: `qa/rpc-tests/assumeutxo.py` (native Linux `dogecoind` with AssumeUTXO bui
 | | |
 |--|--|
 | **Product** | Dogecoin Core Pro |
-| **Line** | **1.14 DNA** (Pro + IBD + AssumeUTXO program) |
-| **Stamp** | **v1.14.102** (Fast Sync CDN / GPE latest.json path; distinguish from stock 1.14.x) |
-| **User-Agent** | Shibetoshi lineage |
+| **Line** | **1.14 DNA** (Pro + IBD + AssumeUTXO) |
+| **Stamp** | **v1.14.102** (Fast Sync CDN path; distinguish from stock 1.14.x) |
+| **User-Agent** | Shibetoshi lineage (e.g. `/Shibetoshi:1.15.2/`) |
 
-Pre-release GUI: **use at your own risk** for large merchant float / mining until you’ve reviewed builds yourself.
+Pre-release GUI: review builds yourself before large merchant float / mining.
 
 ---
 
-## Docs that actually exist
+## Docs
 
-Open **[`html/docs/index.html`](html/docs/index.html)** in a browser (no server).
+Open **[`html/docs/index.html`](html/docs/index.html)** offline.
 
-| Page | |
-|------|--|
-| [Pure DOGE strategy](html/docs/pages/pure-doge-strategy.html) | Why no wrap / EVM product path |
-| [Payment layer](html/docs/pages/payment-layer.html) | Invoices / POS / tips on L1 |
-| [UI reference](html/docs/pages/ui-reference-core-pro.html) | Screenshots + layout contract |
+| Page | Topic |
+|------|--------|
+| [Fast Sync explained](html/docs/pages/fast-sync.html) | CDN bootstrap + trust model |
+| [Multi-operator mesh](html/docs/pages/multi-operator-mesh.html) | Many dumpers/mirrors |
+| [AssumeUTXO](html/docs/pages/assumeutxo.html) | Dual chainstate A–D |
 | [IBD & P2P](html/docs/pages/ibd-and-p2p.html) | Telemetry, rescue, parallelism |
-| [AssumeUTXO](html/docs/pages/assumeutxo.html) | Dual chainstate A–D3 + product P1 |
-| [Fast Sync explained](html/docs/pages/fast-sync.html) | Plain-language CDN bootstrap + trust model |
-| [Multi-operator mesh](html/docs/pages/multi-operator-mesh.html) | Many dumpers/mirrors → faster, resilient delivery |
-| [Storage stack](html/docs/pages/storage-stack.html) | Tiered storage / prune / CDN plan |
-| [Tiered storage plan](doc/tiered-storage-and-fast-sync.md) | Authoritative P1–P4 architecture |
-| [Roadmap](html/docs/pages/roadmap.html) | Phases 0–7 checklist |
-| [Architecture](html/docs/pages/architecture.html) | System view |
-| [Changelog (heavy)](DOGECOIN_CHANGELOG.md) | Full war diary |
+| [UI reference](html/docs/pages/ui-reference-core-pro.html) | Layout contract |
+| [Payment layer](html/docs/pages/payment-layer.html) | Invoices / POS / tips |
+| [Pure DOGE strategy](html/docs/pages/pure-doge-strategy.html) | Why no wrap / EVM path |
+| [Roadmap](html/docs/pages/roadmap.html) | Phases checklist |
+| [Changelog](DOGECOIN_CHANGELOG.md) | Full history |
 
-Design notes: `doc/assumeutxo-dogecoin-1.14.md`, `doc/ibd-p0-peer-telemetry.md`.
+Plan: [`doc/tiered-storage-and-fast-sync.md`](doc/tiered-storage-and-fast-sync.md)
 
 ---
 
 ## Build
 
-### Linux / WSL (native)
+### Linux / WSL
 
 ```bash
 ./autogen.sh
 ./configure --with-gui=qt5 --enable-c++17 --with-incompatible-bdb
 make -j$(nproc)
-# GUI:
 make -C src qt/dogecoin-qt -j$(nproc)
 ```
 
@@ -232,50 +295,9 @@ See [BUILD_GUIDE.md](BUILD_GUIDE.md) and [html/docs/pages/build-and-run.html](ht
 
 ### Windows PE (cross from WSL)
 
-This tree carries a **real Windows cross-build story** (depends + mingw). Prefer a **full Qt rebuild** after GUI work:
-
 ```bash
-# From WSL, example helper (adjust paths to your winbuild tree):
-bash scripts/full-rebuild-dogecoin-qt.sh
+bash scripts/full-rebuild-dogecoin-qt.sh   # adjust paths for your winbuild tree
 ```
-
-Other helpers under `scripts/` (relink, theme, progress UI, AssumeUTXO smokes).
-
----
-
-## Run
-
-```bash
-# Mainnet GUI
-./src/qt/dogecoin-qt
-
-# Daemon
-./src/dogecoind -daemon
-./src/dogecoin-cli getblockchaininfo
-./src/dogecoin-cli getibdinfo
-./src/dogecoin-cli getchainstates
-```
-
-| | mainnet | testnet | regtest |
-|--|--------:|--------:|--------:|
-| P2P | 22556 | 44556 | 18444 |
-| RPC | 22555 | 44555 | 18332 |
-
-**Do not expose RPC to the public internet.**
-
-### AssumeUTXO (regtest / dev)
-
-```bash
-# Dump tip coins
-dogecoin-cli -regtest dumptxoutset utxo.dat
-
-# Fresh consumer: headers first, then
-dogecoin-cli loadtxoutset utxo.dat
-dogecoin-cli activatesnapshot   # regtest always allowed
-dogecoin-cli getibdinfo         # snapshot_active, assumeutxo_progress, collapse
-```
-
-Mainnet activate without attestation requires `-assumeutxodev=1` (dev only — **not** for untrusted snapshots with real funds).
 
 ---
 
@@ -283,43 +305,25 @@ Mainnet activate without attestation requires `-assumeutxodev=1` (dev only — *
 
 1. **One coin** — Dogecoin L1.  
 2. **Keys in Core** — Business / POS / tips use *this* wallet.  
-3. **Tips are on-chain** — creator address, real DOGE.  
+3. **Tips are on-chain** — real DOGE to creator addresses.  
 4. **Payment layer ≠ EVM L2** — merchant UX settles L1.  
-5. **Measure IBD before magic** — telemetry and peer path before snapshot theater.  
+5. **Measure IBD before magic** — telemetry before snapshot theater.  
 6. **Docs move with code** — `html/docs/` stays alive.  
 7. **Consensus is sacred** — AuxPoW and rules stay Dogecoin.
 
 ---
 
-## Repo layout
-
-```text
-src/              Node, wallet, consensus, RPC, dual chainstate
-src/qt/           Core Pro GUI (Business, Meme Stream, Network, Arcade, themes)
-src/node/         AssumeUTXO chainstate + snapshot plumbing
-qa/rpc-tests/     assumeutxo.py + classic Core tests
-scripts/          Windows rebuild + AssumeUTXO PE smokes
-html/docs/        Living product docs (open index.html)
-doc/              Design notes + classic Core docs
-DOGECOIN_CHANGELOG.md   Heavy-update history
-```
-
----
-
-## Status (read this before you YOLO)
+## Status (honest)
 
 | | |
 |--|--|
 | **Branch** | `master` — active integration |
-| **AssumeUTXO code** | A→D engineered; regtest **1-node + 2-node** PE smokes green |
-| **Mainnet mapAssumeutxo** | **6324519** attested; more heights as dumps publish |
-| **Fast Sync product** | P1 ~90% — CDN + WinHTTP + dialog in `release/dogecoin-1.14.102-win64*` |
+| **AssumeUTXO** | A→D engineered; regtest PE smokes green |
+| **Mainnet mapAssumeutxo** | e.g. **6324519** attested; more heights as dumps publish |
+| **Fast Sync** | CDN + WinHTTP + dialog in `release/dogecoin-1.14.102-win64*` |
 | **Mesh** | M1 live (GPE); M2 multi-URL failover next |
-| **Docs / diagrams** | `html/docs/` + Eraser PNGs under `html/docs/assets/diagrams/` |
-| **GUI** | Pre-release — review before high-value merchant float |
-| **Upstream DNA** | Dogecoin Core / Bitcoin Core lineage |
-
-Upstream reference: [dogecoin/dogecoin](https://github.com/dogecoin/dogecoin).
+| **GUI** | Pre-release — review before high-value float |
+| **Upstream DNA** | [dogecoin/dogecoin](https://github.com/dogecoin/dogecoin) lineage |
 
 ---
 
@@ -335,16 +339,16 @@ PRs and issues against this repo. Keep changes aligned with **pure DOGE** settle
 
 **MIT** — see [COPYING](COPYING).
 
-Dogecoin branding and heritage remain of the Dogecoin Core lineage. Many source files retain historical Bitcoin Core copyright headers where appropriate.
+Dogecoin branding and heritage remain of the Dogecoin Core lineage.
 
 ---
 
 <div align="center">
 
-### Built on real consensus. Shipped with a Pro shell. Aimed at operators who want **native DOGE** — not a costume.
+### Built on real consensus. Shipped with a Pro shell. Aimed at operators who want **native DOGE**.
 
 **Dogecoin Core Pro · 1.14.102 · Takeback**
 
-`getibdinfo` · `getchainstates` · `dumptxoutset` · `activatesnapshot`
+`getibdinfo` · Fast Sync · Doge Business · Meme Stream · Arcade
 
 </div>
