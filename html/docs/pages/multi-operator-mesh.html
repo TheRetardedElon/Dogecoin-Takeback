@@ -297,7 +297,7 @@
             <td><strong>M2</strong> Multi-mirror same artifact</td>
             <td><code>urls[]</code> / operator list; clients failover</td>
             <td>Geo + capacity + uptime</td>
-            <td><span class="badge badge-todo">Next mesh code</span></td>
+            <td><span class="badge badge-partial">Client failover in tree</span></td>
           </tr>
           <tr>
             <td><strong>M3</strong> Multi-dumper schedule</td>
@@ -354,27 +354,27 @@
         <li>No requirement that every operator run merchant/GPE stack — dump+CDN is enough.</li>
       </ul>
 
-      <h2>Implementation sketch (when we code M2)</h2>
+      <h2>Implementation (M2 client — in tree)</h2>
       <table>
         <thead>
-          <tr><th>Surface</th><th>Change</th></tr>
+          <tr><th>Surface</th><th>Status</th></tr>
         </thead>
         <tbody>
           <tr>
             <td><code>SnapshotArtifactManifest</code></td>
-            <td>Parse <code>urls[]</code> / optional <code>mirrors[]</code>; keep GPE single <code>url</code></td>
+            <td><span class="badge badge-done">Done</span> — parse <code>urls[]</code> + <code>mirrors[].url</code>; <code>CandidateUrls()</code></td>
           </tr>
           <tr>
-            <td><code>FetchSnapshotArtifact</code> / GUI worker</td>
-            <td>Iterate URLs; shared expected sha256; progress UI shows which mirror</td>
+            <td><code>FetchSnapshotArtifactFromCandidates</code></td>
+            <td><span class="badge badge-done">Done</span> — try each source; same expected sha256; fail closed</td>
           </tr>
           <tr>
-            <td>Options</td>
-            <td>Optional extra mirror list; still SoftSet manifest URL</td>
+            <td>Fast Sync dialog + <code>fetchassumeutxomanifest</code></td>
+            <td><span class="badge badge-done">Done</span> — uses candidate list; reports source used</td>
           </tr>
           <tr>
-            <td>Operator doc</td>
-            <td>This page + sample <code>latest.json</code> + pull script for mirrors</td>
+            <td>Second public mirror host</td>
+            <td><span class="badge badge-todo">Ops</span> — append URL to manifest <code>urls[]</code> when online</td>
           </tr>
         </tbody>
       </table>

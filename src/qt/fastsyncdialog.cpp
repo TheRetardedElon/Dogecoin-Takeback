@@ -99,9 +99,24 @@ void FastSyncWorker::process()
             const double gib = size_hint / (1024.0 * 1024.0 * 1024.0);
             sizeNote = tr(" (~%1 GiB)").arg(QString::number(gib, 'f', 1));
         }
-        Q_EMIT status(tr("Downloading attested snapshot%1…\n%2")
+
+        // Mesh M2: candidate list from manifest urls[] (primary first); single direct URL otherwise
+        std::vector<std::string> candidates;
+        if (!direct_url.empty() && !direct_sha.empty() && direct_url.find("latest.json") == std::string::npos) {
+            candidates.push_back(artifact_url);
+        } else {
+            candidates = m.CandidateUrls();
+            if (candidates.empty() && !artifact_url.empty())
+                candidates.push_back(artifact_url);
+        }
+
+        QStringList tryList;
+        for (size_t i = 0; i < candidates.size(); ++i)
+            tryList << QString::fromStdString(candidates[i]);
+        Q_EMIT status(tr("Downloading attested snapshot%1…\nTrying %2 source(s):\n%3")
                           .arg(sizeNote)
-                          .arg(QString::fromStdString(artifact_url)));
+                          .arg(candidates.size())
+                          .arg(tryList.join(QLatin1String("\n"))));
         if (size_hint > 0)
             Q_EMIT progress(0, size_hint);
 
@@ -112,11 +127,15 @@ void FastSyncWorker::process()
         }
 
         uint64_t bytes = 0;
-        if (!FetchSnapshotArtifact(artifact_url, dest, expected, bytes, error,
-                                   CDN_FETCH_TIMEOUT_SEC, ProgressThunk, this)) {
+        std::string used_source;
+        if (!FetchSnapshotArtifactFromCandidates(candidates, dest, expected, bytes, error,
+                                                 &used_source, CDN_FETCH_TIMEOUT_SEC,
+                                                 ProgressThunk, this)) {
             Q_EMIT finished(false, QString::fromStdString(error));
             return;
         }
+        if (!used_source.empty())
+            artifact_url = used_source;
 
         if (m_abort->load() != 0) {
             Q_EMIT finished(false, tr("Aborted after download."));

@@ -630,6 +630,51 @@ bool FetchSnapshotArtifact(const std::string& source,
     return true;
 }
 
+bool FetchSnapshotArtifactFromCandidates(const std::vector<std::string>& sources,
+                                         const fs::path& dest,
+                                         const uint256& expected_sha256,
+                                         uint64_t& bytes_out,
+                                         std::string& error,
+                                         std::string* used_source_out,
+                                         int timeout_sec,
+                                         SnapshotProgressFn progress,
+                                         void* progress_ctx)
+{
+    if (sources.empty()) {
+        error = "No snapshot source URLs/paths to try";
+        return false;
+    }
+    std::string combined;
+    for (size_t i = 0; i < sources.size(); ++i) {
+        const std::string& src = sources[i];
+        if (src.empty())
+            continue;
+        std::string attempt_err;
+        uint64_t attempt_bytes = 0;
+        // Clean dest between attempts so a partial from host A is not kept on fail
+        {
+            boost::system::error_code ec;
+            fs::remove(dest, ec);
+            fs::path partial = dest;
+            partial += ".partial";
+            fs::remove(partial, ec);
+        }
+        if (FetchSnapshotArtifact(src, dest, expected_sha256, attempt_bytes, attempt_err,
+                                  timeout_sec, progress, progress_ctx)) {
+            bytes_out = attempt_bytes;
+            if (used_source_out)
+                *used_source_out = src;
+            error.clear();
+            return true;
+        }
+        if (!combined.empty())
+            combined += " | ";
+        combined += strprintf("[%u] %s: %s", static_cast<unsigned>(i + 1), src, attempt_err);
+    }
+    error = strprintf("All snapshot sources failed (fail closed): %s", combined);
+    return false;
+}
+
 bool LooksLikeJsonObject(const std::string& s)
 {
     size_t i = 0;
@@ -671,6 +716,29 @@ bool ParseSnapshotArtifactManifest(const std::string& json, SnapshotArtifactMani
         m.artifact_sha256_hex = v["sha256"].get_str();
     if (v.exists("url"))
         m.url = v["url"].get_str();
+    // mesh M2: urls[] and/or mirrors[].url — same artifact digest for every host
+    if (v.exists("urls") && v["urls"].isArray()) {
+        const UniValue& arr = v["urls"];
+        for (size_t i = 0; i < arr.size(); ++i) {
+            if (arr[i].isStr()) {
+                const std::string u = arr[i].get_str();
+                if (!u.empty())
+                    m.urls.push_back(u);
+            }
+        }
+    }
+    if (v.exists("mirrors") && v["mirrors"].isArray()) {
+        const UniValue& arr = v["mirrors"];
+        for (size_t i = 0; i < arr.size(); ++i) {
+            if (!arr[i].isObject())
+                continue;
+            if (arr[i].exists("url") && arr[i]["url"].isStr()) {
+                const std::string u = arr[i]["url"].get_str();
+                if (!u.empty())
+                    m.urls.push_back(u);
+            }
+        }
+    }
     // size aliases
     if (v.exists("size_bytes"))
         m.size_bytes = v["size_bytes"].get_int64();
@@ -689,9 +757,26 @@ bool ParseSnapshotArtifactManifest(const std::string& json, SnapshotArtifactMani
         error = "Manifest missing artifact_sha256 (or sha256)";
         return false;
     }
+    // url optional if urls[] non-empty
+    if (m.url.empty() && !m.urls.empty())
+        m.url = m.urls.front();
     if (m.url.empty()) {
-        error = "Manifest missing url (HTTPS path to .dat artifact)";
+        error = "Manifest missing url (or urls[]) for .dat artifact";
         return false;
+    }
+    // Ensure primary is first candidate
+    if (m.urls.empty())
+        m.urls.push_back(m.url);
+    else {
+        bool has_primary = false;
+        for (size_t i = 0; i < m.urls.size(); ++i) {
+            if (m.urls[i] == m.url) {
+                has_primary = true;
+                break;
+            }
+        }
+        if (!has_primary)
+            m.urls.insert(m.urls.begin(), m.url);
     }
     uint256 discard;
     std::string herr;
@@ -701,6 +786,26 @@ bool ParseSnapshotArtifactManifest(const std::string& json, SnapshotArtifactMani
     }
     out = m;
     return true;
+}
+
+std::vector<std::string> SnapshotArtifactManifest::CandidateUrls() const
+{
+    std::vector<std::string> out;
+    std::vector<std::string> seen;
+    auto add = [&](const std::string& u) {
+        if (u.empty())
+            return;
+        for (size_t i = 0; i < seen.size(); ++i) {
+            if (seen[i] == u)
+                return;
+        }
+        seen.push_back(u);
+        out.push_back(u);
+    };
+    add(url);
+    for (size_t i = 0; i < urls.size(); ++i)
+        add(urls[i]);
+    return out;
 }
 
 bool DownloadUrlToString(const std::string& url, std::string& body_out, std::string& error, int timeout_sec)

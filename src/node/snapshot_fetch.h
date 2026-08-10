@@ -9,6 +9,7 @@
 #include "uint256.h"
 
 #include <string>
+#include <vector>
 
 /**
  * Product P1 helpers: treat cloud/CDN as a dumb pipe.
@@ -79,6 +80,21 @@ bool FetchSnapshotArtifact(const std::string& source,
                            void* progress_ctx = 0);
 
 /**
+ * Mesh M2: try each source URL/path until one stream-hashes to expected_sha256.
+ * Never accepts a different digest from a "faster" host. On total failure, error
+ * lists each attempt. Partial files are removed on mismatch/abort.
+ */
+bool FetchSnapshotArtifactFromCandidates(const std::vector<std::string>& sources,
+                                         const fs::path& dest,
+                                         const uint256& expected_sha256,
+                                         uint64_t& bytes_out,
+                                         std::string& error,
+                                         std::string* used_source_out = 0,
+                                         int timeout_sec = 600,
+                                         SnapshotProgressFn progress = 0,
+                                         void* progress_ctx = 0);
+
+/**
  * Optional CDN manifest fields (JSON). Product P1.
  * coins hash_serialized is checked later by loadtxoutset / mapAssumeutxo — not here.
  *
@@ -90,11 +106,15 @@ struct SnapshotArtifactManifest {
     std::string base_blockhash_hex;
     std::string hash_serialized_hex; // UTXO set hash (informational in manifest)
     std::string artifact_sha256_hex; // required for fetch
-    std::string url;
+    std::string url;                 // primary URL (always set when valid)
+    std::vector<std::string> urls;   // mesh M2: try in order; same sha256 for all
     int64_t size_bytes;
     std::string status; // e.g. "awaiting first snapshot" (not ready)
 
     SnapshotArtifactManifest() : height(-1), size_bytes(-1) {}
+
+    /** Primary first, then remaining urls[] without duplicates. */
+    std::vector<std::string> CandidateUrls() const;
 };
 
 /** Official GPE public manifest URL (empty until first dumptxoutset is published). */

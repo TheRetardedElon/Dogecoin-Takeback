@@ -2248,6 +2248,7 @@ UniValue fetchassumeutxomanifest(const JSONRPCRequest& request)
             "\nGPE Fast Sync CDN default:\n"
             "  https://sync.doge.gopastearth.com/latest.json\n"
             "Accepts field aliases: sha256, blocks, bytes, bestblock, status.\n"
+            "Mesh M2: optional urls[] / mirrors[].url — try each until file SHA-256 matches.\n"
             "Placeholder manifests (status set, no sha256) fail closed with a clear error.\n"
             "\nArguments:\n"
             "1. \"manifest\" (string, optional) HTTPS URL, local JSON path, or inline JSON\n"
@@ -2286,12 +2287,18 @@ UniValue fetchassumeutxomanifest(const JSONRPCRequest& request)
     }
 
     uint64_t bytes = 0;
-    if (!FetchSnapshotArtifact(m.url, dest, expected, bytes, error))
+    std::string used_source;
+    const std::vector<std::string> candidates = m.CandidateUrls();
+    if (!FetchSnapshotArtifactFromCandidates(candidates, dest, expected, bytes, error, &used_source))
         throw JSONRPCError(RPC_MISC_ERROR, error);
 
     UniValue result(UniValue::VOBJ);
     result.pushKV("manifest", manifest_src);
-    result.pushKV("url", m.url);
+    result.pushKV("url", used_source.empty() ? m.url : used_source);
+    UniValue urlsArr(UniValue::VARR);
+    for (size_t i = 0; i < candidates.size(); ++i)
+        urlsArr.push_back(candidates[i]);
+    result.pushKV("urls_tried", urlsArr);
     result.pushKV("artifact_sha256", expected.GetHex());
     if (m.height >= 0)
         result.pushKV("height", m.height);
