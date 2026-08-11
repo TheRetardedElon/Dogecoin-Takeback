@@ -341,6 +341,12 @@ PRs and issues against this repo. Keep changes aligned with **pure DOGE** settle
 
 Dogecoin branding and heritage remain of the Dogecoin Core lineage.
 
+## Privacy
+
+**Privacy policy URL:** https://github.com/TheRetardedElon/Dogecoin-Takeback/blob/main/PRIVACY.md  
+
+See [PRIVACY.md](./PRIVACY.md) in this repository. Related operator kit: [GPENode privacy](https://github.com/TheRetardedElon/Dogecoin-GPENode/blob/main/PRIVACY.md).
+
 ---
 
 <div align="center">
