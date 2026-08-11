@@ -2280,6 +2280,10 @@ UniValue fetchassumeutxomanifest(const JSONRPCRequest& request)
     if (!ParseSha256Hex(m.artifact_sha256_hex, expected, error))
         throw JSONRPCError(RPC_INVALID_PARAMETER, error);
 
+    // Same preflight as GUI Fast Sync (attestation + disk + reachability)
+    if (!PreValidateSnapshotForFastSync(m, m.url, error, /*require_attested_height=*/true))
+        throw JSONRPCError(RPC_MISC_ERROR, error);
+
     fs::path dest = GetDataDir() / "snapshots" / "utxo_fetch.dat";
     {
         boost::system::error_code ec;

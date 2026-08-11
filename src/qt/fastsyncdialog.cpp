@@ -67,12 +67,18 @@ void FastSyncWorker::process()
         int64_t size_hint = -1;
         int height_hint = -1;
 
-        if (!direct_url.empty() && !direct_sha.empty() && direct_url.find("latest.json") == std::string::npos) {
+        const bool direct_dat = !direct_url.empty() && !direct_sha.empty() &&
+                                direct_url.find("latest.json") == std::string::npos;
+
+        if (direct_dat) {
             artifact_url = direct_url;
             if (!ParseSha256Hex(direct_sha, expected, error)) {
                 Q_EMIT finished(false, QString::fromStdString(error));
                 return;
             }
+            // Custom direct .dat: still check disk if size unknown (skip size gate)
+            m.size_bytes = -1;
+            m.height = -1;
         } else {
             if (!direct_url.empty() && direct_url.find("latest.json") != std::string::npos)
                 manifest_src = direct_url;
@@ -94,6 +100,16 @@ void FastSyncWorker::process()
             return;
         }
 
+        // Preflight: attestation + disk + CDN probe — before multi-GB download
+        Q_EMIT status(tr("Checking snapshot compatibility, disk space, and CDN…"));
+        {
+            const bool require_attested = !direct_dat; // custom .dat may be advanced
+            if (!PreValidateSnapshotForFastSync(m, artifact_url, error, require_attested)) {
+                Q_EMIT finished(false, QString::fromStdString(error));
+                return;
+            }
+        }
+
         QString sizeNote;
         if (size_hint > 0) {
             const double gib = size_hint / (1024.0 * 1024.0 * 1024.0);
@@ -102,7 +118,7 @@ void FastSyncWorker::process()
 
         // Mesh M2: candidate list from manifest urls[] (primary first); single direct URL otherwise
         std::vector<std::string> candidates;
-        if (!direct_url.empty() && !direct_sha.empty() && direct_url.find("latest.json") == std::string::npos) {
+        if (direct_dat) {
             candidates.push_back(artifact_url);
         } else {
             candidates = m.CandidateUrls();

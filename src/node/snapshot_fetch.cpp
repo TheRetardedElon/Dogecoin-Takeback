@@ -4,6 +4,7 @@
 
 #include "node/snapshot_fetch.h"
 
+#include "chainparams.h"
 #include "crypto/sha256.h"
 #include "support/events.h"
 #include "tinyformat.h"
@@ -806,6 +807,229 @@ std::vector<std::string> SnapshotArtifactManifest::CandidateUrls() const
     for (size_t i = 0; i < urls.size(); ++i)
         add(urls[i]);
     return out;
+}
+
+bool EnsureDiskSpaceForSnapshot(int64_t size_bytes, std::string& error)
+{
+    if (size_bytes <= 0)
+        return true;
+    // Snapshot file + room to unpack into chainstate_snapshot (margin).
+    const int64_t margin = 2LL * 1024 * 1024 * 1024; // 2 GiB
+    const uintmax_t need = static_cast<uintmax_t>(size_bytes) + static_cast<uintmax_t>(margin);
+
+    boost::system::error_code ec;
+    fs::path dir = GetDataDir();
+    fs::space_info si = fs::space(dir, ec);
+    if (ec) {
+        si = fs::space(dir.parent_path(), ec);
+    }
+    if (ec) {
+        LogPrintf("Fast Sync preflight: could not query free disk (%s); continuing\n",
+                  ec.message());
+        return true;
+    }
+    if (si.available < need) {
+        const double need_gib = need / (1024.0 * 1024.0 * 1024.0);
+        const double have_gib = si.available / (1024.0 * 1024.0 * 1024.0);
+        const double snap_gib = size_bytes / (1024.0 * 1024.0 * 1024.0);
+        error = strprintf(
+            "Not enough free disk for Fast Sync: need ~%.1f GiB free "
+            "(snapshot ~%.1f GiB + margin), have ~%.1f GiB on datadir volume",
+            need_gib, snap_gib, have_gib);
+        return false;
+    }
+    return true;
+}
+
+#ifdef WIN32
+static bool ProbeHttpUrlReachableWinHttp(const std::string& url, std::string& error, int timeout_sec)
+{
+    std::string host, path;
+    int port = 80;
+    bool ssl = false;
+    if (!ParseUrl(url, host, port, path, ssl, error))
+        return false;
+
+    auto to_wide = [](const std::string& s) -> std::wstring {
+        if (s.empty())
+            return std::wstring();
+        int n = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, NULL, 0);
+        if (n <= 0)
+            return std::wstring();
+        std::wstring w(static_cast<size_t>(n), L'\0');
+        MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, &w[0], n);
+        if (!w.empty() && w.back() == L'\0')
+            w.pop_back();
+        return w;
+    };
+    std::wstring whost = to_wide(host);
+    std::wstring wpath = to_wide(path);
+    if (whost.empty() || wpath.empty()) {
+        error = "Probe: failed to convert URL for WinHTTP";
+        return false;
+    }
+
+    HINTERNET hSession = WinHttpOpen(L"DogecoinCore-FastSyncProbe/1.0",
+                                     WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                                     WINHTTP_NO_PROXY_NAME,
+                                     WINHTTP_NO_PROXY_BYPASS, 0);
+    if (!hSession) {
+        error = "Probe: WinHttpOpen failed";
+        return false;
+    }
+    const int timeout_ms = timeout_sec > 0 ? timeout_sec * 1000 : 30000;
+    WinHttpSetTimeouts(hSession, timeout_ms, timeout_ms, timeout_ms, timeout_ms);
+
+    HINTERNET hConnect = WinHttpConnect(hSession, whost.c_str(), static_cast<INTERNET_PORT>(port), 0);
+    if (!hConnect) {
+        WinHttpCloseHandle(hSession);
+        error = "Probe: WinHttpConnect failed (host unreachable?)";
+        return false;
+    }
+
+    DWORD flags = ssl ? WINHTTP_FLAG_SECURE : 0;
+    HINTERNET hRequest = WinHttpOpenRequest(hConnect, L"HEAD", wpath.c_str(),
+                                            NULL, WINHTTP_NO_REFERER,
+                                            WINHTTP_DEFAULT_ACCEPT_TYPES, flags);
+    if (!hRequest) {
+        // Some CDNs dislike HEAD — fall back to Range GET of 1 byte
+        hRequest = WinHttpOpenRequest(hConnect, L"GET", wpath.c_str(),
+                                      NULL, WINHTTP_NO_REFERER,
+                                      WINHTTP_DEFAULT_ACCEPT_TYPES, flags);
+        if (hRequest) {
+            WinHttpAddRequestHeaders(hRequest, L"Range: bytes=0-0", (ULONG)-1L, WINHTTP_ADDREQ_FLAG_ADD);
+        }
+    }
+    if (!hRequest) {
+        WinHttpCloseHandle(hConnect);
+        WinHttpCloseHandle(hSession);
+        error = "Probe: WinHttpOpenRequest failed";
+        return false;
+    }
+
+    BOOL ok = WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+                                 WINHTTP_NO_REQUEST_DATA, 0, 0, 0);
+    if (ok)
+        ok = WinHttpReceiveResponse(hRequest, NULL);
+    DWORD status = 0;
+    DWORD statusSize = sizeof(status);
+    if (ok) {
+        WinHttpQueryHeaders(hRequest,
+                            WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                            WINHTTP_HEADER_NAME_BY_INDEX, &status, &statusSize,
+                            WINHTTP_NO_HEADER_INDEX);
+    }
+
+    WinHttpCloseHandle(hRequest);
+    WinHttpCloseHandle(hConnect);
+    WinHttpCloseHandle(hSession);
+
+    if (!ok) {
+        error = "Probe: no HTTP response from snapshot host (firewall / DNS / offline?)";
+        return false;
+    }
+    // 2xx, 3xx redirect already followed by WinHTTP defaults for some cases; 206 Partial OK
+    if (status >= 400) {
+        error = strprintf("Probe: snapshot URL returned HTTP %lu", static_cast<unsigned long>(status));
+        return false;
+    }
+    return true;
+}
+#endif
+
+bool ProbeHttpUrlReachable(const std::string& url, std::string& error, int timeout_sec)
+{
+    if (!IsHttpUrl(url) && !SourceIsHttpUrl(url)) {
+        // Local path
+        if (!fs::exists(url)) {
+            error = strprintf("Snapshot path does not exist: %s", url);
+            return false;
+        }
+        return true;
+    }
+#ifdef WIN32
+    return ProbeHttpUrlReachableWinHttp(url, error, timeout_sec);
+#else
+    // Non-Windows: full download of multi-GB is too heavy; skip deep probe
+    // after manifest already fetched from CDN. Still check URL shape.
+    (void)timeout_sec;
+    if (url.find("http://") != 0 && url.find("https://") != 0) {
+        error = "Probe: expected http(s) URL or local path";
+        return false;
+    }
+    LogPrintf("Fast Sync preflight: skipping deep HTTP probe on non-Windows for %s\n", url);
+    return true;
+#endif
+}
+
+bool PreValidateSnapshotForFastSync(const SnapshotArtifactManifest& m,
+                                    const std::string& artifact_url,
+                                    std::string& error,
+                                    bool require_attested_height)
+{
+    const bool allow_unattested =
+        GetBoolArg("-assumeutxodev", false) ||
+        Params().NetworkIDString() == "regtest";
+
+    // --- height + mapAssumeutxo + hash_serialized (before multi-GB download) ---
+    if (m.height >= 0) {
+        const AssumeutxoData* att = Params().AssumeutxoForHeight(m.height);
+        if (!att) {
+            if (require_attested_height && !allow_unattested) {
+                error = strprintf(
+                    "Snapshot height %d is not attested in this Dogecoin Core Pro build "
+                    "(mapAssumeutxo). Install a client that includes this height, or wait "
+                    "for a matching release. Advanced only: -assumeutxodev=1 (not for real funds).",
+                    m.height);
+                return false;
+            }
+        } else if (!m.hash_serialized_hex.empty()) {
+            uint256 manifest_hs;
+            std::string herr;
+            // Accept with or without 0x
+            std::string hex = m.hash_serialized_hex;
+            if (hex.size() >= 2 && (hex[0] == '0') && (hex[1] == 'x' || hex[1] == 'X'))
+                hex = hex.substr(2);
+            if (!ParseSha256Hex(hex, manifest_hs, herr)) {
+                // hash_serialized uses same hex encoding as GetHex
+                try {
+                    manifest_hs = uint256S(hex);
+                } catch (...) {
+                    error = strprintf("Manifest hash_serialized is not valid hex: %s", herr);
+                    return false;
+                }
+            }
+            if (manifest_hs != att->hash_serialized) {
+                error = strprintf(
+                    "Manifest hash_serialized does not match this build's mapAssumeutxo[%d] "
+                    "(manifest=%s expected=%s). CDN dump and client attestation are out of sync — "
+                    "do not download; update client or republish a matching dump.",
+                    m.height, manifest_hs.GetHex(), att->hash_serialized.GetHex());
+                return false;
+            }
+        }
+    } else if (require_attested_height && !allow_unattested &&
+               artifact_url.find("latest.json") == std::string::npos) {
+        // Direct custom .dat without height: cannot pre-check mapAssumeutxo; still allow
+        // download (SHA fail-closed) but log.
+        LogPrintf("Fast Sync preflight: no height in manifest; skipping mapAssumeutxo pre-check\n");
+    }
+
+    if (!EnsureDiskSpaceForSnapshot(m.size_bytes, error))
+        return false;
+
+    std::string probe_url = artifact_url;
+    if (probe_url.empty())
+        probe_url = m.url;
+    if (!probe_url.empty() && (IsHttpUrl(probe_url) || SourceIsHttpUrl(probe_url))) {
+        std::string perr;
+        if (!ProbeHttpUrlReachable(probe_url, perr, 30)) {
+            error = perr;
+            return false;
+        }
+    }
+
+    return true;
 }
 
 bool DownloadUrlToString(const std::string& url, std::string& body_out, std::string& error, int timeout_sec)

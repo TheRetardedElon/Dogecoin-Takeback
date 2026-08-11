@@ -148,4 +148,25 @@ bool ResolveSnapshotFromManifest(const std::string& manifest_json_or_url,
 /** True if s looks like a JSON object (starts with '{') rather than a URL/path. */
 bool LooksLikeJsonObject(const std::string& s);
 
+/**
+ * Pre-download Fast Sync gates (cheap; fail before multi-GB pull when possible):
+ *  1) Manifest height attested in mapAssumeutxo (unless -assumeutxodev / regtest)
+ *  2) Manifest hash_serialized matches chainparams for that height (when both present)
+ *  3) Free disk on datadir volume >= size_bytes + margin (when size known)
+ *  4) Optional HTTP(S) probe that artifact URL is reachable (HEAD/GET headers)
+ *
+ * Does not replace fail-closed file SHA-256 or post-load UTXO hash checks.
+ * require_attested_height: true for product Fast Sync UI / default path.
+ */
+bool PreValidateSnapshotForFastSync(const SnapshotArtifactManifest& m,
+                                    const std::string& artifact_url,
+                                    std::string& error,
+                                    bool require_attested_height = true);
+
+/** Free-space check only (size_bytes from manifest; 0 skips). */
+bool EnsureDiskSpaceForSnapshot(int64_t size_bytes, std::string& error);
+
+/** Lightweight reachability probe for http(s) artifact URL (not a full download). */
+bool ProbeHttpUrlReachable(const std::string& url, std::string& error, int timeout_sec = 30);
+
 #endif // DOGECOIN_NODE_SNAPSHOT_FETCH_H

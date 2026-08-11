@@ -117,14 +117,17 @@ public:
         consensus.defaultAssumeValid = uint256S("0xe7d4577405223918491477db725a393bcfc349d8ee63b0a4fde23cbfbfd81dea"); // 5,050,000
 
         // AssumeUTXO attested snapshots (Phase D / Product P1).
-        // First mainnet entry from gpednode1 dumptxoutset (2026-08-09).
-        // Artifact: https://sync.doge.gopastearth.com/utxo-6324517-20260809T065442Z.dat
-        // File SHA-256 (CDN fail-closed): 0c40745212238714bc138ca4f5ee6f6b9a0e5f700e055b8bf1dbc61b408ad026
-        // Coins hash_serialized (activate gate): below. Refresh as new dumps are published.
+        // Refresh when gpednode publishes a new dump + latest.json.
+        // File SHA-256 is fail-closed from CDN latest.json (not hardcoded here).
         mapAssumeutxo.clear();
+        // 2026-08-09 dump (height 6324519)
         mapAssumeutxo[6324519] = AssumeutxoData(
             6324519,
             uint256S("a2fde0b74a87138560c634382eca7837b559f8750221367514af75cfa3c6762a"));
+        // 2026-08-10 CDN latest (blocks 6325931) — hash_serialized from latest.json
+        mapAssumeutxo[6325931] = AssumeutxoData(
+            6325931,
+            uint256S("c90b021eef3465ee89c37d58c39a8167ae286db0b07dee03b3782cf26ccd13ea"));
 
         // AuxPoW parameters
         consensus.nAuxpowChainId = 0x0062; // 98 - Josh Wise!

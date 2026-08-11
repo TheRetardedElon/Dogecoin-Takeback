@@ -250,8 +250,9 @@ bool LoadUTXOSnapshot(const fs::path& path,
         error = "Snapshot base block hash is null";
         return false;
     }
-    if (metadata.coins_count > 100000000ULL) {
-        // Sanity cap (~100M txs) to catch corrupt headers early on 1.14 hardware.
+    // Dogecoin mainnet UTXO entries already exceed 100M (e.g. ~182M in 2026 dumps).
+    // Cap is a corrupt-header guard only — keep well above live set size.
+    if (metadata.coins_count > 500000000ULL) {
         error = strprintf("Snapshot coins_count %llu looks unreasonable",
                           (unsigned long long)metadata.coins_count);
         return false;
