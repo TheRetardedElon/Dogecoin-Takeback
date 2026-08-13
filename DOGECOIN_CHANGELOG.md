@@ -1,8 +1,11 @@
 # Dogecoin Core - Change Log
 
-**Project**: Dogecoin Core / Core Pro (1.14 DNA)  
-**Started**: September 27, 2024 (rebrand + themes); continued 2025–2026 (product + full-node)  
-**Purpose**: Dogecoin identity, modern Qt shell, pure-DOGE product features, IBD/P2P robustness, and AssumeUTXO bootstrap — without changing consensus rules (AuxPoW / subsidy / script)
+**Project**: Dogecoin Core Pro (1.14 DNA) — [Takeback](https://github.com/TheRetardedElon/Dogecoin-Takeback)  
+**Started**: September 27, 2024 (rebrand + themes); continued 2025–2026 (product + full-node + installers)  
+**Latest**: **v1.14.104** (2026-08-13) — Client / Server / Hybrid installers; ImGui is the shipped desktop  
+**Purpose**: Same Dogecoin mainnet as official Core. Modern control planes (ImGui + operator TUI) over one `dogecoind`. Fast Sync, IBD/P2P, AssumeUTXO, prune/archive — **without changing consensus** (AuxPoW / subsidy / script). Not a second coin. Not an EVM layer.
+
+**Read this first if you only need current product truth:** sections **1.14.104** and **1.14.103** below. Historical Qt rebrand/theme work is kept at the top for the archive. Living docs: `html/docs/` (especially `how-it-works.html`).
 
 ---
 
@@ -402,6 +405,123 @@ Work continued in 2025–2026 as **Dogecoin Core Pro** on the 1.14 DNA line — 
 
 ---
 
+## 🐕 **2026-08-13 — Dogecoin Core Pro 1.14.104 (installers + ImGui product + Hybrid)**
+
+**GitHub:** [v1.14.104](https://github.com/TheRetardedElon/Dogecoin-Takeback/releases/tag/v1.14.104) · operator mirror [v1.14.104-gpenode](https://github.com/TheRetardedElon/Dogecoin-GPENode/releases/tag/v1.14.104-gpenode)
+
+**Consensus:** unchanged. Other Core clients still peer with this node. Storage engine and GUI are local — they are not a network fork.
+
+### **What people download**
+
+| Asset | Platform |
+|-------|----------|
+| `dogecoin-1.14.104-win64-setup-rpcsecure.exe` | Windows Client / Server / Hybrid |
+| `dogecoin-core-pro_1.14.104-1_amd64.deb` | Debian/Ubuntu (same three roles; Provides/Replaces `dogecoin-gpenode`) |
+| `SHA256SUMS-1.14.104.txt` | Digests |
+
+**`dogecoin-qt` is not shipped.** Windows Start was indexing leftover Qt as “Dogecoin Core.” Product desktop is **`dogecoin-pro-gui`** (Dear ImGui + GLFW). Qt remains in the source tree for unfinished parity (Business / Meme Stream polish), not in the installer.
+
+### **Client / Server / Hybrid (every machine)**
+
+One `dogecoind`. Never two nodes on one datadir (that corrupts BDB / LevelDB).
+
+| Role | Who | UI | How the node starts |
+|------|-----|----|---------------------|
+| **Client** | Daily wallet | ImGui only | GUI starts `dogecoind` if needed. Exit may stop the node. |
+| **Server** | VPS / dump operator | TUI + `gpenode-ops` | Windows service or systemd. No desktop GUI. |
+| **Hybrid** | Both | ImGui + TUI | **This PC is a full node (a server)** plus a desktop wallet — not a light client. Service owns `dogecoind`. Closing the GUI does **not** stop the node. |
+
+- Same question on Windows NSIS and Linux **debconf** (`dpkg-reconfigure dogecoin-core-pro`).
+- Hybrid default is **`ask`** every launch (`hybrid-ui.txt` / `/etc/dogecoin-core-pro/hybrid-ui`). Remember is opt-in (picker checkbox, GUI **Options → Hybrid**, TUI **Settings → H**).
+- No top-level “Desktop GUI” Start shortcut (Search skipped the picker). Direct exe launch with Hybrid+ask bounces back to the picker (`--ui gfx|tui` after a choice).
+- Unique **RPC password per install** (`127.0.0.1` only) → `dogecoin.conf` + `RPC-CREDENTIALS.txt`.
+- GUI **auto-reads** installer `rpcuser`/`rpcpassword` so users never type credentials (fixes close splash: “no RPC cookie/credentials”).
+- Hybrid/Server Windows service: SCM name `DogecoinGPENode`, display name **Dogecoin Core Pro**, host `gpenode-ops service-run` (`dogecoind` is not a native SCM binary). If `dogecoind` is already running, the service is installed but not started.
+- TUI uses the **same datadir** as the GUI on Hybrid/Client (`%APPDATA%\Dogecoin`), not a leftover GPENode `ProgramData` path.
+
+**Uninstall:** stop service → RPC `stop` (flush) → wait → only then remove program files. Optional **FULL PURGE** deletes blockchain + `wallet.dat` (extra confirm). Unchecked = tens of GB can remain. Linux: `apt remove` stops the unit; `apt purge` deletes `/var/lib/dogecoin-core-pro` (not `~/.dogecoin`).
+
+### **ImGui control plane (Path A) — shipped**
+
+`pro-gui/` is no longer “experimental / not in installer.” It is the 1.14.104 desktop.
+
+- Headless `dogecoind` owns AppInit / wallet / chainstate. GUI is RPC only (never consensus on the render thread).
+- First-run Welcome when datadir/wallet missing (default vs custom folder).
+- Wallet import / backup (stop node, copy `wallet.dat`, restart).
+- Borderless GLFW window; caption File/Help; min/close hit-test fixed.
+- Fast Sync: resolve manifest on UI thread, **download on a worker** (no “Not Responding” 11 GB hang).
+- Official CDN fields (height 6325931, attested SHA-256). Refuse Fast Sync mid-IBD+prune past 10k.
+- Options: Main / Wallet / Network / Window / Display / Theme / Connection / **Hybrid**.
+- Arcade via WebView2 on Windows (GPE hub).
+- Cloud-path refuse for live datadir (see storage).
+
+### **Storage (honest — LevelDB is not deleted)**
+
+Most disk is **`blocks/blk*.dat`**, not the UTXO folder.
+
+| Data | Engine | Rule |
+|------|--------|------|
+| UTXO + block index | **LevelDB default** | Compatible with other Core nodes |
+| Optional hot engine | **MDBX** (`-dbengine=mdbx`) | Empty dir only, or `-migratedb=mdbx` then exit. **Never** flip a live old chainstate |
+| Wallet | Berkeley DB `wallet.dat` | Unchanged |
+| Raw blocks | Flat files | `prune=5500` is the real size win |
+| Pruned history | `-archivepath=` | Copy finalized blk/rev + sidecar hash **before** delete; RPC `getarchiveinfo` / `verifyarchive` |
+
+**Cloud is a pipe, not a live database.**
+
+- Fast Sync CDN = HTTPS file + SHA-256 fail-closed + local load. Default `sync.doge.gopastearth.com`.
+- Consumer clouds (OneDrive, Drive, iCloud, Dropbox, pCloud, MEGA, Nextcloud, …) **refused** as live datadir (`src/cloudpath.h`).
+- Operator virtiofs / NFS (`/mnt/vfs`) = archive / snapshot dest only, never live `chainstate/` or `wallet.dat`.
+
+### **Docs (1.14.104)**
+
+- Root `README.md` rewritten for current product (not “ship Qt”).
+- `html/docs/pages/how-it-works.html` — end-user ecosystem map.
+- `html/docs/pages/install-roles.html` — Client / Server / Hybrid.
+- Architecture / diagrams / storage-stack updated; old PNGs labeled Qt-era (2026-08-09).
+- `doc/install-roles.md`, `doc/qt-phase-out.md`, `doc/startup-performance.md`, `doc/files.md`.
+
+### **What 1.14.104 does *not* change**
+
+- AuxPoW, subsidy, scripts, P2P magic/ports.
+- Wallet format (still BDB).
+- Default chainstate engine (still LevelDB).
+- Compatibility with official Dogecoin Core peers.
+
+---
+
+## 🐕 **2026-08 — Dogecoin Core Pro 1.14.103 (Fast Sync + Arcade + daemon work)**
+
+**Stamp:** `CLIENT_VERSION` 1.14.103. Related: [GH_RELEASE_NOTES_103](release/GH_RELEASE_NOTES_103.md).
+
+### **Fast Sync**
+
+- Raised snapshot `coins_count` sanity cap (100M → 500M). Fixes false error on live mainnet dumps (~181M coins).
+- Preflight before multi-GB download: attested height, `hash_serialized` match, free disk, HTTPS probe (Windows).
+- Attested heights including **6325931** (and 6324519).
+- Quiet P2P during snapshot load + activate, then restore network.
+- Refuse mid-IBD + prune Fast Sync (height > 10k).
+- No AbortNode when disconnect/connect hits a body-less snapshot tip (`nFile=-1`).
+- Refuse reorg off AssumeUTXO tip without block bodies.
+- Empty wallet + prune + AssumeUTXO: skip fatal “beyond pruned data” on restart.
+
+### **Arcade**
+
+- Multi-game cabinet (Classic / Action / Puzzle / Racing).
+- Flappy Doge (featured) + Retr-Doge Shibe Blaster; GPE hub catalog.
+- Unlock by host identity (`DogecoinCorePro/…`), not Qt vs ImGui.
+
+### **Daemon internals landed in this line (shipped PE / tree)**
+
+- `CDBWrapper` + `src/dbengine.*` backend (LevelDB default).
+- Optional libmdbx (`src/mdbx/`, `-dbengine=`, `-migratedb=`).
+- Block archive (`src/blockarchive.*`, `-archivepath=`, `getarchiveinfo`, `verifyarchive`).
+- Cloud-path helpers (`src/cloudpath.h`).
+
+At 1.14.103 release time, ImGui was still labeled experimental and Qt was still the packaged GUI. **1.14.104 flipped that for installers.**
+
+---
+
 ## 🐕 **2026 — Dogecoin Core Pro 1.14.102 (Fast Sync CDN path)**
 
 - Product P1 partial: GPE `latest.json` manifest resolve, `fetchassumeutxomanifest`, Options SoftSet for snapshot URL/SHA/official CDN (`sync.doge.gopastearth.com`)
@@ -504,18 +624,16 @@ Work continued in 2025–2026 as **Dogecoin Core Pro** on the 1.14 DNA line — 
 
 ## 📝 **Final notes (ongoing project)**
 
-- ✅ Rebrand + theme **baseline** complete (historical section above)
+- ✅ Rebrand + theme **baseline** complete (historical Qt section above)
 - ✅ Core Pro product shell + pure DOGE payments path
 - ✅ IBD P0–P0.3 and AssumeUTXO engineering **A–D3** on 1.14 DNA
-- ⏳ **Product P1–P4** tiered storage / fast sync — see `doc/tiered-storage-and-fast-sync.md`
-  - P1 trust anchors + CDN stream-hash + Fast Sync UI  
-  - P2 default prune-as-you-go product  
-  - P3 optional cold blk object CDN  
-  - P4 RocksDB-class hot engine (ops; not main space win)
-- ⏳ SQLite wallet backend (orthogonal)
-- ⚠️ Prefer `html/docs/` + code over outdated “100% Bitcoin eliminated” claims
-- ⚠️ Cloud = CDN + hash fail-closed; never live LevelDB on Drive/FUSE
+- ✅ **1.14.103** Fast Sync automation + Arcade + attested 6325931
+- ✅ **1.14.104** ImGui shipped; Client/Server/Hybrid installers; Qt not packed; Hybrid = full node; auto RPC creds; uninstall stop + optional FULL PURGE
+- ✅ Optional MDBX + archive path **in tree** (LevelDB still default)
+- ⏳ Fetch archived blks back; Zstd archive; SQLite wallet; apt.dogecli metapackage rename
+- ⚠️ Prefer `html/docs/pages/how-it-works.html` + this 1.14.104 section over “we deleted LevelDB” or “fully off Qt in source”
+- ⚠️ Cloud = CDN + hash fail-closed + archive dest; never live chainstate/wallet on Drive/OneDrive/FUSE
 
 ---
 
-*This changelog documents Dogecoin Core rebrand/theme history and the 2026 Core Pro / full-node performance / AssumeUTXO program.*
+*This changelog is the public history: 2024 rebrand/themes (Qt), then 2026 Core Pro full-node + AssumeUTXO + Fast Sync, then 1.14.104 product installers (ImGui + roles). Consensus never forked.*
