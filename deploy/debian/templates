@@ -1,0 +1,19 @@
+Template: dogecoin-core-pro/install-role
+Type: select
+Choices: Client - desktop wallet (ImGui), Server - headless operator (TUI + systemd), Hybrid - both UIs, one dogecoind
+Choices-C: client, server, hybrid
+Default: client
+Description: How are you installing Dogecoin Core Pro?
+ One dogecoind is installed in every case. The UIs share it; never run two nodes.
+ .
+ Client: desktop wallet. You start the GUI; it starts the node if needed.
+ Datadir is the installing user's ~/.dogecoin. No systemd unit.
+ .
+ Server: headless operator (replaces dogecoin-gpenode). systemd unit
+ dogecoin-core-pro, datadir /var/lib/dogecoin-core-pro.
+ .
+ Hybrid: both UIs, still one systemd dogecoind. Run dogecoin-core-pro
+ and pick Desktop GUI or Operator TUI.
+ .
+ Reconfigure later with: sudo dpkg-reconfigure dogecoin-core-pro
+ Noninteractive: debconf-set-selections (see /usr/share/doc/dogecoin-core-pro).

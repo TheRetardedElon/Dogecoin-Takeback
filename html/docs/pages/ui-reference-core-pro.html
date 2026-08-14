@@ -69,21 +69,21 @@
     <main class="main">
       <h1>Dogecoin Core Pro — UI reference</h1>
       <p class="lead">
-        Screenshots of the lost modern shell (sidebar nav, Meme Stream, Doge Business).
-        Use this as the product target when rebuilding — not the stock Bitcoin-class Qt layout.
+        Screenshots of the older Qt modern shell (sidebar nav, Meme Stream, Doge Business).
+        The 1.14.104 product desktop is ImGui — this gallery is the visual contract, not the live binary.
       </p>
       <div class="meta">
-        <span>Captured: 2026-07 (promo / running client)</span>
-        <span>In tree today: partial modern shell only</span>
+        <span>Captured: 2026-07 (promo / running Qt client)</span>
+        <span>Shipped: ImGui <code>dogecoin-pro-gui</code></span>
         <span>Assets: <code>html/docs/assets/ui-reference/</code></span>
       </div>
 
-      <div class="callout warn">
-        <strong>Gap vs current tree</strong>
-        <code>ModernNavigation</code> only has Overview / Send / Receive / History / AddressBook / Console.
-        Screenshots show <strong>Home, Send, Receive, Transactions, Network, Doge Business, Meme Stream</strong>
-        plus Home-side Meme Stream rail and full Business/POS/Invoices pages.
-        Those pages are <em>not</em> implemented in this recovery tree yet.
+      <div class="callout ok">
+        <strong>ImGui status (2026-08)</strong>
+        Nav includes Home, Send, History, Network, Chain, Arcade, Meme Stream, Business, Mining, Settings.
+        Business Dashboard / Invoices / POS keypad + Charge QR are live. Receive has QR.
+        Home keeps a compact GPE WebView rail. The Meme Stream tab is Stream (full site)
+        + Submit (≤ 69 KiB image + tip) — not a second native feed. Testnet uses the Matrix theme.
       </div>
 
       <h2>Shell layout (product contract)</h2>
@@ -216,7 +216,9 @@
         <li class="done">Business: local invoice store + POS (wallet addresses only)</li>
         <li class="done">Home: no top Business bar (nav handles Business / Meme Stream)</li>
         <li class="done">Network page: peers/bans, activity toggle, disconnect/ban/unban menus</li>
-        <li class="done">Business: invoice Show QR + POS live QR after Charge</li>
+        <li class="done">Business: invoice Show QR + POS live QR after Charge (ImGui <code>qr_tiny</code>)</li>
+        <li class="done">Native HTTP Meme Stream rail / publish (ImGui)</li>
+        <li class="todo">Image attach on ImGui publish (≤ 69 KiB)</li>
         <li class="todo">Theme polish to match Core Pro gold/dark cards</li>
       </ul>
 

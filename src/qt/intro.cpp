@@ -12,14 +12,22 @@
 
 #include "fs.h"
 #include "guiutil.h"
+#include "cloudpath.h"
 
 #include "util.h"
 
 #include <QFileDialog>
 #include <QSettings>
 #include <QMessageBox>
+#include <QDir>
 
 #include <cmath>
+#include <cstdlib>
+
+static bool CloudBlockedDatadir(const QString& path)
+{
+    return LooksLikeConsumerCloudPath(QDir::toNativeSeparators(path).toLocal8Bit().constData());
+}
 
 static const uint64_t GB_BYTES = 1000000000LL;
 /* Minimum free space (in GB) needed for data directory */
@@ -103,6 +111,13 @@ void FreespaceChecker::check()
                 replyStatus = ST_ERROR;
                 replyMessage = tr("Path already exists, and is not a directory.");
             }
+        }
+        if (replyStatus == ST_OK && CloudBlockedDatadir(dataDirStr)) {
+            replyStatus = ST_ERROR;
+            replyMessage = tr("Do not store the live data directory on a cloud sync folder (OneDrive, Google Drive, iCloud, Dropbox, Proton Drive, pCloud, MEGA, Nextcloud). Those agents lock files and can crash or corrupt a running node. Use a local disk. A later archive folder (finalized block files only) can go on cloud storage.");
+        } else if (replyStatus == ST_OK &&
+                   LooksLikeOperatorFileStore(QDir::toNativeSeparators(dataDirStr).toLocal8Bit().constData())) {
+            replyMessage = tr("This looks like a server network disk (virtiofs / NFS / CIFS). Prefer a local disk for the live wallet and chainstate. Operator archives and snapshot dumps can use that mount.");
         }
     } catch (const fs::filesystem_error&)
     {
@@ -204,6 +219,11 @@ bool Intro::pickDataDirectory()
                 return false;
             }
             dataDir = intro.getDataDirectory();
+            if (CloudBlockedDatadir(dataDir)) {
+                QMessageBox::critical(0, tr(PACKAGE_NAME),
+                    tr("Do not store the live data directory on a cloud sync folder. Use a local disk."));
+                continue;
+            }
             try {
                 TryCreateDirectory(GUIUtil::qstringToBoostPath(dataDir));
                 break;
@@ -224,6 +244,9 @@ bool Intro::pickDataDirectory()
             // Stock Core auto prune-as-you-go; ~5.5 GiB block target (Dogecoin tip).
             // SoftSet so dogecoin.conf can still override if the user sets -prune explicitly.
             SoftSetArg("-prune", "5500");
+            // Prefer a larger UTXO/db cache on Fast Sync desktops when user did not set -dbcache.
+            // SoftSet only applies if unset — low-RAM users can still force a smaller value in conf.
+            SoftSetArg("-dbcache", "1024");
             settings.setValue("bPrune", true);
             settings.setValue("nPruneSize", 6); // Options UI units: GB
             settings.setValue("nPrune", 5500);  // legacy key some paths read

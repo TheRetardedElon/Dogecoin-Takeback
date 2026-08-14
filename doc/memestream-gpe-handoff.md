@@ -1,16 +1,20 @@
 # MemeStream ↔ Dogecoin Core Pro — integration handoff
 
-**Updated:** 2026-08-09  
-**Sources:** GPE server env + Core client (`src/qt/memestream*`)
+**Updated:** 2026-08-14  
+**Sources:** GPE server env + Qt leftover (`src/qt/memestream*`) + ImGui `DrawMemeStream`
 
 ## Status matrix
 
-| Feature | Core client | GPE prod | Notes |
-|---------|-------------|----------|--------|
-| GET feed | Done | OK (200 JSON) | Titles/bodies/tips show in rail |
-| POST publish | Done | Key matches built-in | Header `X-MemeStream-Key` |
-| POST like / Wow | Done | Public* | Optional `X-Doge-Address` |
-| **Images / media** | Client resolves URL + WIC JPEG fallback | **Mostly fixed on GPE** | PNG works via Qt; JPEG needs WIC (depends Qt had `-no-libjpeg`) |
+| Feature | ImGui 1.14.104 (shipped) | Qt leftover (not packed) | GPE prod |
+|---------|--------------------------|--------------------------|----------|
+| Feed view | Home right rail = GPE site WebView. Meme Stream tab = full page + Submit (not a second native feed). | Native HTTP leftover | OK |
+| POST publish | ImGui Publish tab (`X-MemeStream-Key`) | Done | Key matches built-in |
+| POST publish + image | Multipart field `image` (≤ 69 KiB) | Done | Same `/publish` route |
+| POST like / Wow | ImGui Wow on cards | Done | Public* |
+| Tip | `sendtoaddress` from card or Tip tab | Send-coins flow | On-chain |
+| **Images / media** | WinINet + stb_image (PNG/JPEG/GIF) | URL + WIC JPEG fallback | Live `/media/memestream/*` is real image bytes (2026-08-13) |
+
+ImGui client: `pro-gui/src/memestream_http.*` + `DrawMemeStream` / `DrawMemeRail`. Home rail and Stream tab are the GPE site WebView. Submit is native HTTP. There is not a second native feed.
 
 ## Auth (publish only)
 

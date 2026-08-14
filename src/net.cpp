@@ -1605,6 +1605,20 @@ static std::string GetDNSHost(const CDNSSeedData& data, ServiceFlags* requiredSe
 }
 
 
+/** Stable per-seed source for addrman (RFC 5737 TEST-NET-1 192.0.2.x).
+ *  Avoids a second blocking DNS Lookup(seed.name) after each seed resolve
+ *  (slow resolvers were doubling startup DNS cost on the dnsseed thread).
+ *  Network-invisible: only used as AddrMan "source" metadata, not as a peer. */
+static CNetAddr DnsSeedSourceAddr(const std::string& seedName)
+{
+    uint256 h = Hash(seedName.begin(), seedName.end());
+    struct in_addr ia;
+    // 192.0.2.0/24 documentation prefix; low byte from hash (avoid .0)
+    unsigned char b = (h.begin()[0] % 254) + 1;
+    ia.s_addr = htonl((192u << 24) | (0u << 16) | (2u << 8) | b);
+    return CNetAddr(ia);
+}
+
 void CConnman::ThreadDNSAddressSeed()
 {
     // goal: only query DNS seeds if address need is acute
@@ -1630,7 +1644,8 @@ void CConnman::ThreadDNSAddressSeed()
     const std::vector<CDNSSeedData> &vSeeds = Params().DNSSeeds();
     int found = 0;
 
-    LogPrintf("Loading addresses from DNS seeds (could take a while)\n");
+    // Runs on dnsseed thread only — never blocks AppInitMain / splash "Done loading".
+    LogPrintf("Loading addresses from DNS seeds (background; will not block RPC/UI ready)\n");
 
     BOOST_FOREACH(const CDNSSeedData &seed, vSeeds) {
         if (interruptNet) {
@@ -1642,7 +1657,9 @@ void CConnman::ThreadDNSAddressSeed()
             std::vector<CNetAddr> vIPs;
             std::vector<CAddress> vAdd;
             ServiceFlags requiredServiceBits = nRelevantServices;
-            if (LookupHost(GetDNSHost(seed, &requiredServiceBits), vIPs, 0, true))
+            const int64_t t0 = GetTimeMillis();
+            const std::string host = GetDNSHost(seed, &requiredServiceBits);
+            if (LookupHost(host, vIPs, 0, true))
             {
                 BOOST_FOREACH(const CNetAddr& ip, vIPs)
                 {
@@ -1653,16 +1670,14 @@ void CConnman::ThreadDNSAddressSeed()
                     found++;
                 }
             }
+            LogPrint("net", "DNS seed %s (%s): %u addrs in %dms\n",
+                     seed.name, host, (unsigned)vIPs.size(), (int)(GetTimeMillis() - t0));
             if (interruptNet) {
                 return;
             }
-            // TODO: The seed name resolve may fail, yielding an IP of [::], which results in
-            // addrman assigning the same source to results from different seeds.
-            // This should switch to a hard-coded stable dummy IP for each seed name, so that the
-            // resolve is not required at all.
+            // Deterministic dummy source — no second getaddrinfo on seed.name
             if (!vIPs.empty()) {
-                CService seedSource;
-                Lookup(seed.name, seedSource, 0, true);
+                CNetAddr seedSource = DnsSeedSourceAddr(seed.name);
                 addrman.Add(vAdd, seedSource);
             }
         }

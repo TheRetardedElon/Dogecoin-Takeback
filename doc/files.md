@@ -35,10 +35,10 @@ Chain         | Data directory path
 Subdirectory       | File(s)               | Description
 -------------------|-----------------------|------------
 `blocks/`          |                       | Blocks directory
-`blocks/index/`    | LevelDB database      | Block and transaction indices
+`blocks/index/`    | LevelDB (default) or MDBX (`-dbengine=`) | Block and transaction indices
 `blocks/`          | `blkNNNNN.dat`        | Actual blocks (in network format, dumped in raw on disk, 128 MiB per file)
 `blocks/`          | `revNNNNN.dat`        | Block undo data (custom format)
-`chainstate/`      | LevelDB database      | Blockchain state, a.k.a UTXO database
+`chainstate/`      | LevelDB (default) or MDBX (`-dbengine=`) | Blockchain state (UTXO). Do not flip a live LevelDB dir to MDBX.
 `./`               | `anchors.dat`         | Anchor IP address database, created on shutdown and deleted at startup. Anchors are last known outgoing block-relay-only peers that are tried to re-connect to on startup
 `./`               | `banlist.dat`         | Stores the IPs/subnets of banned nodes
 `./`               | `dogecoin.conf`       | User-defined configuration settings for `dogecoind` or `dogecoin-qt`; can be specified by `-conf` option

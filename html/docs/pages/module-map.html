@@ -127,13 +127,14 @@
           <tr><td>UTXO / chainstate DB</td><td><code>txdb.*</code>, <code>dbwrapper.*</code>, <code>coins.*</code></td></tr>
           <tr><td>AssumeUTXO dual tip</td><td><code>node/chainstate.*</code>, <code>node/utxo_snapshot.*</code></td></tr>
           <tr><td>Wallet keys &amp; spends</td><td><code>wallet/wallet.*</code>, <code>walletdb.*</code>, <code>db.*</code></td></tr>
-          <tr><td>Main window UI</td><td><code>qt/dogecoingui.*</code> (live shell; ModernMainWindow not linked)</td></tr>
-          <tr><td>Themes</td><td><code>qt/thememanager.*</code>, <code>qt/themes/</code></td></tr>
-          <tr><td>Overview / balances UI</td><td><code>qt/modernoverviewpage.*</code>, <code>qt/overviewpage.*</code></td></tr>
-          <tr><td>Network page / map</td><td><code>qt/networkpage.*</code>, peer table models</td></tr>
-          <tr><td>Arcade</td><td><code>qt/arcadepage.*</code>, <code>qt/arcadegamewidget.*</code></td></tr>
-          <tr><td>Meme Stream / Business</td><td><code>qt/memestreampage.*</code>, invoice/POS widgets</td></tr>
-          <tr><td>Build Qt into binary</td><td><code>src/Makefile.qt.include</code>, <code>configure.ac</code></td></tr>
+          <tr><td>Shipped desktop (ImGui)</td><td><code>pro-gui/src/app.*</code>, <code>main.cpp</code>, <code>corepro_launch.cpp</code></td></tr>
+          <tr><td>QR (receive / invoices / POS)</td><td><code>pro-gui/src/qr_tiny.*</code></td></tr>
+          <tr><td>WebView (Arcade / Meme Stream)</td><td><code>pro-gui/src/arcade_webview.*</code></td></tr>
+          <tr><td>Qt fallback (not packed)</td><td><code>qt/dogecoingui.*</code></td></tr>
+          <tr><td>Themes (Qt leftover)</td><td><code>qt/thememanager.*</code>, <code>qt/themes/</code></td></tr>
+          <tr><td>Arcade (Qt leftover)</td><td><code>qt/arcadepage.*</code>, <code>qt/arcadegamewidget.*</code></td></tr>
+          <tr><td>Meme Stream / Business (Qt leftover)</td><td><code>qt/memestreampage.*</code>, invoice/POS widgets</td></tr>
+          <tr><td>Build Qt into binary</td><td><code>src/Makefile.qt.include</code>, <code>configure.ac</code> — not the installer path</td></tr>
         </tbody>
       </table>
 

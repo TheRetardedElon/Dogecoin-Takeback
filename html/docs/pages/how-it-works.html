@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>How it works — Dogecoin Core Pro</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav></nav>
+    </aside>
+    <main class="main">
+      <h1>How Dogecoin Core Pro works</h1>
+      <p class="lead">
+        End-user map of the 1.14.104 product. Same Dogecoin mainnet as official Core.
+        This page is the topology that older Qt + “LevelDB-only” diagrams must match.
+      </p>
+      <div class="meta">
+        <span>Release: <strong>v1.14.105</strong></span>
+        <span>Updated: 2026-08-14</span>
+      </div>
+
+      <div class="callout ok">
+        <strong>Unchanged</strong>
+        AuxPoW, subsidy, scripts, P2P ports, and “is this a valid block?” stay in
+        <code>dogecoind</code>. Other Core clients still peer with you.
+      </div>
+
+      <div class="callout warn">
+        <strong>Do not over-claim</strong>
+        LevelDB is <em>not deleted</em>. It is still the default UTXO/index engine.
+        Qt is <em>not deleted from source</em>. It is <strong>not shipped</strong> in 1.14.104 installers.
+        Cloud is a <em>CDN / archive dest</em>, never a live <code>chainstate/</code>.
+      </div>
+
+      <h2>Process topology (canonical 1.14.104)</h2>
+      <pre><code>                    Dogecoin P2P :22556  (testnet :44556)
+                                  │
+                    ┌─────────────▼─────────────┐
+                    │     dogecoind  (ONE)      │
+                    │  validate · wallet.dat    │
+                    │  LevelDB default          │
+                    │  optional MDBX (empty /   │
+                    │    -migratedb only)       │
+                    │  prune + optional archive │
+                    └─────────────┬─────────────┘
+                                  │ RPC 127.0.0.1
+                                  │ main :22555  testnet :44555
+           ┌──────────────────────┼──────────────────────┐
+           ▼                      ▼                      ▼
+   dogecoin-pro-gui         gpenode-tui            dogecoin-cli
+      ImGui Client          Server / Hybrid           scripts
+           │                      │
+           └──────── Hybrid ──────┘
+              Start Menu asks unless Remember
+              Testnet icon / --testnet skips the mainnet service</code></pre>
+
+      <h2>Close / tray / Exit</h2>
+      <table>
+        <thead><tr><th>Action</th><th>GUI</th><th>Node</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Window <strong>X</strong> / Hide / Minimize to tray</td>
+            <td>One tray icon (the Desktop GUI)</td>
+            <td>Stays up</td>
+          </tr>
+          <tr>
+            <td>File → Exit / tray Quit</td>
+            <td>Exits after splash</td>
+            <td>Stop service <code>DogecoinGPENode</code> if present, then RPC stop + flush</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Three install roles</h2>
+      <table>
+        <thead><tr><th>Role</th><th>UI</th><th>How dogecoind starts</th><th>Datadir</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Client</td>
+            <td>ImGui only</td>
+            <td>GUI starts it if needed</td>
+            <td>User folder (<code>%APPDATA%\Dogecoin</code> / <code>~/.dogecoin</code>)</td>
+          </tr>
+          <tr>
+            <td>Server</td>
+            <td>TUI only</td>
+            <td>Windows service or systemd</td>
+            <td>Linux <code>/var/lib/dogecoin-core-pro</code>; Windows installer uses the written datadir</td>
+          </tr>
+          <tr>
+            <td>Hybrid</td>
+            <td>Both, one node</td>
+            <td>Service + picker (default ask)</td>
+            <td>Same folder for both UIs</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Details: <a href="install-roles.html">Install roles</a>.</p>
+
+      <h2>Testnet</h2>
+      <p>
+        Start Menu / desktop <strong>Dogecoin Core Pro Testnet</strong>, or
+        <code>corepro-launch.exe --testnet</code>, <code>dogecoin-pro-gui --ui gfx --testnet</code>,
+        <code>gpenode-tui --testnet</code>, <code>dogecoin-cli -testnet</code>.
+        ImGui switches to Matrix (green). The TUI uses a green palette and a TESTNET header.
+        Datadir is <code>testnet3</code>. The mainnet Windows service is not started.
+        Full page: <a href="testnet.html">Testnet</a>.
+      </p>
+
+      <h2>Meme Stream / Arcade / Privacy</h2>
+      <ul>
+        <li>Home keeps a compact Meme Stream <em>rail</em> (WebView of the GPE site).</li>
+        <li>The Meme Stream tab is <strong>Stream</strong> (full site) + <strong>Submit</strong> (≤ 69 KiB image + tip). It is not a second native feed.</li>
+        <li>Arcade is WebView of <code>arcade.gopastearth.com</code>.</li>
+        <li>Optional Tor (Options → Privacy) is <strong>P2P only</strong>. Drop <code>tor.exe</code> in <code>Dogecoin\tor\</code>. Not bundled. WebView stays on the normal web connection.</li>
+      </ul>
+
+      <h2>Disk vs cloud</h2>
+      <div class="flow">
+        <div class="flow-step"><strong>Hot</strong> chainstate + wallet local only</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>Bootstrap</strong> CDN snapshot file</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>Warm</strong> blk*.dat prune</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-step"><strong>Cold</strong> archivepath copy</div>
+      </div>
+      <ul>
+        <li>OneDrive / Drive / Dropbox / iCloud / pCloud / MEGA / Nextcloud = <strong>refused</strong> as live datadir.</li>
+        <li>CDN = HTTPS bytes + SHA-256 fail-closed.</li>
+        <li><code>-archivepath=</code> copies finalized block files <em>before</em> prune deletes them. Not a second live node.</li>
+        <li>Operator <code>/mnt/vfs</code> (virtiofs) is archive/snapshot dest, not live LevelDB.</li>
+      </ul>
+
+      <h2>Fast Sync vs normal IBD</h2>
+      <pre><code>Normal:   peers → headers → blocks → UTXO  (days, full history)
+Fast Sync: CDN file → SHA-256 → load UTXO at H → use wallet
+           then background-prove history over P2P</code></pre>
+      <p>Prefer an empty datadir. Do not Fast Sync mid-IBD+prune. Guide: <a href="fast-sync.html">Fast Sync</a>.</p>
+
+      <h2>What other Dogecoin nodes see</h2>
+      <p>
+        A peer. Same version handshake lineage (Shibetoshi). Same blocks. They never see ImGui,
+        the TUI, <code>hybrid-ui.txt</code>, or MDBX. Storage engine is local.
+      </p>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

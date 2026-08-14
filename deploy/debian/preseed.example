@@ -1,0 +1,8 @@
+# Noninteractive apt / dpkg preseed for Dogecoin Core Pro.
+# Same three roles as the Windows NSIS page and the interactive debconf prompt.
+#
+#   sudo debconf-set-selections < deploy/debian/preseed.example
+#   sudo DEBIAN_FRONTEND=noninteractive apt-get install ./dogecoin-core-pro_*.deb
+#
+# Values: client | server | hybrid
+dogecoin-core-pro dogecoin-core-pro/install-role select server

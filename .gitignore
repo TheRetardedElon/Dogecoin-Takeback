@@ -182,8 +182,50 @@ scripts/fix-winbuild-snapshot-makefile.py
 scripts/finish-fastsync-package.sh
 scripts/compile-winhttp-snapshot.sh
 scripts/compile-fastsync-check.sh
+release/latest/dogecoin-1.14.102-win64.zip
+release/latest/README.txt
+release/latest/SHA256SUMS.txt
 
 # Operator secrets (never commit)
 serverdetails.txt
 **/serverdetails.txt
+
+
+# dogecoin-pro-gui ImGui (source is committed; build trees are not)
+pro-gui/build/
+pro-gui/build-win/
+pro-gui/third_party/imgui/examples/
+pro-gui/third_party/imgui/misc/fonts/
+pro-gui/third_party/imgui/.github/
+pro-gui/third_party/imgui/.git.bak-for-commit/
+.cache/
+tor/*.exe
+tor/pluggable_transports/
+release/debian/*.deb
+release/debian/*.sha256
+release/debian/stage-*/
+release/smoke-pro-gui/
+release/upload-*/
+release/win64-zip-stage/
+release/*.exe.sha256
+release/*.err
+
+# One-off probe / remote-build helpers (some contain host passwords)
+scripts/_probe*
+scripts/_remote-make*
+scripts/_onbox*
+scripts/_poll*
+scripts/_copy-gui*
+scripts/_fix-hybrid*
+scripts/_fix-qt*
+scripts/_install-service*
+scripts/_rebuild-gui*
+scripts/_repair-hybrid*
+scripts/_status_boxes.sh
+scripts/_sync-html-docs.ps1
+scripts/_verify-deb.sh
+scripts/_run-apt-105.sh
+scripts/do-apt-103.sh
+scripts/finish-apt-103-publish.sh
+scripts/fix-apt-103-real-daemon.sh
 

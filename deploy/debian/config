@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+# Ask Client / Server / Hybrid on apt/dpkg install and dpkg-reconfigure.
+. /usr/share/debconf/confmodule
+db_version 2.0
+db_capb backup
+db_input high dogecoin-core-pro/install-role || true
+db_go || true

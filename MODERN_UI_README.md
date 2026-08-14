@@ -1,6 +1,8 @@
-# Dogecoin Core - Modern UI System
+# Dogecoin Core - Modern UI System (Qt leftover)
 
-This document describes the new modern UI system implemented for Dogecoin Core, featuring themeable interfaces, dark mode support, and contemporary design elements.
+This document describes the **Qt** modern UI system that used to be the Core Pro desktop. It is **not packed** in 1.14.104.
+
+> **Shipping desktop:** Dear ImGui in [`pro-gui/`](pro-gui/README.md) — see [`doc/pro-gui-imgui.md`](doc/pro-gui-imgui.md) and [`doc/qt-phase-out.md`](doc/qt-phase-out.md). The rest of this file is historical Qt inventory.
 
 ## 🎨 Features
 

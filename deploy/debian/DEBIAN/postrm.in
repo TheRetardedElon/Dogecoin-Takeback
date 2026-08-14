@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+case "$1" in
+  purge)
+    if command -v systemctl >/dev/null 2>&1; then
+      systemctl disable dogecoin-core-pro.service >/dev/null 2>&1 || true
+      systemctl daemon-reload || true
+    fi
+    if [ -f /usr/share/debconf/confmodule ]; then
+      # shellcheck disable=SC1091
+      . /usr/share/debconf/confmodule
+      db_purge || true
+    fi
+    echo "dogecoin-core-pro: purge — removing /var/lib/dogecoin-core-pro (blocks/wallet)."
+    rm -rf /var/lib/dogecoin-core-pro
+    rm -f /etc/xdg/autostart/dogecoin-core-pro-tray.desktop
+    echo "dogecoin-core-pro: user ~/.dogecoin was not deleted (Client datadir)."
+    ;;
+  remove)
+    rm -f /etc/xdg/autostart/dogecoin-core-pro-tray.desktop
+    if command -v systemctl >/dev/null 2>&1; then
+      systemctl daemon-reload || true
+    fi
+    ;;
+esac
+exit 0

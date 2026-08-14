@@ -40,13 +40,23 @@
     <main class="main">
       <h1>MemeStream + Dogecoin Core integration</h1>
       <p class="lead">
-        Handoff for rebuilding the client-side Meme Stream tab in Dogecoin Core / Qt.
-        Captured from GPE (GoPastEarth) side discussion — 2026-07-28.
+        GPE HTTP contract for Meme Stream, plus what 1.14.104 actually ships in ImGui.
+        Captured from GPE (GoPastEarth) side discussion — 2026-07-28; status updated 2026-08-14.
       </p>
       <div class="meta">
-        <span>Status: <strong>spec only</strong> — no <code>memestream</code> sources in this tree yet</span>
+        <span>Shipped: ImGui WebView of the SPA + RPC tip</span>
         <span>API host: <code>https://gopastearth.com</code></span>
         <span>SPA: <code>https://memestream.gopastearth.com</code></span>
+      </div>
+
+      <div class="callout ok">
+        <strong>What 1.14.104 ships</strong>
+        Home keeps a compact Meme Stream <em>rail</em> (WebView of the GPE site).
+        The Meme Stream tab is <strong>Stream</strong> (full site) + <strong>Submit</strong>
+        (native HTTP publish via <code>pro-gui/src/memestream_http.*</code>, optional
+        JPEG/PNG/GIF/WebP ≤ 69 KiB as multipart <code>image</code>, plus Tip via
+        <code>sendtoaddress</code>). There is not a second native feed on that tab.
+        Keys never leave <code>dogecoind</code>.
       </div>
 
       <div class="callout danger">
@@ -65,7 +75,7 @@
         <tbody>
           <tr>
             <td><strong>A. MemeStream</strong></td>
-            <td>Dogecoin Core/Qt → HTTPS → GPE API</td>
+            <td>Core ImGui (WebView today) / Qt HTTP leftover → HTTPS → GPE API</td>
             <td>Feed, publish, upload, soft “Wow” likes</td>
           </tr>
           <tr>
@@ -264,15 +274,17 @@ curl -sS -F 'title=Such meme' -F 'body=Very small' \
         unrelated to MemeStream publish.
       </p>
 
-      <h2>Checklist for rebuilding Core + MemeStream</h2>
+      <h2>Checklist for Core + MemeStream</h2>
       <ul class="checklist">
-        <li class="todo">Ship/build Qt with Meme Stream tab + <code>-memestreamkey=</code></li>
-        <li class="todo">Set key from GPE <code>MEMESTREAM_PUBLISH_KEY</code> (local only)</li>
-        <li class="todo">Always send <code>X-MemeStream-Key</code> on publish/upload</li>
-        <li class="todo">Always send receiving wallet on publish</li>
-        <li class="todo">Feed: GET canonical feed URL</li>
-        <li class="todo">Images ≤69 KiB; tip on-chain to <code>tipAddress</code></li>
-        <li class="todo">Do not use MemeStream key for RPC or POS</li>
+        <li class="done">ImGui Home rail (WebView) + Stream / Submit tab</li>
+        <li class="done">Tip via wallet RPC (<code>sendtoaddress</code>) — not through GPE</li>
+        <li class="done">Native HTTP GET feed inside ImGui (no WebView required)</li>
+        <li class="done">Native HTTP publish with <code>X-MemeStream-Key</code></li>
+        <li class="done">Always send receiving wallet on publish</li>
+        <li class="done">Like / Wow + feed thumbnails (PNG/JPEG)</li>
+        <li class="done">Home right-rail compact cards</li>
+        <li class="todo">Image attach on publish (≤ 69 KiB multipart)</li>
+        <li class="done">Do not use MemeStream key for RPC or POS</li>
       </ul>
 
       <h2>What Core does not need</h2>
@@ -285,15 +297,16 @@ curl -sS -F 'title=Such meme' -F 'body=Very small' \
 
       <h2>Implementation notes for this tree</h2>
       <div class="callout warn">
-        <strong>Not present yet</strong>
-        Recovery scan found no <code>memestream</code> client code under <code>C:\dogedev</code>.
-        This page is the contract so Phase 4 can rebuild without re-discovering GPE.
+        <strong>Two clients</strong>
+        ImGui ships the SPA embed + RPC tip (<code>pro-gui/src/app.cpp</code>
+        <code>DrawMemeStream</code>). Native HTTP is still the Qt leftover
+        (<code>src/qt/memestream*</code>). This page is the GPE contract for the
+        remaining native port.
       </div>
       <ul>
-        <li>Prefer Qt Network (or libcurl) HTTP client — no RPC dependency for feed/publish.</li>
-        <li>Hide tab when Serious Mode is on (local setting).</li>
-        <li>Reuse existing send-coins flow for tips; never send funds through GPE for tips.</li>
-        <li>Next optional doc: Qt checklist (exact header names + error code mapping).</li>
+        <li>Prefer WinHTTP / libcurl for a native ImGui feed — no RPC dependency for feed/publish.</li>
+        <li>Tips already reuse <code>sendtoaddress</code>; never send funds through GPE.</li>
+        <li>Do not put the publish key in git as plaintext.</li>
       </ul>
 
       <h2>Related</h2>

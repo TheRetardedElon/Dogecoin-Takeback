@@ -20,7 +20,7 @@
       <h1>Architecture</h1>
       <p class="lead">
         How this codebase is layered. Consensus and P2P define the coin;
-        local storage and the Qt shell are replaceable without forking the network.
+        local storage and the GUI shell are replaceable without forking the network.
       </p>
 
       <div class="callout ok">
@@ -42,14 +42,29 @@
             <td>Full node daemon (P2P, validation, optional wallet, RPC)</td>
           </tr>
           <tr>
+            <td><code>dogecoin-pro-gui</code></td>
+            <td><code>pro-gui/</code></td>
+            <td>ImGui control plane over localhost RPC (shipped in 1.14.104)</td>
+          </tr>
+          <tr>
+            <td><code>gpenode-tui</code></td>
+            <td>GPENode tree / installer</td>
+            <td>Operator TUI (Server / Hybrid). Not consensus.</td>
+          </tr>
+          <tr>
             <td><code>dogecoin-qt</code></td>
             <td><code>src/qt/dogecoin.cpp</code></td>
-            <td>Same core + Qt GUI (DogecoinGUI / modern shell)</td>
+            <td>Legacy in-tree Qt shell. <strong>Not packed</strong> in 1.14.104 installers.</td>
+          </tr>
+          <tr>
+            <td><code>corepro-launch</code></td>
+            <td><code>pro-gui/src/corepro_launch.cpp</code></td>
+            <td>Windows Start Menu / desktop launcher. Hybrid picker. Passes <code>--testnet</code>.</td>
           </tr>
           <tr>
             <td><code>dogecoin-cli</code></td>
             <td><code>src/dogecoin-cli.cpp</code></td>
-            <td>JSON-RPC client against a running node</td>
+            <td>JSON-RPC client. <code>-testnet</code> prints a green banner on a TTY.</td>
           </tr>
           <tr>
             <td><code>dogecoin-tx</code></td>
@@ -78,10 +93,10 @@
 
       <h2>Layer stack</h2>
       <pre><code>┌─────────────────────────────────────────────────────────┐
-│  Qt GUI  Core Pro: Home, Network, Business, Meme Stream,│
-│          Options, Arcade + Fast Sync dialog + themes    │
+│  ImGui (dogecoin-pro-gui)  +  TUI (gpenode-tui)         │
+│  Control planes only · localhost RPC · Hybrid picker    │
 ├─────────────────────────────────────────────────────────┤
-│  Wallet  (keys, txs, coin control)  ← still BDB         │
+│  Wallet keys  (Berkeley DB wallet.dat)                  │
 ├─────────────────────────────────────────────────────────┤
 │  RPC / HTTP / ZMQ  (getibdinfo, getchainstates, …)      │
 ├─────────────────────────────────────────────────────────┤
@@ -90,9 +105,10 @@
 │  Validation + dual chainstate (AssumeUTXO active/bg)    │
 ├─────────────────────────────────────────────────────────┤
 │  Consensus  (script, pow/DigiShield, AuxPoW, subsidy)   │
+│             UNTOUCHED — same as other Core clients      │
 ├─────────────────────────────────────────────────────────┤
-│  Storage  chainstate/ + chainstate_snapshot/ (LevelDB)  │
-│           assumeutxo.dat · blocks/*.dat                 │
+│  Storage  LevelDB DEFAULT  ·  MDBX opt-in (empty/migrate)│
+│           assumeutxo.dat · blk*.dat · optional archive  │
 └─────────────────────────────────────────────────────────┘</code></pre>
       <p>
         Bootstrap path: <a href="ibd-and-p2p.html">IBD &amp; P2P</a> ·

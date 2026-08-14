@@ -18,6 +18,11 @@
 #include "utilstrencodings.h"
 
 #include <stdio.h>
+#ifdef WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
 #include <event2/buffer.h>
 #include <event2/keyvalq_struct.h>
@@ -376,6 +381,20 @@ MAIN_FUNCTION
     } catch (...) {
         PrintExceptionContinue(NULL, "AppInitRPC()");
         return EXIT_FAILURE;
+    }
+
+    if (GetBoolArg("-testnet", false)) {
+#ifdef WIN32
+        const bool tty = _isatty(_fileno(stderr)) != 0;
+        HANDLE h = GetStdHandle(STD_ERROR_HANDLE);
+        DWORD mode = 0;
+        if (h && h != INVALID_HANDLE_VALUE && GetConsoleMode(h, &mode))
+            SetConsoleMode(h, mode | 0x0004); // ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#else
+        const bool tty = isatty(fileno(stderr)) != 0;
+#endif
+        if (tty)
+            fprintf(stderr, "\033[32;1m*** TESTNET *** coins have no value  ·  RPC default 44555\033[0m\n");
     }
 
     int ret = EXIT_FAILURE;

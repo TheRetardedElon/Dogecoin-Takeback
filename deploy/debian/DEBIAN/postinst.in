@@ -1,0 +1,97 @@
+#!/bin/bash
+set -e
+
+NAME=dogecoin-core-pro
+USER=dogecoin
+GROUP=dogecoin
+DATADIR=/var/lib/dogecoin-core-pro
+ETCDIR=/etc/dogecoin-core-pro
+CONF="${ETCDIR}/dogecoin.conf"
+HELPER=/usr/share/dogecoin-core-pro
+ROLE=client
+
+if [ -f /usr/share/debconf/confmodule ]; then
+  # shellcheck disable=SC1091
+  . /usr/share/debconf/confmodule
+  db_get dogecoin-core-pro/install-role || true
+  ROLE="${RET:-client}"
+fi
+ROLE=$(echo "$ROLE" | tr '[:upper:]' '[:lower:]' | tr -d ' \t\r\n')
+case "$ROLE" in
+  server|hybrid|client) ;;
+  *) ROLE=client ;;
+esac
+
+case "$1" in
+  configure)
+    mkdir -p "$ETCDIR"
+    echo "$ROLE" > "${ETCDIR}/install-role"
+    chmod 644 "${ETCDIR}/install-role"
+    echo "${NAME}: install-role=${ROLE}"
+    if [[ "$ROLE" == "hybrid" && ! -f "${ETCDIR}/hybrid-ui" ]]; then
+      echo "ask" > "${ETCDIR}/hybrid-ui"
+      chmod 644 "${ETCDIR}/hybrid-ui"
+    fi
+
+    if [[ "$ROLE" == "server" || "$ROLE" == "hybrid" ]]; then
+      if ! getent group "$GROUP" >/dev/null; then
+        addgroup --system "$GROUP" || true
+      fi
+      if ! getent passwd "$USER" >/dev/null; then
+        adduser --system --ingroup "$GROUP" --home "$DATADIR" --no-create-home \
+          --shell /usr/sbin/nologin --gecos "Dogecoin Core Pro" "$USER" || true
+      fi
+
+      mkdir -p "$DATADIR" "${DATADIR}/logs"
+      chown "${USER}:${GROUP}" "$DATADIR" "${DATADIR}/logs" || true
+      chmod 750 "$DATADIR" || true
+
+      PROFILE=dump
+      [[ "$ROLE" == "hybrid" ]] && PROFILE=hybrid
+
+      if [[ ! -f "$CONF" ]]; then
+        PASS="$("${HELPER}/gen-rpc-password.sh")"
+        "${HELPER}/write-install-conf.sh" \
+          --datadir "$DATADIR" --rpcpassword "$PASS" --rpcuser dogecoin --profile "$PROFILE"
+        if [[ -f "${DATADIR}/dogecoin.conf" ]]; then
+          cp -a "${DATADIR}/dogecoin.conf" "$CONF"
+        fi
+        chown "root:${GROUP}" "$CONF" "${DATADIR}/RPC-CREDENTIALS.txt" 2>/dev/null || true
+        chmod 640 "$CONF" "${DATADIR}/RPC-CREDENTIALS.txt" 2>/dev/null || true
+        echo "${NAME}: role=${ROLE} wrote credentials to ${DATADIR}/RPC-CREDENTIALS.txt"
+      fi
+
+      chown -R "${USER}:${GROUP}" "$DATADIR" || true
+    fi
+
+    if command -v systemctl >/dev/null 2>&1; then
+      systemctl daemon-reload || true
+      if [[ "$ROLE" == "server" || "$ROLE" == "hybrid" ]]; then
+        if [[ "${DISABLE_COREPRO_AUTOSTART:-0}" != "1" ]]; then
+          systemctl enable dogecoin-core-pro.service >/dev/null 2>&1 || true
+          systemctl restart dogecoin-core-pro.service >/dev/null 2>&1 || \
+            systemctl start dogecoin-core-pro.service >/dev/null 2>&1 || true
+        fi
+      else
+        systemctl disable --now dogecoin-core-pro.service >/dev/null 2>&1 || true
+        echo "${NAME}: Client role - systemd unit installed but not enabled."
+        echo "${NAME}: run dogecoin-core-pro (or dogecoin-pro-gui) as your user."
+        echo "${NAME}: datadir will be ~/.dogecoin (GUI first-run prompt)."
+      fi
+    fi
+
+    # Hybrid / Client graphical desktop: X sends the UI to the tray.
+    if [[ "$ROLE" == "hybrid" || "$ROLE" == "client" ]]; then
+      if [[ -f /usr/share/applications/dogecoin-core-pro-tray.desktop ]]; then
+        mkdir -p /etc/xdg/autostart
+        cp -a /usr/share/applications/dogecoin-core-pro-tray.desktop \
+          /etc/xdg/autostart/dogecoin-core-pro-tray.desktop
+        echo "${NAME}: tray autostart enabled (X hides UI; node stays up)."
+      fi
+    else
+      rm -f /etc/xdg/autostart/dogecoin-core-pro-tray.desktop
+    fi
+    ;;
+esac
+
+exit 0

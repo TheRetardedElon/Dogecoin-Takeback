@@ -10,10 +10,13 @@
 
 #include "chainparams.h"
 #include "guiutil.h"
+#include "net.h"
 #include "node/chainstate.h"
 #include "node/snapshot_fetch.h"
 #include "node/utxo_snapshot.h"
+#include "sync.h"
 #include "util.h"
+#include "validation.h"
 
 #include <QApplication>
 #include <QHBoxLayout>
@@ -50,7 +53,60 @@ bool FastSyncWorker::ProgressThunk(uint64_t bytes_done, int64_t expected_bytes, 
 
 void FastSyncWorker::process()
 {
+    // RAII: re-enable P2P if we quieted the network around load/activate.
+    struct NetworkQuietGuard {
+        bool quieted;
+        bool prevActive;
+        NetworkQuietGuard() : quieted(false), prevActive(true) {}
+        void Quiet()
+        {
+            if (!g_connman || quieted)
+                return;
+            prevActive = g_connman->GetNetworkActive();
+            if (prevActive) {
+                g_connman->SetNetworkActive(false);
+                quieted = true;
+            }
+        }
+        void Restore()
+        {
+            if (quieted && g_connman) {
+                g_connman->SetNetworkActive(prevActive);
+                quieted = false;
+            }
+        }
+        ~NetworkQuietGuard() { Restore(); }
+    } netGuard;
+
     try {
+        // Mid-IBD safety gate: Fast Sync + prune mid-sync is the crash path
+        // (partial blocks, wallet locator beyond pruned data). Prefer fresh datadir.
+        {
+            LOCK(cs_main);
+            const int tipH = chainActive.Height();
+            if (IsSnapshotChainstateActive()) {
+                Q_EMIT finished(false, tr("A Fast Sync snapshot is already active on this node."));
+                return;
+            }
+            // Deep mid-sync with pruning: refuse and tell the user how to recover.
+            // Low tip (<10k) is still OK — first-run headers / early IBD.
+            if (fPruneMode && tipH > 10000) {
+                Q_EMIT finished(false,
+                    tr("Fast Sync refused: this node is mid-sync at height %1 with pruning on.\n\n"
+                       "That combination breaks after snapshot activate (missing block bodies + "
+                       "wallet rescan beyond pruned data).\n\n"
+                       "What to do:\n"
+                       "1. Close Core Pro fully.\n"
+                       "2. Use a fresh data directory (Settings → Options → Reset, or a new -datadir), "
+                       "OR delete only blocks/ + chainstate/ if you have no funds to keep.\n"
+                       "3. Restart and run Fast Sync from height 0.\n\n"
+                       "No manual pause button — the node automates quiet-network load when the "
+                       "datadir is ready.")
+                        .arg(tipH));
+                return;
+            }
+        }
+
         Q_EMIT status(tr("Resolving CDN manifest…"));
         std::string manifest_src = GetArg("-snapshotmanifest", DEFAULT_SNAPSHOT_MANIFEST_URL);
         if (manifest_src.empty())
@@ -158,7 +214,7 @@ void FastSyncWorker::process()
             return;
         }
 
-        Q_EMIT status(tr("Download verified. Loading UTXO snapshot into chainstate…"));
+        Q_EMIT status(tr("Download verified. Quieting P2P, then loading UTXO snapshot…"));
         Q_EMIT progress(static_cast<qint64>(bytes), static_cast<qint64>(bytes));
 
         if (!HasBackgroundChainstate()) {
@@ -166,10 +222,16 @@ void FastSyncWorker::process()
             return;
         }
 
+        // Automate the critical section: pause peer block chatter so ActivateBestChain
+        // does not race DisconnectTip/ConnectTip on a body-less snapshot tip.
+        netGuard.Quiet();
+        Q_EMIT status(tr("Network quiet. Loading UTXO snapshot into chainstate…"));
+
         uint64_t coins_loaded = 0;
         uint256 base_hash;
         int base_height = -1;
         if (!LoadUTXOSnapshot(dest, coins_loaded, base_hash, base_height, error)) {
+            netGuard.Restore();
             Q_EMIT finished(false, QString::fromStdString(error));
             return;
         }
@@ -179,6 +241,7 @@ void FastSyncWorker::process()
                           .arg(QString::number(coins_loaded)));
 
         if (!ActivateLoadedSnapshot(error)) {
+            netGuard.Restore();
             // Still useful if load succeeded but activate needs more headers — report load OK
             Q_EMIT finished(false,
                             tr("Loaded snapshot but activate failed: %1\n"
@@ -186,6 +249,10 @@ void FastSyncWorker::process()
                                 .arg(QString::fromStdString(error)));
             return;
         }
+
+        // Brief settle, then re-enable P2P so background history + tip advance resume.
+        netGuard.Restore();
+        Q_EMIT status(tr("Snapshot active. Network restored — background validation continues…"));
 
         const AssumeutxoData* att = Params().AssumeutxoForHeight(base_height);
         QString attNote = att ? tr("Attested height — background history proof will continue.")
@@ -196,7 +263,8 @@ void FastSyncWorker::process()
                            "Active tip height: %1\n"
                            "Coins loaded: %2\n"
                            "%3\n\n"
-                           "Wallet becomes usable while historical blocks validate in the background.")
+                           "Wallet becomes usable while historical blocks validate in the background.\n"
+                           "P2P was automatically quieted during load/activate and restored afterward.")
                             .arg(base_height)
                             .arg(QString::number(coins_loaded))
                             .arg(attNote));
@@ -231,7 +299,9 @@ FastSyncDialog::FastSyncDialog(QWidget* parent)
         "<p>Typical size is multi‑GB and may take a while on home internet. "
         "Your live wallet data always stays on local disk — cloud is only a dumb download pipe.</p>"
         "<p>After activation, the wallet can be usable while historical blocks "
-        "are proven in the background. You can also skip and use normal P2P sync.</p>"));
+        "are proven in the background. You can also skip and use normal P2P sync.</p>"
+        "<p><b>Automated safety:</b> mid-sync+prune is blocked, P2P is quieted "
+        "during load/activate, and missing block bodies no longer crash the node.</p>"));
 
     m_status = new QLabel(tr("Ready."), this);
     m_status->setWordWrap(true);

@@ -41,6 +41,7 @@
 #include "versionbits.h"
 #include "warnings.h"
 #include "ibdstats.h"
+#include "blockarchive.h"
 #include "node/chainstate.h"
 
 #include <atomic>
@@ -2121,6 +2122,10 @@ bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode, int n
         // Soft flush only when ~95% full (not at the usual ~50-90% thresholds).
         fCacheLarge = cacheSize > (nTotalSpace * 95 / 100);
         fPeriodicFlush = nNow > nLastFlush + (int64_t)DATABASE_FLUSH_INTERVAL * 2 * 1000000;
+        // Write the block index every 2 minutes during IBD so a restart can
+        // resume from blk*.dat instead of re-downloading. Coins still flush
+        // on cache pressure / File→Exit. Do not force-kill during that flush.
+        fPeriodicWrite = nNow > nLastWrite + (int64_t)120 * 1000000;
     }
 
     // Combine all conditions that result in a full cache flush.
@@ -2276,8 +2281,16 @@ bool static DisconnectTip(CValidationState& state, const CChainParams& chainpara
     assert(pindexDelete);
     // Read block from disk.
     CBlock block;
-    if (!ReadBlockFromDisk(block, pindexDelete, chainparams.GetConsensus(chainActive.Height())))
+    if (!ReadBlockFromDisk(block, pindexDelete, chainparams.GetConsensus(chainActive.Height()))) {
+        // AssumeUTXO Fast Sync: active tip may be a snapshot height with no block file yet
+        // (nFile=-1). Never AbortNode — that hard-crashes Core Pro after a successful activate.
+        if (IsSnapshotChainstateActive() && !(pindexDelete->nStatus & BLOCK_HAVE_DATA)) {
+            return error("DisconnectTip(): cannot disconnect AssumeUTXO tip %s without block body "
+                         "(height %d) — not fatal; waiting for historical data",
+                         pindexDelete->GetBlockHash().ToString(), pindexDelete->nHeight);
+        }
         return AbortNode(state, "Failed to read block");
+    }
     // Apply the block atomically to the chain state.
     int64_t nStart = GetTimeMicros();
     {
@@ -2353,8 +2366,16 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     if (!pblock) {
         std::shared_ptr<CBlock> pblockNew = std::make_shared<CBlock>();
         connectTrace.blocksConnected.emplace_back(pindexNew, pblockNew);
-        if (!ReadBlockFromDisk(*pblockNew, pindexNew, chainparams.GetConsensus(pindexNew->nHeight)))
+        if (!ReadBlockFromDisk(*pblockNew, pindexNew, chainparams.GetConsensus(pindexNew->nHeight))) {
+            // Snapshot tip / headers without body: temporary failure, NOT invalid.
+            // Do not DoS/IsInvalid — that would poison legitimate future blocks.
+            if (IsSnapshotChainstateActive() && !(pindexNew->nStatus & BLOCK_HAVE_DATA)) {
+                connectTrace.blocksConnected.pop_back();
+                return error("ConnectTip(): block data missing for %s (AssumeUTXO; waiting for body)",
+                             pindexNew->GetBlockHash().ToString());
+            }
             return AbortNode(state, "Failed to read block");
+        }
     } else {
         connectTrace.blocksConnected.emplace_back(pindexNew, pblock);
     }
@@ -2479,6 +2500,17 @@ static bool ActivateBestChainStep(CValidationState& state, const CChainParams& c
     // Disconnect active blocks which are no longer in the best chain.
     bool fBlocksDisconnected = false;
     while (chainActive.Tip() && chainActive.Tip() != pindexFork) {
+        // AssumeUTXO Fast Sync: active tip may have no block body yet. Refusing a
+        // reorg off that tip is correct — stay on the snapshot tip until history
+        // arrives (background validation / P2P). Soft-fail, never AbortNode.
+        if (IsSnapshotChainstateActive() &&
+            !(chainActive.Tip()->nStatus & BLOCK_HAVE_DATA)) {
+            LogPrintf("ActivateBestChainStep: refusing reorg off AssumeUTXO tip %s "
+                      "(height %d) without block body — staying on snapshot tip\n",
+                      chainActive.Tip()->GetBlockHash().ToString(),
+                      chainActive.Tip()->nHeight);
+            return true;
+        }
         if (!DisconnectTip(state, chainparams))
             return false;
         fBlocksDisconnected = true;
@@ -3527,6 +3559,12 @@ void UnlinkPrunedFiles(const std::set<int>& setFilesToPrune)
 {
     for (std::set<int>::iterator it = setFilesToPrune.begin(); it != setFilesToPrune.end(); ++it) {
         CDiskBlockPos pos(*it, 0);
+        if (!GetBlockArchivePath().empty()) {
+            if (!ArchiveBlockFilePair(*it)) {
+                LogPrintf("Prune: keeping blk/rev (%05u) — archive copy failed\n", *it);
+                continue;
+            }
+        }
         fs::remove(GetBlockPosFilename(pos, "blk"));
         fs::remove(GetBlockPosFilename(pos, "rev"));
         LogPrintf("Prune: %s deleted blk/rev (%05u)\n", __func__, *it);

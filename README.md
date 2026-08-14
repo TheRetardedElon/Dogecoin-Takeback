@@ -4,13 +4,13 @@
 
 > **Not a wrapper. Not an EVM “DOGE app layer.” Not Qt.**  
 > Full **Dogecoin Core (1.14 DNA)** node + wallet. Consensus (AuxPoW, subsidy, scripts) is **untouched**.  
-> Latest release: **[v1.14.104](https://github.com/TheRetardedElon/Dogecoin-Takeback/releases/tag/v1.14.104)**
+> Latest release: **[v1.14.105](https://github.com/TheRetardedElon/Dogecoin-Takeback/releases/tag/v1.14.105)**
 
 <p align="center">
   <img src="https://i.imgur.com/OJMui2T.png" alt="Dogecoin Core Pro — Home" width="860" />
 </p>
 
-<p align="center"><b>Dogecoin Core Pro</b> · v1.14.104 · ImGui desktop · Client / Server / Hybrid</p>
+<p align="center"><b>Dogecoin Core Pro</b> · v1.14.105 · ImGui desktop · Client / Server / Hybrid</p>
 
 ---
 
@@ -34,7 +34,6 @@ The desktop is **ImGui** (`dogecoin-pro-gui`). `dogecoin-qt` is **not shipped**.
               ▲
               │
         corepro-launch   (Windows: no console — Hybrid picker)
-        gpenode-tray     (system tray: reopen GUI or TUI)
 ```
 
 | Piece | What it is | What it is not |
@@ -51,12 +50,13 @@ The desktop is **ImGui** (`dogecoin-pro-gui`). `dogecoin-qt` is **not shipped**.
 
 ## Install
 
-Download **[v1.14.104](https://github.com/TheRetardedElon/Dogecoin-Takeback/releases/tag/v1.14.104)**.
+Download **[v1.14.105](https://github.com/TheRetardedElon/Dogecoin-Takeback/releases/tag/v1.14.105)**.
 
 | File | Who |
 |------|-----|
-| `dogecoin-1.14.104-win64-setup-rpcsecure.exe` | Windows |
-| `dogecoin-core-pro_1.14.104-1_amd64.deb` | Debian / Ubuntu (or apt, below) |
+| `dogecoin-1.14.105-win64-setup-rpcsecure.exe` | Windows |
+| `dogecoin-1.14.105-win64.zip` | Windows portable |
+| `dogecoin-core-pro_1.14.105-1_amd64.deb` | Debian / Ubuntu (or apt, below) |
 
 The installer asks **how this machine is used** (same question on Linux apt):
 
@@ -66,13 +66,13 @@ The installer asks **how this machine is used** (same question on Linux apt):
 | **Server** | TUI + service | Linux: `/var/lib/dogecoin-core-pro` | Windows service / systemd |
 | **Hybrid** | Both UIs, **one** node | Same as Client on desktop | Service + native picker |
 
-**Hybrid:** Start Menu **Dogecoin Core Pro** opens `corepro-launch.exe` (no black console). Default is **ask** which UI — Desktop GUI or Operator TUI — unless you check Remember. Change later in **Options → Hybrid** or TUI **Settings → H**.
+**Hybrid:** Start Menu **Dogecoin Core Pro** opens `corepro-launch.exe` (no black console). Default is **ask** which UI — Desktop GUI or Operator TUI — unless you check Remember. Change later in **Options → Hybrid** or TUI **Settings → H**. **Dogecoin Core Pro Testnet** (green coin) starts the same launcher with `--testnet`.
 
 Each new install gets a **unique RPC password** on `127.0.0.1` only. See `RPC-CREDENTIALS.txt` in the datadir.
 
-**Close / tray:** window **X** sends the UI to the system tray. The node is **not** closed. File → **Exit** is the sanitary shutdown (Client stops the node after flush; Hybrid can leave it or **Stop node and exit**). Hybrid tray can reopen Desktop GUI or Operator TUI.
+**Close / tray:** window **X** (and Hide / Minimize to tray) hide the UI. The node stays up. There is **one** tray icon — the Desktop GUI's. File → **Exit** and that icon's **Quit and stop node** stop the Windows service if present (`DogecoinGPENode`), then RPC-stop `dogecoind` and wait for flush. Hybrid: the same icon can **Show Desktop GUI** or **Open Operator TUI**.
 
-Operators: same packages on [Dogecoin-GPENode v1.14.104-gpenode](https://github.com/TheRetardedElon/Dogecoin-GPENode/releases/tag/v1.14.104-gpenode).
+Operators: same Windows packages on [Dogecoin-GPENode v1.14.105-gpenode](https://github.com/TheRetardedElon/Dogecoin-GPENode/releases/tag/v1.14.105-gpenode).
 
 Linux apt:
 
@@ -189,7 +189,7 @@ Most of a full node’s disk is `blocks/blk*.dat` (raw blocks), not the UTXO dat
 | Data | Engine today | Notes |
 |------|----------------|-------|
 | UTXO / block index | **LevelDB default** | Same class of store other Core nodes use. |
-| Optional hot engine | **MDBX** (`-dbengine=mdbx`) | Empty dir only, or `-migratedb=mdbx` then exit. Do not flip a live old chainstate. |
+| Optional hot engine | **MDBX** | Empty dir + `-dbengine=mdbx`, or `-migratedb=mdbx` then `-migratedb=mdbx -swapdb`. After swap the `ENGINE` stamp is enough. Do not flip a live LevelDB folder in place. |
 | Wallet keys | **Berkeley DB** `wallet.dat` | Unchanged. |
 | Raw blocks | Flat files | `prune=5500` is the real size win. |
 | Pruned history | Optional **archive** | `-archivepath=` copies finalized `blk`/`rev` before delete. |
@@ -227,13 +227,14 @@ dogecoin-pro-gui    — ImGui desktop
 corepro-launch      — Windows launcher / Hybrid picker (no console)
 gpenode-tui         — operator TUI (Server / Hybrid)
 gpenode-ops         — service host + operator glue (not consensus)
-gpenode-tray        — system tray
 ```
 
 | Port | mainnet | testnet | regtest |
 |------|--------:|--------:|--------:|
 | P2P | 22556 | 44556 | 18444 |
 | RPC | 22555 | 44555 | 18332 |
+
+**Testnet:** Start Menu / desktop **Dogecoin Core Pro Testnet** (green coin icon), or `corepro-launch.exe --testnet`, `dogecoin-pro-gui --ui gfx --testnet`, `gpenode-tui --testnet`, `dogecoin-cli -testnet`. ImGui uses Matrix (green); the TUI is green with a TESTNET header; `dogecoin-cli` prints a green banner on a TTY. Datadir is `testnet3`. The mainnet service is not started. Stop mainnet first (one `dogecoind`). Details: [`html/docs/pages/testnet.html`](html/docs/pages/testnet.html).
 
 **Never expose RPC to the public internet.**
 
@@ -254,6 +255,7 @@ Open **[`html/docs/index.html`](html/docs/index.html)** offline.
 |------|--------|
 | [How it works](html/docs/pages/how-it-works.html) | Ecosystem map |
 | [Install roles](html/docs/pages/install-roles.html) | Client / Server / Hybrid |
+| [Testnet](html/docs/pages/testnet.html) | Start Menu / flags / green TUI |
 | [Diagrams](html/docs/pages/diagrams.html) | Topology |
 | [Storage stack](html/docs/pages/storage-stack.html) | LevelDB default, MDBX opt-in, cloud rules |
 | [GPENode](html/docs/pages/gpenode.html) | Operators / dumps |

@@ -1,0 +1,380 @@
+{
+  "count": 53,
+  "skipped": [
+    "blasterIcon.jpg",
+    "flappyStyleIcon.jpg"
+  ],
+  "assets": [
+    {
+      "src": "arcadecontrolPause.jpg",
+      "dst": "arcade/arcadecontrolPause.png",
+      "w": 84,
+      "h": 128,
+      "bytes": 4827
+    },
+    {
+      "src": "arcadecontrolPlay.jpg",
+      "dst": "arcade/arcadecontrolPlay.png",
+      "w": 101,
+      "h": 128,
+      "bytes": 12875
+    },
+    {
+      "src": "borders/bottomLeftCorner.jpg",
+      "dst": "borders/bottomLeftCorner.png",
+      "w": 255,
+      "h": 192,
+      "bytes": 14202
+    },
+    {
+      "src": "borders/bottomRightCorner.jpg",
+      "dst": "borders/bottomRightCorner.png",
+      "w": 219,
+      "h": 256,
+      "bytes": 28193
+    },
+    {
+      "src": "borders/btmLeft-thinGold.jpg",
+      "dst": "borders/btmLeft-thinGold.png",
+      "w": 256,
+      "h": 145,
+      "bytes": 5995
+    },
+    {
+      "src": "borders/btmRight-thinGold.jpg",
+      "dst": "borders/btmRight-thinGold.png",
+      "w": 195,
+      "h": 256,
+      "bytes": 9453
+    },
+    {
+      "src": "borders/horBorderSeg1.jpg",
+      "dst": "borders/horBorderSeg1.png",
+      "w": 256,
+      "h": 15,
+      "bytes": 5019
+    },
+    {
+      "src": "borders/horDblSegThin1.jpg",
+      "dst": "borders/horDblSegThin1.png",
+      "w": 256,
+      "h": 93,
+      "bytes": 4945
+    },
+    {
+      "src": "borders/horThickbarShort.jpg",
+      "dst": "borders/horThickbarShort.png",
+      "w": 256,
+      "h": 29,
+      "bytes": 9989
+    },
+    {
+      "src": "borders/topLeft-thinGold.jpg",
+      "dst": "borders/topLeft-thinGold.png",
+      "w": 167,
+      "h": 256,
+      "bytes": 3326
+    },
+    {
+      "src": "borders/topLeftCorner.jpg",
+      "dst": "borders/topLeftCorner.png",
+      "w": 168,
+      "h": 256,
+      "bytes": 6478
+    },
+    {
+      "src": "borders/topRight-thinGold.jpg",
+      "dst": "borders/topRight-thinGold.png",
+      "w": 87,
+      "h": 256,
+      "bytes": 2913
+    },
+    {
+      "src": "borders/topRightCorner.jpg",
+      "dst": "borders/topRightCorner.png",
+      "w": 161,
+      "h": 255,
+      "bytes": 16126
+    },
+    {
+      "src": "borders/verBorderSeg1.jpg",
+      "dst": "borders/verBorderSeg1.png",
+      "w": 18,
+      "h": 256,
+      "bytes": 6534
+    },
+    {
+      "src": "borders/verDblSegThin1.jpg",
+      "dst": "borders/verDblSegThin1.png",
+      "w": 115,
+      "h": 256,
+      "bytes": 9373
+    },
+    {
+      "src": "borders/ZEmgu.jpg",
+      "dst": "borders/ZEmgu.png",
+      "w": 256,
+      "h": 169,
+      "bytes": 12625
+    },
+    {
+      "src": "closeIcon.jpg",
+      "dst": "chrome/closeIcon.png",
+      "w": 92,
+      "h": 128,
+      "bytes": 8859
+    },
+    {
+      "src": "copyClipboardIcon.jpg",
+      "dst": "icons/copyClipboardIcon.png",
+      "w": 93,
+      "h": 128,
+      "bytes": 8961
+    },
+    {
+      "src": "dockpinIcon.jpg",
+      "dst": "chrome/dockpinIcon.png",
+      "w": 50,
+      "h": 128,
+      "bytes": 8358
+    },
+    {
+      "src": "dogeD_metallicGold.jpg",
+      "dst": "brand/dogeD_metallicGold.png",
+      "w": 86,
+      "h": 128,
+      "bytes": 10422
+    },
+    {
+      "src": "errorIcon.jpg",
+      "dst": "status/errorIcon.png",
+      "w": 125,
+      "h": 128,
+      "bytes": 23909
+    },
+    {
+      "src": "fastsyncRocketIcon.jpg",
+      "dst": "icons/fastsyncRocketIcon.png",
+      "w": 85,
+      "h": 128,
+      "bytes": 21651
+    },
+    {
+      "src": "insertCoin.jpg",
+      "dst": "arcade/insertCoin.png",
+      "w": 128,
+      "h": 111,
+      "bytes": 22160
+    },
+    {
+      "src": "lockEncrypticon.jpg",
+      "dst": "icons/lockEncrypticon.png",
+      "w": 84,
+      "h": 128,
+      "bytes": 12409
+    },
+    {
+      "src": "minimizeIcon.jpg",
+      "dst": "chrome/minimizeIcon.png",
+      "w": 128,
+      "h": 31,
+      "bytes": 5743
+    },
+    {
+      "src": "networkPeersIcon.jpg",
+      "dst": "icons/networkPeersIcon.png",
+      "w": 118,
+      "h": 128,
+      "bytes": 21718
+    },
+    {
+      "src": "peersMapIcon.jpg",
+      "dst": "icons/peersMapIcon.png",
+      "w": 79,
+      "h": 128,
+      "bytes": 13236
+    },
+    {
+      "src": "qrStyleIcon.jpg",
+      "dst": "icons/qrStyleIcon.png",
+      "w": 122,
+      "h": 127,
+      "bytes": 30941
+    },
+    {
+      "src": "receiveIcon.jpg",
+      "dst": "icons/receiveIcon.png",
+      "w": 87,
+      "h": 128,
+      "bytes": 4313
+    },
+    {
+      "src": "sendIcon.jpg",
+      "dst": "icons/sendIcon.png",
+      "w": 127,
+      "h": 120,
+      "bytes": 12896
+    },
+    {
+      "src": "settingsIcon.jpg",
+      "dst": "icons/settingsIcon.png",
+      "w": 94,
+      "h": 128,
+      "bytes": 9378
+    },
+    {
+      "src": "shibaInuonDSplash.jpg",
+      "dst": "brand/shibaInuonDSplash.png",
+      "w": 265,
+      "h": 512,
+      "bytes": 156477
+    },
+    {
+      "src": "sidebar/blocksSidebarIcon.jpg",
+      "dst": "sidebar/blocksSidebarIcon.png",
+      "w": 64,
+      "h": 58,
+      "bytes": 6679
+    },
+    {
+      "src": "sidebar/busCenterSidebarIcon.jpg",
+      "dst": "sidebar/busCenterSidebarIcon.png",
+      "w": 53,
+      "h": 64,
+      "bytes": 6626
+    },
+    {
+      "src": "sidebar/conSidebarClockIcon.jpg",
+      "dst": "sidebar/conSidebarClockIcon.png",
+      "w": 62,
+      "h": 64,
+      "bytes": 6185
+    },
+    {
+      "src": "sidebar/consoleSidebarIcon.jpg",
+      "dst": "sidebar/consoleSidebarIcon.png",
+      "w": 38,
+      "h": 64,
+      "bytes": 5540
+    },
+    {
+      "src": "sidebar/copySidebarIcon.jpg",
+      "dst": "sidebar/copySidebarIcon.png",
+      "w": 50,
+      "h": 64,
+      "bytes": 3925
+    },
+    {
+      "src": "sidebar/dogeArcadeSidebarIcon.jpg",
+      "dst": "sidebar/dogeArcadeSidebarIcon.png",
+      "w": 43,
+      "h": 64,
+      "bytes": 5032
+    },
+    {
+      "src": "sidebar/dogeDsidebarGoldIcon.jpg",
+      "dst": "sidebar/dogeDsidebarGoldIcon.png",
+      "w": 63,
+      "h": 64,
+      "bytes": 7214
+    },
+    {
+      "src": "sidebar/homeSidebarIcon.jpg",
+      "dst": "sidebar/homeSidebarIcon.png",
+      "w": 63,
+      "h": 64,
+      "bytes": 5526
+    },
+    {
+      "src": "sidebar/lockedwalletSidebarIcon.jpg",
+      "dst": "sidebar/lockedwalletSidebarIcon.png",
+      "w": 46,
+      "h": 64,
+      "bytes": 5721
+    },
+    {
+      "src": "sidebar/memeStreamSidebarIcon.jpg",
+      "dst": "sidebar/memeStreamSidebarIcon.png",
+      "w": 52,
+      "h": 64,
+      "bytes": 8016
+    },
+    {
+      "src": "sidebar/miningSidebarIcon.jpg",
+      "dst": "sidebar/miningSidebarIcon.png",
+      "w": 44,
+      "h": 64,
+      "bytes": 2627
+    },
+    {
+      "src": "sidebar/networkSidebarIcon.jpg",
+      "dst": "sidebar/networkSidebarIcon.png",
+      "w": 61,
+      "h": 64,
+      "bytes": 8674
+    },
+    {
+      "src": "sidebar/sendSidebarIcon.jpg",
+      "dst": "sidebar/sendSidebarIcon.png",
+      "w": 63,
+      "h": 57,
+      "bytes": 5700
+    },
+    {
+      "src": "sidebar/settingsSidebarIcon.jpg",
+      "dst": "sidebar/settingsSidebarIcon.png",
+      "w": 47,
+      "h": 64,
+      "bytes": 4095
+    },
+    {
+      "src": "sidebar/txSidebarIcon.jpg",
+      "dst": "sidebar/txSidebarIcon.png",
+      "w": 46,
+      "h": 64,
+      "bytes": 4354
+    },
+    {
+      "src": "smCircularGoldcoin.jpg",
+      "dst": "brand/smCircularGoldcoin.png",
+      "w": 124,
+      "h": 128,
+      "bytes": 21304
+    },
+    {
+      "src": "statusGlyph.jpg",
+      "dst": "status/statusGlyph.png",
+      "w": 98,
+      "h": 128,
+      "bytes": 9024
+    },
+    {
+      "src": "successIcon.jpg",
+      "dst": "status/successIcon.png",
+      "w": 124,
+      "h": 128,
+      "bytes": 20062
+    },
+    {
+      "src": "themeSwitcherIcon.jpg",
+      "dst": "icons/themeSwitcherIcon.png",
+      "w": 128,
+      "h": 120,
+      "bytes": 25566
+    },
+    {
+      "src": "txandHistoryIcon.jpg",
+      "dst": "icons/txandHistoryIcon.png",
+      "w": 106,
+      "h": 128,
+      "bytes": 14086
+    },
+    {
+      "src": "walletballanceIcon.jpg",
+      "dst": "icons/walletballanceIcon.png",
+      "w": 128,
+      "h": 108,
+      "bytes": 7974
+    }
+  ]
+}

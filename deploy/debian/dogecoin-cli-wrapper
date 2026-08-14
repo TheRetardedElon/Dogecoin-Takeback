@@ -1,0 +1,9 @@
+#!/bin/sh
+LIB=/usr/lib/dogecoin-core-pro
+BIN="${LIB}/dogecoin-cli"
+if [ ! -x "$BIN" ]; then
+  echo "dogecoin-cli: missing $BIN" >&2
+  exit 127
+fi
+export LD_LIBRARY_PATH="${LIB}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+exec "$BIN" "$@"

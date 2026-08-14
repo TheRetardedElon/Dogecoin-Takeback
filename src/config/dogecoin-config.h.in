@@ -259,6 +259,9 @@
 /* Define to 1 if you have the 'uuid' library (-luuid). */
 #undef HAVE_LIBUUID
 
+/* Define to 1 if you have the 'winhttp' library (-lwinhttp). */
+#undef HAVE_LIBWINHTTP
+
 /* Define to 1 if you have the 'winmm' library (-lwinmm). */
 #undef HAVE_LIBWINMM
 

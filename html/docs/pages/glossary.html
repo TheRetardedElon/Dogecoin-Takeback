@@ -35,7 +35,11 @@
           </tr>
           <tr>
             <td><strong>Chainstate</strong></td>
-            <td>UTXO / tip index data used for validation; currently LevelDB-backed.</td>
+            <td>UTXO / tip index. <strong>LevelDB default</strong>; optional MDBX on an empty dir or after <code>-migratedb</code>.</td>
+          </tr>
+          <tr>
+            <td><strong>Testnet</strong></td>
+            <td>Same Core, different chain. RPC 44555, P2P 44556, datadir <code>testnet3</code>. Start Menu <strong>Dogecoin Core Pro Testnet</strong> or <code>--testnet</code>. TUI is green. See <a href="testnet.html">Testnet</a>.</td>
           </tr>
           <tr>
             <td><strong>Fast Sync</strong></td>
@@ -107,7 +111,7 @@
           </tr>
           <tr>
             <td><strong>Core Pro</strong></td>
-            <td>This product shell: pure DOGE node + wallet + Qt (Business, Meme Stream, Network, Arcade) on 1.14 DNA.</td>
+            <td>This product: one <code>dogecoind</code> + ImGui desktop (<code>dogecoin-pro-gui</code>) + operator TUI. Qt is in-tree only, not packed in 1.14.104.</td>
           </tr>
           <tr>
             <td><strong>DigiShield</strong></td>
@@ -135,7 +139,7 @@
           </tr>
           <tr>
             <td><strong>Meme Stream</strong></td>
-            <td>Client-gated social/meme feed. SPA view-only; Core/Qt posts with publish key + wallet. Spec: <a href="memestream-integration.html">MemeStream integration</a>.</td>
+            <td>Client social/meme feed. 1.14.104 ImGui embeds the GPE SPA in WebView2 and tips via <code>sendtoaddress</code>. Native HTTP publish is still Qt-only. Spec: <a href="memestream-integration.html">MemeStream integration</a>.</td>
           </tr>
           <tr>
             <td><strong>Allowlist</strong></td>

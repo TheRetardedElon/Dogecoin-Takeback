@@ -24,7 +24,7 @@
 #define CLIENT_VERSION_MINOR 14
 
 /* Build revision */
-#define CLIENT_VERSION_REVISION 102
+#define CLIENT_VERSION_REVISION 105
 
 /* Copyright holder(s) before %s replacement */
 #define COPYRIGHT_HOLDERS "The %s developers"
@@ -260,6 +260,9 @@
 /* Define to 1 if you have the 'uuid' library (-luuid). */
 /* #undef HAVE_LIBUUID */
 
+/* Define to 1 if you have the 'winhttp' library (-lwinhttp). */
+/* #undef HAVE_LIBWINHTTP */
+
 /* Define to 1 if you have the 'winmm' library (-lwinmm). */
 /* #undef HAVE_LIBWINMM */
 
@@ -351,7 +354,7 @@
 #define PACKAGE_NAME "Dogecoin Core"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Dogecoin Core 1.14.102"
+#define PACKAGE_STRING "Dogecoin Core 1.14.105"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "dogecoin"
@@ -360,7 +363,7 @@
 #define PACKAGE_URL "https://github.com/TheRetardedElon/Dogecoin-Takeback"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.14.102"
+#define PACKAGE_VERSION "1.14.105"
 
 /* Define to necessary symbol if this constant uses a non-standard name on
    your system. */

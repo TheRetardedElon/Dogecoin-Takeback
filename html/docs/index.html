@@ -19,14 +19,15 @@
     <main class="main">
       <h1>Project control dashboard</h1>
       <p class="lead">
-        Living documentation for Dogecoin Core Pro at <code>C:\dogedev</code>
-        (1.14 DNA). Pure DOGE client: full node + wallet + Qt shell — no EVM product path.
+        Living documentation for Dogecoin Core Pro (1.14 DNA).
+        Pure DOGE full node + wallet. Product GUI is ImGui over RPC.
+        Qt is not in the 1.14.104 installer. No EVM product path.
       </p>
       <div class="meta">
         <span>Workspace: <code>C:\dogedev</code></span>
-        <span>Client: <strong>1.14.102+</strong></span>
+        <span>Release: <strong>v1.14.105</strong></span>
         <span>Docs: <code>html/docs/</code></span>
-        <span>Updated: 2026-08-09</span>
+        <span>Updated: 2026-08-14</span>
       </div>
 
       <div class="callout ok">
@@ -38,10 +39,23 @@
       </div>
 
       <div class="callout ok">
-        <strong>Node workstream (2026-08-09)</strong>
+        <strong>1.14.104 product line</strong>
+        Installers ask Client / Server / Hybrid. ImGui is the shipped desktop GUI.
+        Hybrid asks which UI unless Remember. LevelDB remains the default UTXO engine;
+        MDBX is opt-in on empty dirs. CDN is a dumb pipe.
+        Testnet: Start Menu / desktop <strong>Dogecoin Core Pro Testnet</strong>
+        or <code>--testnet</code> (TUI goes green; ImGui uses Matrix).
+        Start here:
+        <a href="pages/how-it-works.html">How it works</a> ·
+        <a href="pages/install-roles.html">Install roles</a> ·
+        <a href="pages/testnet.html">Testnet</a>.
+      </div>
+
+      <div class="callout ok">
+        <strong>Node workstream</strong>
         IBD P0–P0.3 and AssumeUTXO engineering <strong>A–D3</strong> are in tree.
-        Product <strong>P1 ~90%</strong>: map <code>6324519</code> + CDN + WinHTTP +
-        <strong>Fast Sync dialog shipped</strong> in 1.14.102 packages.
+        Fast Sync CDN + attested heights (incl. 6325931) + WinHTTP.
+        Archive: copy-before-prune (<code>-archivepath</code>).
         Guides:
         <a href="pages/fast-sync.html">Fast Sync explained</a> ·
         <a href="pages/gpenode.html">GPENode operator</a> ·
@@ -68,9 +82,9 @@
       <div class="card-grid">
         <div class="card">
           <h3>Core Pro UI</h3>
-          <div class="stat">Live</div>
-          <p>Home, Network, Business, Meme Stream, Options, Arcade</p>
-          <span class="badge badge-done">1.14.102</span>
+          <div class="stat">ImGui</div>
+          <p>Path A over RPC. Qt not shipped in 1.14.104 setup.</p>
+          <span class="badge badge-done">1.14.104</span>
         </div>
         <div class="card">
           <h3>IBD / P2P</h3>
@@ -105,8 +119,8 @@
         <div class="card">
           <h3>Chainstate engine</h3>
           <div class="stat">LevelDB</div>
-          <p>Still LevelDB; dual <em>views</em> for AssumeUTXO only</p>
-          <span class="badge badge-partial">No RocksDB</span>
+          <p>Default LevelDB. Optional MDBX on empty dir or <code>-migratedb</code>. Dual views for AssumeUTXO.</p>
+          <span class="badge badge-partial">MDBX opt-in</span>
         </div>
         <div class="card">
           <h3>Rebrand</h3>
@@ -123,7 +137,7 @@
         <span>95%</span>
       </div>
       <div class="progress-row">
-        <span>Core Pro Qt shell</span>
+        <span>Core Pro ImGui shell</span>
         <div class="progress-bar"><span style="width:90%"></span></div>
         <span>90%</span>
       </div>
@@ -153,9 +167,9 @@
         <span>25%</span>
       </div>
       <div class="progress-row">
-        <span>Chainstate engine swap</span>
-        <div class="progress-bar"><span style="width:0%"></span></div>
-        <span>0%</span>
+        <span>Optional MDBX (empty / migrate)</span>
+        <div class="progress-bar"><span style="width:80%"></span></div>
+        <span>80%</span>
       </div>
 
       <h2>Read next</h2>

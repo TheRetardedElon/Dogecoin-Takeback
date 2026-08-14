@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Name=Dogecoin Core Pro Testnet
+Comment=Dogecoin Core Pro on testnet (worthless coins, green / Matrix chrome)
+Exec=dogecoin-core-pro --testnet
+Icon=dogecoin-testnet
+Terminal=false
+Type=Application
+Categories=Finance;Network;
+Keywords=dogecoin;crypto;wallet;testnet;
+StartupNotify=true
+X-GNOME-UsesNotifications=true

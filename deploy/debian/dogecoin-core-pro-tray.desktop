@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Dogecoin Core Pro tray
+Comment=System tray for Dogecoin Core Pro (Hybrid / desktop)
+Exec=gpenode-tray
+Icon=dogecoin
+Terminal=false
+Categories=Network;
+X-GNOME-Autostart-enabled=true
+StartupNotify=false

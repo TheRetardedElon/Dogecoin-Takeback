@@ -36,6 +36,9 @@
 #include "script/sigcache.h"
 #include "scheduler.h"
 #include "timedata.h"
+#include "blockarchive.h"
+#include "dbengine.h"
+#include "dbmigrate.h"
 #include "txdb.h"
 #include "txmempool.h"
 #include "torcontrol.h"
@@ -76,6 +79,27 @@ static const bool DEFAULT_PROXYRANDOMIZE = true;
 static const bool DEFAULT_REST_ENABLE = false;
 static const bool DEFAULT_DISABLE_SAFEMODE = false;
 static const bool DEFAULT_STOPAFTERBLOCKIMPORT = false;
+
+/** Background: resolve -externalip hostname without blocking AppInitMain. */
+static void ThreadResolveExternalIP(std::string strAddr)
+{
+    RenameThread("dogecoin-extip");
+    CService resolved;
+    if (Lookup(strAddr, resolved, GetListenPort(), true) && resolved.IsValid()) {
+        AddLocal(resolved, LOCAL_MANUAL);
+        LogPrintf("Resolved -externalip %s -> %s\n", strAddr, resolved.ToStringIPPort());
+    } else {
+        LogPrintf("Warning: could not resolve -externalip=%s\n", strAddr);
+    }
+}
+
+/** Background: local interface discovery (Windows may DNS-resolve hostname). */
+static void ThreadDiscover()
+{
+    RenameThread("dogecoin-discover");
+    boost::thread_group unused;
+    Discover(unused);
+}
 
 std::unique_ptr<CConnman> g_connman;
 std::unique_ptr<PeerLogicValidation> peerLogic;
@@ -346,7 +370,11 @@ std::string HelpMessage(HelpMessageMode mode)
 #endif
     }
     strUsage += HelpMessageOpt("-datadir=<dir>", _("Specify data directory"));
+    strUsage += HelpMessageOpt("-archivepath=<dir>", _("Copy finalized blk/rev files here before prune deletes them. Live wallet and chainstate stay in -datadir. Use a separate volume on a headless node (not the live datadir)."));
     strUsage += HelpMessageOpt("-dbcache=<n>", strprintf(_("Set database cache size in megabytes (%d to %d, default: %d). Larger values speed Initial Block Download if you have free RAM (e.g. 2048–4096 on a desktop)."), nMinDbCache, nMaxDbCache, nDefaultDbCache));
+    strUsage += HelpMessageOpt("-dbengine=<name>", _("Local chainstate/index KV engine. Default for a new/empty dir: leveldb. If unset, an existing ENGINE stamp is honored (a migrated MDBX datadir opens without this flag). Optional: mdbx. Not consensus. Do not point mdbx at a live LevelDB folder — use a new datadir, Fast Sync, or -migratedb=mdbx."));
+    strUsage += HelpMessageOpt("-migratedb=<name>", _("Copy chainstate and block index to sibling *_<name> folders as raw bytes. Without -swapdb the node then exits. Example: -migratedb=mdbx"));
+    strUsage += HelpMessageOpt("-swapdb", _("With -migratedb: rename live folders aside and move the copy into place, then continue startup. The ENGINE stamp is enough on later starts."));
     strUsage += HelpMessageOpt("-ibdrescue", strprintf(_("During initial block download, allow non-preferred peers to fetch blocks when preferred download peers are stalling or saturated (default: %u)"), 1));
     strUsage += HelpMessageOpt("-assumeutxodev", strprintf(_("Allow activatesnapshot even when the snapshot height is not attested in chainparams (default: %u). Regtest always allows activation. Attested heights use mapAssumeutxo hash_serialized checks instead. Do not use untrusted snapshots with real funds."), 0));
     strUsage += HelpMessageOpt("-snapshotmanifest=<url|path>", _("Product P1: CDN latest.json URL or local path (default when Prefer Fast Sync: https://sync.doge.gopastearth.com/latest.json). Used by RPC fetchassumeutxomanifest; does not auto-download at startup."));
@@ -1022,6 +1050,23 @@ bool AppInitParameterInteraction()
         fPruneMode = true;
     }
 
+    {
+        DbEngine want = DbEngine::LEVELDB;
+        if (!ParseDbEngine(GetArg("-dbengine", "leveldb"), want) || want == DbEngine::UNKNOWN) {
+            return InitError(_("Invalid -dbengine. Supported: leveldb (default), mdbx."));
+        }
+        const fs::path cs = GetDataDir() / "chainstate";
+        const DbEngine have = DetectExistingEngine(cs);
+        if (want == DbEngine::MDBX) {
+            if (have == DbEngine::LEVELDB) {
+                return InitError(EngineMismatchMessage(have, want, cs));
+            }
+            LogPrintf("KV engine requested: mdbx (local only; consensus/P2P unchanged)\n");
+        } else if (!IsArgSet("-dbengine") && have == DbEngine::MDBX) {
+            LogPrintf("KV engine: mdbx (ENGINE stamp; -dbengine not set). Consensus/P2P unchanged.\n");
+        }
+    }
+
     RegisterAllCoreRPCCommands(tableRPC);
 #ifdef ENABLE_WALLET
     RegisterWalletRPCCommands(tableRPC);
@@ -1247,6 +1292,11 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     LogPrintf("Default data directory %s\n", GetDefaultDataDir().string());
     LogPrintf("Using data directory %s\n", GetDataDir().string());
     LogPrintf("Using backup directory %s\n", GetBackupDir().string());
+    {
+        std::string archiveErr;
+        if (!InitBlockArchive(archiveErr))
+            return InitError(archiveErr);
+    }
     LogPrintf("Using config file %s\n", GetConfigFile(GetArg("-conf", DOGECOIN_CONF_FILENAME)).string());
     LogPrintf("Using at most %i automatic connections (%i file descriptors available)\n", nMaxConnections, nFD);
 
@@ -1434,10 +1484,17 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (mapMultiArgs.count("-externalip")) {
         BOOST_FOREACH(const std::string& strAddr, mapMultiArgs.at("-externalip")) {
             CService addrLocal;
-            if (Lookup(strAddr, addrLocal, GetListenPort(), fNameLookup) && addrLocal.IsValid())
+            // Prefer numeric (no DNS) so a slow resolver cannot stall AppInitMain / splash.
+            if (Lookup(strAddr, addrLocal, GetListenPort(), /*fAllowLookup=*/false) && addrLocal.IsValid()) {
                 AddLocal(addrLocal, LOCAL_MANUAL);
-            else
+            } else if (fNameLookup) {
+                // Hostname: resolve in the background; peer discovery does not need this
+                // before "Done loading". Consensus/wallet unaffected.
+                LogPrintf("Deferring DNS resolve for -externalip=%s (background)\n", strAddr);
+                threadGroup.create_thread(boost::bind(&ThreadResolveExternalIP, strAddr));
+            } else {
                 return InitError(ResolveErrMsg("externalip", strAddr));
+            }
         }
     }
 
@@ -1513,6 +1570,15 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
     if (fPruneMode) {
         LogPrintf("Prune mode is active (NODE_NETWORK unset for relay of historical blocks). Use getblockchaininfo / getibdinfo to monitor disk use.\n");
+    }
+
+    if (IsArgSet("-migratedb")) {
+        std::string migrateErr;
+        uiInterface.InitMessage(_("Migrating local KV databases…"));
+        if (!RunRequestedDbMigration(GetDataDir(), migrateErr)) {
+            // Copy finished or failed — do not continue into a mixed datadir.
+            return InitError(migrateErr);
+        }
     }
 
     bool fLoaded = false;
@@ -1604,7 +1670,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                     break;
                 }
             } catch (const std::exception& e) {
-                if (fDebug) LogPrintf("%s\n", e.what());
+                LogPrintf("Error opening block database: %s\n", e.what());
                 strLoadError = _("Error opening block database");
                 break;
             }
@@ -1736,7 +1802,12 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (GetBoolArg("-listenonion", DEFAULT_LISTEN_ONION))
         StartTorControl(threadGroup, scheduler);
 
-    Discover(threadGroup);
+    // Discover local interfaces in the background. On Windows this can call
+    // gethostname()+getaddrinfo and stall for seconds on a bad DNS path —
+    // never block splash / RPC warmup finish for that.
+    if (fDiscover) {
+        threadGroup.create_thread(boost::bind(&ThreadDiscover));
+    }
 
     // Map ports with UPnP
     MapPort(GetBoolArg("-upnp", DEFAULT_UPNP));

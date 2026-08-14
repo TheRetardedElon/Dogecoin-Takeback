@@ -1,0 +1,34 @@
+# dogecoin-core-pro — one headless dogecoind (Server / Hybrid)
+[Unit]
+Description=Dogecoin Core Pro (headless node)
+Documentation=https://github.com/TheRetardedElon/Dogecoin-Takeback
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=dogecoin
+Group=dogecoin
+Environment=LD_LIBRARY_PATH=/usr/lib/dogecoin-core-pro
+# Wrapper sets the same path; real ELF is /usr/lib/dogecoin-core-pro/dogecoind
+ExecStart=/usr/bin/dogecoind -conf=/etc/dogecoin-core-pro/dogecoin.conf -datadir=/var/lib/dogecoin-core-pro
+KillSignal=SIGINT
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=120
+TimeoutStartSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+RestrictRealtime=true
+MemoryDenyWriteExecute=false
+
+[Install]
+WantedBy=multi-user.target

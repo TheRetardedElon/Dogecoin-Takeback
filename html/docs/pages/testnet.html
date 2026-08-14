@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Testnet — Dogecoin Core Pro</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav></nav>
+    </aside>
+    <main class="main">
+      <h1>Testnet mode</h1>
+      <p class="lead">
+        Same <code>dogecoind</code>, different chain. Testnet coins are worthless.
+        The UI turns green (TUI) / Matrix (ImGui) so you cannot mistake it for mainnet.
+      </p>
+      <div class="meta">
+        <span>Release: <strong>v1.14.104+</strong></span>
+        <span>Updated: 2026-08-14</span>
+      </div>
+
+      <div class="callout warn">
+        <strong>One dogecoind</strong>
+        Stop the mainnet node first (File → Exit / tray Quit). The Hybrid Windows
+        service <code>DogecoinGPENode</code> is mainnet-only. Testnet starts a
+        separate process on the <code>testnet3</code> datadir. Fast Sync CDN is
+        mainnet-only — testnet syncs from testnet peers.
+      </div>
+
+      <h2>How to start</h2>
+      <table>
+        <thead><tr><th>Where</th><th>What to click / type</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Windows Start Menu</td>
+            <td><strong>Dogecoin Core Pro Testnet</strong> (Client / Hybrid) or
+                <strong>Dogecoin Operator TUI Testnet</strong> (Server)</td>
+          </tr>
+          <tr>
+            <td>Desktop</td>
+            <td><strong>Dogecoin Core Pro Testnet</strong> → <code>corepro-launch.exe --testnet</code></td>
+          </tr>
+          <tr>
+            <td>Linux applications menu</td>
+            <td><strong>Dogecoin Core Pro Testnet</strong> → <code>dogecoin-core-pro --testnet</code></td>
+          </tr>
+          <tr>
+            <td>ImGui already open</td>
+            <td>Options → Main → Testnet. Then stop the running node and start again.</td>
+          </tr>
+          <tr>
+            <td>Command line</td>
+            <td>See flags below</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Flags (all equivalent)</h2>
+      <pre><code>corepro-launch.exe --testnet
+dogecoin-pro-gui.exe --ui gfx --testnet
+gpenode-tui.exe --testnet
+dogecoin-core-pro --testnet          # Linux launcher
+dogecoind -testnet -server
+dogecoin-cli -testnet getblockchaininfo</code></pre>
+      <p>
+        <code>-testnet</code> (single dash) is accepted everywhere Core already accepted it.
+        <code>--regtest</code> / <code>-regtest</code> work the same way for local testing.
+      </p>
+
+      <h2>What changes</h2>
+      <table>
+        <thead><tr><th></th><th>Mainnet</th><th>Testnet</th></tr></thead>
+        <tbody>
+          <tr><td>P2P</td><td>22556</td><td>44556</td></tr>
+          <tr><td>RPC</td><td>22555</td><td>44555</td></tr>
+          <tr><td>Datadir</td><td><code>%APPDATA%\Dogecoin</code> / <code>~/.dogecoin</code></td>
+              <td>…<code>\testnet3</code> / <code>/testnet3</code></td></tr>
+          <tr><td>Icon</td><td>Gold Dogecoin coin</td><td>Same coin, green metal (Start Menu / desktop / taskbar)</td></tr>
+          <tr><td>ImGui theme</td><td>Gold Dark</td><td>Matrix (green) by default</td></tr>
+          <tr><td>TUI chrome</td><td>Gold-dark</td><td>Green + “TESTNET” header</td></tr>
+          <tr><td>CLI</td><td>—</td><td>Green <code>*** TESTNET ***</code> banner on a TTY</td></tr>
+          <tr><td>Node supervisor</td><td>Windows service / systemd</td><td>Direct <code>dogecoind -testnet</code> process</td></tr>
+        </tbody>
+      </table>
+
+      <h2>What does not change</h2>
+      <ul>
+        <li>Consensus rules are the testnet rules already in Core — we did not invent a chain.</li>
+        <li>Window <strong>X</strong> still hides to tray. File → Exit still stops <em>this</em> node cleanly.</li>
+        <li>RPC stays on <code>127.0.0.1</code>. Cookie-first, then installer <code>rpcuser</code>/<code>rpcpassword</code>.</li>
+        <li>Optional Tor (Options → Privacy) is still P2P-only, never WebView.</li>
+      </ul>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

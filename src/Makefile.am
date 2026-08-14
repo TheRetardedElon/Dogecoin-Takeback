@@ -113,7 +113,10 @@ DOGECOIN_CORE_H = \
   init.h \
   key.h \
   keystore.h \
+  dbengine.h \
+  dbmigrate.h \
   dbwrapper.h \
+  blockarchive.h \
   memusage.h \
   merkleblock.h \
   miner.h \
@@ -201,6 +204,7 @@ libdogecoin_server_a_SOURCES = \
   addrman.cpp \
   addrdb.cpp \
   bloom.cpp \
+  blockarchive.cpp \
   blockencodings.cpp \
   chain.cpp \
   checkpoints.cpp \
@@ -208,7 +212,10 @@ libdogecoin_server_a_SOURCES = \
   httpserver.cpp \
   ibdstats.cpp \
   init.cpp \
+  dbengine.cpp \
   dbwrapper.cpp \
+  dbmigrate.cpp \
+  mdbx/mdbx.c \
   merkleblock.cpp \
   miner.cpp \
   net.cpp \

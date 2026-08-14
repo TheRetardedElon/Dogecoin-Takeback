@@ -27,6 +27,8 @@
 #include "hash.h"
 #include "ibdstats.h"
 #include "fs.h"
+#include "blockarchive.h"
+#include "dbengine.h"
 #include "node/chainstate.h"
 #include "node/snapshot_fetch.h"
 #include "node/utxo_snapshot.h"
@@ -1205,6 +1207,8 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
             "  \"initialblockdownload\": xxxx, (bool) (debug information) estimate of whether this node is in Initial Block Download mode.\n"
             "  \"chainwork\": \"xxxx\"     (string) total amount of work in active chain, in hexadecimal\n"
             "  \"size_on_disk\": xxxxxx,   (numeric) the estimated size of the block and undo files on disk\n"
+            "  \"dbengine\": \"xxxx\",     (string) local chainstate KV engine (leveldb default, or mdbx)\n"
+            "  \"blockindex_dbengine\": \"xxxx\", (string) local block-index KV engine\n"
             "  \"pruned\": xx,             (boolean) if the blocks are subject to pruning\n"
             "  \"pruneheight\": xxxxxx,    (numeric) lowest-height complete block stored (only present if pruning is enabled)\n"
             "  \"automatic_pruning\": xx,  (boolean) whether automatic pruning is enabled (only present if pruning is enabled)\n"
@@ -1246,6 +1250,8 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
     obj.pushKV("initialblockdownload",  IsInitialBlockDownload());
     obj.pushKV("chainwork",             ActiveChain().Tip()->nChainWork.GetHex());
     obj.pushKV("size_on_disk",          CalculateCurrentUsage());
+    obj.pushKV("dbengine",              DbEngineName(DetectExistingEngine(GetDataDir() / "chainstate")));
+    obj.pushKV("blockindex_dbengine",   DbEngineName(DetectExistingEngine(GetDataDir() / "blocks" / "index")));
     obj.pushKV("pruned",                fPruneMode);
     if (fPruneMode) {
         CBlockIndex* block = ActiveChain().Tip();
@@ -2528,10 +2534,91 @@ UniValue stepbackgroundvalidation(const JSONRPCRequest& request)
     return result;
 }
 
+UniValue getarchiveinfo(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() > 0)
+        throw runtime_error(
+            "getarchiveinfo\n"
+            "\nStatus of -archivepath (cold copies of pruned blk/rev files).\n"
+            "Live wallet and chainstate are never stored here.\n"
+        );
+
+    const BlockArchiveInfo info = GetBlockArchiveInfo();
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("enabled", info.enabled);
+    result.pushKV("path", info.path);
+    result.pushKV("files", info.files);
+    result.pushKV("sidecars", info.sidecars);
+    result.pushKV("bytes", info.bytes);
+    return result;
+}
+
+UniValue verifyarchive(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() > 1)
+        throw runtime_error(
+            "verifyarchive ( maxfiles )\n"
+            "\nSHA-256 check of files in -archivepath against .sha256 sidecars.\n"
+            "Does not touch the live datadir. Fail-closed: mismatch is reported, never repaired.\n"
+            "\nArguments:\n"
+            "1. maxfiles    (numeric, optional, default=0) stop after this many data files (0 = all)\n"
+        );
+
+    int maxFiles = 0;
+    if (request.params.size() > 0 && !request.params[0].isNull())
+        maxFiles = request.params[0].get_int();
+
+    const BlockArchiveVerify v = VerifyBlockArchive(maxFiles);
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("checked", v.checked);
+    result.pushKV("ok", v.ok);
+    result.pushKV("failed", v.failed);
+    result.pushKV("missing_sidecar", v.missing_sidecar);
+    UniValue names(UniValue::VARR);
+    for (size_t i = 0; i < v.failed_names.size(); ++i)
+        names.push_back(v.failed_names[i]);
+    result.pushKV("failed_names", names);
+    return result;
+}
+
+UniValue getdbengine(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+        throw runtime_error(
+            "getdbengine\n"
+            "Local KV engine for chainstate and block index. Not consensus.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"requested\": \"xxxx\",     (string) -dbengine if set, else \"auto\"\n"
+            "  \"default_new_dir\": \"leveldb\",\n"
+            "  \"chainstate\": \"xxxx\",    (string) detected engine or none\n"
+            "  \"blocks_index\": \"xxxx\",\n"
+            "  \"chainstate_mdbx_copy\": xx, (bool) sibling chainstate_mdbx exists\n"
+            "  \"note\": \"xxxx\"\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getdbengine", "")
+            + HelpExampleRpc("getdbengine", "")
+        );
+
+    const fs::path data = GetDataDir();
+    UniValue obj(UniValue::VOBJ);
+    obj.pushKV("requested", IsArgSet("-dbengine") ? GetArg("-dbengine", "leveldb") : "auto");
+    obj.pushKV("default_new_dir", "leveldb");
+    obj.pushKV("chainstate", DbEngineName(DetectExistingEngine(data / "chainstate")));
+    obj.pushKV("blocks_index", DbEngineName(DetectExistingEngine(data / "blocks" / "index")));
+    obj.pushKV("chainstate_mdbx_copy", fs::exists(data / "chainstate_mdbx"));
+    obj.pushKV("note",
+               "New/empty datadirs stay LevelDB. An ENGINE=mdbx stamp opens MDBX without -dbengine. "
+               "Copy with -migratedb=mdbx; apply with -migratedb=mdbx -swapdb.");
+    return obj;
+}
+
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafe argNames
   //  --------------------- ------------------------  -----------------------  ------ ----------
     { "blockchain",         "getblockchaininfo",      &getblockchaininfo,      true,  {} },
+    { "blockchain",         "getdbengine",            &getdbengine,            true,  {} },
     { "blockchain",         "getibdinfo",             &getibdinfo,             true,  {} },
     { "blockchain",         "getchainstates",         &getchainstates,         true,  {} },
     { "blockchain",         "dumptxoutset",           &dumptxoutset,           true,  {"path"} },
@@ -2557,6 +2644,8 @@ static const CRPCCommand commands[] =
     { "blockchain",         "gettxout",               &gettxout,               true,  {"txid","n","include_mempool"} },
     { "blockchain",         "gettxoutsetinfo",        &gettxoutsetinfo,        true,  {} },
     { "blockchain",         "pruneblockchain",        &pruneblockchain,        true,  {"height"} },
+    { "blockchain",         "getarchiveinfo",         &getarchiveinfo,         true,  {} },
+    { "blockchain",         "verifyarchive",          &verifyarchive,          true,  {"maxfiles"} },
     { "blockchain",         "verifychain",            &verifychain,            true,  {"checklevel","nblocks"} },
 
     { "blockchain",         "preciousblock",          &preciousblock,          true,  {"blockhash"} },

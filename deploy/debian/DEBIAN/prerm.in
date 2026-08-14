@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+case "$1" in
+  remove|upgrade|deconfigure)
+    if command -v systemctl >/dev/null 2>&1; then
+      systemctl stop dogecoin-core-pro.service >/dev/null 2>&1 || true
+    fi
+    if command -v dogecoin-cli >/dev/null 2>&1; then
+      dogecoin-cli -datadir=/var/lib/dogecoin-core-pro stop >/dev/null 2>&1 || true
+    fi
+    ;;
+esac
+exit 0

@@ -1,0 +1,107 @@
+#!/bin/sh
+# Role-aware launcher. Never starts a second dogecoind if one is already up.
+set -e
+export LD_LIBRARY_PATH="/usr/lib/dogecoin-core-pro${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+ROLE_FILE=/etc/dogecoin-core-pro/install-role
+PREF_FILE=/etc/dogecoin-core-pro/hybrid-ui
+ROLE="client"
+if [ -f "$ROLE_FILE" ]; then
+  ROLE=$(tr -d ' \t\r\n' < "$ROLE_FILE")
+fi
+UI=""
+NET=""
+for arg in "$@"; do
+  case "$arg" in
+    --testnet|-testnet) NET="--testnet" ;;
+    --regtest|-regtest) NET="--regtest" ;;
+    --mainnet|-mainnet) NET="" ;;
+    gfx|gui|imgui|desktop|tui|operator|gpenode|ask) UI="$arg" ;;
+    --ui) ;;
+    --ui=*) UI="${arg#--ui=}" ;;
+  esac
+done
+# Back-compat: first positional gfx|tui still works when NET is the only extra flag.
+if [ -z "$UI" ] && [ -n "${1:-}" ]; then
+  case "$1" in
+    gfx|gui|tui|ask) UI="$1" ;;
+  esac
+fi
+
+read_pref() {
+  if [ -f "$PREF_FILE" ]; then
+    tr -d ' \t\r\n' < "$PREF_FILE" | tr '[:upper:]' '[:lower:]'
+  fi
+}
+
+norm_ui() {
+  case "$1" in
+    gfx|gui|imgui|desktop) echo gfx ;;
+    tui|operator|gpenode) echo tui ;;
+    ask|prompt|choose) echo ask ;;
+    *) echo "" ;;
+  esac
+}
+
+pick_hybrid() {
+  if [ -n "$UI" ]; then
+    n=$(norm_ui "$UI")
+    [ -n "$n" ] && echo "$n" && return
+  fi
+  pref=$(norm_ui "$(read_pref)")
+  if [ -n "$pref" ] && [ "$pref" != "ask" ]; then
+    echo "$pref"
+    return
+  fi
+  if command -v zenity >/dev/null 2>&1; then
+    zenity --list --radiolist --title="Dogecoin Core Pro (Hybrid)" \
+      --text="Hybrid = this PC is a full Dogecoin node (a server) plus a desktop wallet. Not a light client. Which UI?" \
+      --column="" --column="UI" TRUE gfx FALSE tui
+    return
+  fi
+  if command -v kdialog >/dev/null 2>&1; then
+    kdialog --menu "Dogecoin Core Pro (Hybrid) — one dogecoind" gfx "Desktop GUI" tui "Operator TUI"
+    return
+  fi
+  if [ -t 0 ] && command -v whiptail >/dev/null 2>&1; then
+    whiptail --title "Dogecoin Core Pro (Hybrid)" \
+      --menu "One dogecoind. Which UI? Remember in TUI Settings / Options > Hybrid." 14 64 2 \
+      gfx "Desktop GUI (ImGui)" \
+      tui "Operator TUI" 3>&1 1>&2 2>&3
+    return
+  fi
+  echo "Hybrid install. Usage: dogecoin-core-pro gfx|tui" >&2
+  echo "  Default is ask every time. Remember: echo gfx > /etc/dogecoin-core-pro/hybrid-ui" >&2
+  exit 2
+}
+
+is_up() { pgrep -x dogecoind >/dev/null 2>&1; }
+
+case "$ROLE" in
+  server)
+    exec gpenode-tui --ui tui $NET
+    ;;
+  hybrid)
+    UI=$(pick_hybrid)
+    case "$UI" in
+      gfx|gui|imgui)
+        if command -v dogecoin-pro-gui >/dev/null 2>&1; then
+          exec dogecoin-pro-gui --ui gfx $NET
+        fi
+        echo "Desktop GUI is not in this package yet. Use: dogecoin-core-pro tui" >&2
+        exit 1
+        ;;
+      tui|*)
+        exec gpenode-tui --ui tui $NET
+        ;;
+    esac
+    ;;
+  client|*)
+    if command -v dogecoin-pro-gui >/dev/null 2>&1; then
+      exec dogecoin-pro-gui --ui gfx $NET
+    fi
+    echo "Client role: start dogecoin-pro-gui when packaged, or dogecoind -server" >&2
+    if ! is_up; then
+      exec dogecoind -server $NET
+    fi
+    ;;
+esac

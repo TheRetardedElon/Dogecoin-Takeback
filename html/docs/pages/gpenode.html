@@ -27,16 +27,19 @@
       <div class="meta">
         <span>Status: <strong>M1 live</strong> (first public operator)</span>
         <span>CDN: <code>sync.doge.gopastearth.com</code></span>
-        <span>Attested H: <code>6324519</code></span>
-        <span>Updated: 2026-08-10</span>
+        <span>Attested H: <code>6325931</code> (and 6324519)</span>
+        <span>Updated: 2026-08-13</span>
       </div>
 
       <div class="callout ok">
         <strong>One sentence</strong>
-        GPENode is a <em>headless Dogecoin operator host</em>: run an honest full
-        (or carefully pruned) node, dump UTXO snapshots, publish static files to a
-        CDN, and optionally serve GPE merchant RPC over a private path. It is
-        <strong>not</strong> consensus, not a second chain, and not Core Pro GUI.
+        GPENode is the <em>operator face</em> of Core Pro: same <code>dogecoind</code>,
+        Server/Hybrid install, TUI, service, dumps, CDN publish.
+        1.14.104: use the Core Pro setup and pick <strong>Server</strong> or <strong>Hybrid</strong>
+        (<a href="https://github.com/TheRetardedElon/Dogecoin-GPENode/releases/tag/v1.14.104-gpenode">v1.14.104-gpenode</a>).
+        It is <strong>not</strong> a second chain and not a second consensus binary.
+        Testnet: Start Menu <strong>Operator TUI Testnet</strong> or <code>gpenode-tui --testnet</code>
+        (green chrome). Do not start the mainnet service for that.
       </div>
 
       <div class="callout info">
@@ -74,7 +77,7 @@
           </tr>
           <tr>
             <td><strong>Client</strong></td>
-            <td>Core Pro <code>dogecoin-qt</code> / <code>dogecoind</code></td>
+            <td>Core Pro <code>dogecoin-pro-gui</code> / <code>dogecoind</code></td>
             <td>Downloads snapshot; verifies hashes; background prove</td>
             <td>Local datadir only</td>
           </tr>
@@ -94,7 +97,7 @@
       </ul>
       <h2>What GPENode is not</h2>
       <ul>
-        <li>Not Core Pro desktop (no Qt, Arcade, Meme Stream on the server)</li>
+        <li>Not Core Pro desktop (no ImGui, Arcade, Meme Stream on the server)</li>
         <li>Not a consensus authority or “trusted cloud chainstate”</li>
         <li>Not a place to expose RPC on the public internet</li>
         <li>Not live LevelDB on FUSE/Drive/object storage</li>

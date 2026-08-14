@@ -1,0 +1,10 @@
+#!/bin/sh
+# Real binary lives next to bundled Boost 1.90 (not in Ubuntu repos).
+LIB=/usr/lib/dogecoin-core-pro
+BIN="${LIB}/dogecoind"
+if [ ! -x "$BIN" ]; then
+  echo "dogecoind: missing $BIN" >&2
+  exit 127
+fi
+export LD_LIBRARY_PATH="${LIB}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+exec "$BIN" "$@"

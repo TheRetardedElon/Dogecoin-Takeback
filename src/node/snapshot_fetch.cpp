@@ -333,8 +333,9 @@ static bool DownloadUrlStreamHashWinHttp(const std::string& url,
     int64_t expected_bytes = -1;
     bytes_out = 0;
 
+    // NO_PROXY: WPAD/autoproxy can hang for minutes and never reach the CDN.
     hSession = WinHttpOpen(L"DogecoinCore-Pro-snapshot-fetch/1.14",
-                           WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                           WINHTTP_ACCESS_TYPE_NO_PROXY,
                            WINHTTP_NO_PROXY_NAME,
                            WINHTTP_NO_PROXY_BYPASS,
                            0);
@@ -346,8 +347,10 @@ static bool DownloadUrlStreamHashWinHttp(const std::string& url,
         return false;
     }
 
-    int to_ms = timeout_sec > 0 ? timeout_sec * 1000 : 600000;
-    WinHttpSetTimeouts(hSession, to_ms, to_ms, to_ms, to_ms);
+    int recv_ms = timeout_sec > 0 ? timeout_sec * 1000 : 600000;
+    // Fail the handshake quickly if the CDN is unreachable; keep a long receive
+    // window for the multi-GB artifact.
+    WinHttpSetTimeouts(hSession, 20000, 20000, 30000, recv_ms);
 
     hConnect = WinHttpConnect(hSession, whost.c_str(), static_cast<INTERNET_PORT>(port), 0);
     if (!hConnect) {

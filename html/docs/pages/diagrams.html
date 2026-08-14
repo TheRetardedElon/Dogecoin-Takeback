@@ -19,15 +19,14 @@
     <main class="main">
       <h1>Diagrams</h1>
       <p class="lead">
-        Canonical Eraser Freeform renders for Fast Sync / AssumeUTXO architecture.
-        Prefer these over chat sketches when status is disputed. Source assets also
-        live under <code>-FlowDiagramLatest/</code> in the repo root.
+        Current topology is the ASCII/HTML diagrams below (1.14.104).
+        Older PNGs still show a Qt-era shell and “LevelDB only” captions —
+        treat them as historical Fast Sync pictures, not the product installer.
       </p>
       <div class="meta">
-        <span>Updated: <strong>2026-08-09</strong></span>
-        <span>Source: <code>-FlowDiagramLatest/</code></span>
-        <span>Published: <code>assets/diagrams/</code></span>
-        <span>Mermaid text: <code>-FlowDiagramLatest/updatedmermaid.txt</code></span>
+        <span>Updated: <strong>2026-08-14</strong></span>
+        <span>Canonical: <a href="how-it-works.html">How it works</a></span>
+        <span>Legacy PNG: <code>assets/diagrams/</code></span>
       </div>
 
       <div class="callout ok">
@@ -37,9 +36,27 @@
         multi-operator mesh M0–M4 roadmap. Hard fork? <strong>No.</strong>
       </div>
 
-      <h2>1. Master architecture (canonical)</h2>
+      <h2>0. Product topology (1.14.104 — use this)</h2>
+      <pre><code>Users / operators
+        │  installer: Client | Server | Hybrid
+        ▼
+ ImGui ──┐
+ TUI  ───┼── localhost RPC ──► dogecoind (ONE)
+ CLI  ───┘                      │
+                                ├─ LevelDB default (chainstate, index)
+                                ├─ MDBX only if empty or -migratedb
+                                ├─ wallet.dat BDB
+                                ├─ blk*.dat  prune / -archivepath
+                                └─ P2P main :22556 / testnet :44556
+ Testnet: Start Menu "Dogecoin Core Pro Testnet" or --testnet
+          (Matrix GUI / green TUI; no mainnet service)
+CDN (sync.doge.gopastearth.com) = snapshot FILES only
+Consumer cloud folders = NOT a live datadir</code></pre>
+      <p>Narrative: <a href="how-it-works.html">How it works</a>.</p>
+
+      <h2>1. Master architecture (legacy PNG)</h2>
       <p>
-        Full product map: users, GitHub distribution, Core Pro Qt shell, node core,
+        Full product map (PNG is 2026-08-09): users, GitHub, then-Qt shell, node core,
         dual chainstate, Fast Sync pipeline, GPENode operator stack, and external
         non-consensus surfaces (peers, optional GPE APIs, future mesh).
       </p>
@@ -114,15 +131,15 @@
         “Hard fork? No. Same consensus. Software distribution ≠ protocol change.”
       </p>
 
-      <h2>Layer stack (text)</h2>
-      <p>Authoritative ASCII stack also on <a href="architecture.html">Architecture</a>.</p>
-      <pre><code>Qt (Core Pro shell, Arcade, Business, Meme Stream, Fast Sync dialog)
-Wallet (BDB today)
+      <h2>Layer stack (text) — current</h2>
+      <p>Authoritative stack: <a href="architecture.html">Architecture</a> · <a href="how-it-works.html">How it works</a>.</p>
+      <pre><code>ImGui + TUI (control planes, Hybrid ask) — Qt not shipped
+Wallet (BDB wallet.dat)
 RPC / ZMQ
 P2P + net_processing (IBD rescue, ASMAP, historical fetch)
 Validation + dual chainstate (AssumeUTXO active/background)
-Consensus (AuxPoW, DigiShield, subsidy) — UNTOUCHED in bootstrap work
-Storage: LevelDB chainstate + chainstate_snapshot + blk*.dat</code></pre>
+Consensus (AuxPoW, DigiShield, subsidy) — UNTOUCHED
+Storage: LevelDB DEFAULT · MDBX opt-in · blk*.dat · archivepath</code></pre>
 
       <h2>IBD observe → rescue</h2>
       <div class="flow">

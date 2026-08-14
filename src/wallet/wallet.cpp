@@ -21,6 +21,7 @@
 #include "keystore.h"
 #include "validation.h"
 #include "net.h"
+#include "node/chainstate.h"
 #include "policy/policy.h"
 #include "primitives/block.h"
 #include "primitives/transaction.h"
@@ -3839,18 +3840,35 @@ CWallet* CWallet::CreateWalletFromFile(const std::string walletFile)
                 block = block->pprev;
 
             if (pindexRescan != block) {
-                InitError(_("Prune: last wallet synchronisation goes beyond pruned data. You need to -reindex (download the whole blockchain again in case of pruned node)"));
-                return NULL;
+                // Fast Sync / AssumeUTXO: tip jumps to snapshot height without block
+                // bodies. Empty wallets have nothing to recover — anchor to tip and
+                // skip the fatal "beyond pruned data" gate (mom-laptop restart path).
+                if (IsSnapshotChainstateActive() && walletInstance->mapWallet.empty()) {
+                    LogPrintf("Wallet: empty wallet under AssumeUTXO — anchoring to "
+                              "snapshot tip height %d without historical rescan "
+                              "(locator would need pruned data)\n",
+                              chainActive.Height());
+                    pindexRescan = chainActive.Tip();
+                } else {
+                    InitError(_("Prune: last wallet synchronisation goes beyond pruned data. You need to -reindex (download the whole blockchain again in case of pruned node)"));
+                    return NULL;
+                }
             }
         }
 
-        uiInterface.InitMessage(_("Rescanning..."));
-        LogPrintf("Rescanning last %i blocks (from block %i)...\n", chainActive.Height() - pindexRescan->nHeight, pindexRescan->nHeight);
-        nStart = GetTimeMillis();
-        walletInstance->ScanForWalletTransactions(pindexRescan, true);
-        LogPrintf(" rescan      %15dms\n", GetTimeMillis() - nStart);
-        walletInstance->SetBestChain(chainActive.GetLocator());
-        CWalletDB::IncrementUpdateCounter();
+        if (chainActive.Tip() == pindexRescan) {
+            // Anchored after AssumeUTXO empty-wallet gate — no rescan needed.
+            walletInstance->SetBestChain(chainActive.GetLocator());
+            CWalletDB::IncrementUpdateCounter();
+        } else {
+            uiInterface.InitMessage(_("Rescanning..."));
+            LogPrintf("Rescanning last %i blocks (from block %i)...\n", chainActive.Height() - pindexRescan->nHeight, pindexRescan->nHeight);
+            nStart = GetTimeMillis();
+            walletInstance->ScanForWalletTransactions(pindexRescan, true);
+            LogPrintf(" rescan      %15dms\n", GetTimeMillis() - nStart);
+            walletInstance->SetBestChain(chainActive.GetLocator());
+            CWalletDB::IncrementUpdateCounter();
+        }
 
         // Restore wallet transaction metadata after -zapwallettxes=1
         if (GetBoolArg("-zapwallettxes", false) && GetArg("-zapwallettxes", "1") != "2")

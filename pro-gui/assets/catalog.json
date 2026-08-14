@@ -1,0 +1,78 @@
+{
+  "arcade_hub_url": "https://arcade.gopastearth.com/",
+  "arcade_hub_alt": "https://gopastearth.com/arcade",
+  "sidebar": [
+    {
+      "id": "home",
+      "file": "sidebar/homeSidebarIcon.png",
+      "label": "Home"
+    },
+    {
+      "id": "send",
+      "file": "sidebar/sendSidebarIcon.png",
+      "label": "Send"
+    },
+    {
+      "id": "tx",
+      "file": "sidebar/txSidebarIcon.png",
+      "label": "History"
+    },
+    {
+      "id": "network",
+      "file": "sidebar/networkSidebarIcon.png",
+      "label": "Network"
+    },
+    {
+      "id": "blocks",
+      "file": "sidebar/blocksSidebarIcon.png",
+      "label": "Chain"
+    },
+    {
+      "id": "arcade",
+      "file": "sidebar/dogeArcadeSidebarIcon.png",
+      "label": "Arcade"
+    },
+    {
+      "id": "meme",
+      "file": "sidebar/memeStreamSidebarIcon.png",
+      "label": "Meme Stream"
+    },
+    {
+      "id": "business",
+      "file": "sidebar/busCenterSidebarIcon.png",
+      "label": "Business"
+    },
+    {
+      "id": "console",
+      "file": "sidebar/consoleSidebarIcon.png",
+      "label": "Console"
+    },
+    {
+      "id": "mining",
+      "file": "sidebar/miningSidebarIcon.png",
+      "label": "Mining"
+    },
+    {
+      "id": "settings",
+      "file": "sidebar/settingsSidebarIcon.png",
+      "label": "Settings"
+    }
+  ],
+  "brand": {
+    "splash": "brand/shibaInuonDSplash.png",
+    "mark": "brand/dogeD_metallicGold.png",
+    "coin": "brand/smCircularGoldcoin.png"
+  },
+  "actions": {
+    "send": "icons/sendIcon.png",
+    "receive": "icons/receiveIcon.png",
+    "balance": "icons/walletballanceIcon.png",
+    "fastsync": "icons/fastsyncRocketIcon.png",
+    "peers_map": "icons/peersMapIcon.png",
+    "theme": "icons/themeSwitcherIcon.png",
+    "lock": "icons/lockEncrypticon.png",
+    "qr": "icons/qrStyleIcon.png",
+    "copy": "icons/copyClipboardIcon.png"
+  },
+  "note": "Arcade content loads from GPE hub URL; no per-game flappy/blaster icons required."
+}

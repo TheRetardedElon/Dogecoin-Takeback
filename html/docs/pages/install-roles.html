@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Install roles — Dogecoin Core Pro</title>
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Ð Dogecoin Dev</h1>
+        <p>Local project documentation</p>
+      </div>
+      <nav></nav>
+    </aside>
+    <main class="main">
+      <h1>Client / Server / Hybrid</h1>
+      <p class="lead">
+        Every Windows setup and every <code>.deb</code> asks the same question.
+        One <code>dogecoind</code>. Never two.
+      </p>
+      <div class="meta">
+        <span>Markdown: <code>doc/install-roles.md</code></span>
+        <span>Release: v1.14.104</span>
+        <span>Updated: 2026-08-14</span>
+      </div>
+
+      <h2>Windows</h2>
+      <p>
+        Asset: <code>dogecoin-1.14.105-win64-setup-rpcsecure.exe</code>
+        on <a href="https://github.com/TheRetardedElon/Dogecoin-Takeback/releases/tag/v1.14.105">Takeback v1.14.105</a>.
+      </p>
+      <ul>
+        <li>Unique RPC password page (no shared <code>CHANGE_ME</code>).</li>
+        <li>Qt is not packed. Start Menu “Dogecoin Core Pro” is the Hybrid launcher.</li>
+        <li>Hybrid default file <code>hybrid-ui.txt</code> = <code>ask</code>. Remember is opt-in.</li>
+        <li>Server/Hybrid register Windows service <code>DogecoinGPENode</code> (display name Dogecoin Core Pro)
+            via <code>gpenode-ops service-run</code>. <code>dogecoind</code> is not a native SCM binary.</li>
+        <li>If <code>dogecoind</code> is already running, the service is installed but not started (one node).</li>
+      </ul>
+
+      <h2>Linux (apt)</h2>
+      <p>
+        Asset: <code>dogecoin-core-pro_1.14.105-1_amd64.deb</code>.
+        Debconf asks Client / Server / Hybrid.
+        <code>Provides</code>/<code>Replaces</code> <code>dogecoin-gpenode</code>.
+      </p>
+      <pre><code>echo "dogecoin-core-pro dogecoin-core-pro/install-role select server" | sudo debconf-set-selections
+sudo DEBIAN_FRONTEND=noninteractive apt-get install ./dogecoin-core-pro_1.14.105-1_amd64.deb</code></pre>
+      <p>Reconfigure: <code>sudo dpkg-reconfigure dogecoin-core-pro</code>.</p>
+
+      <h2>Hybrid picker</h2>
+      <p>
+        Opening Dogecoin Core Pro asks Desktop GUI vs Operator TUI unless
+        <code>hybrid-ui.txt</code> (or <code>/etc/dogecoin-core-pro/hybrid-ui</code>) is
+        <code>gfx</code> or <code>tui</code>. Change in GUI Options → Hybrid or TUI Settings → H.
+        Direct exe launch with Hybrid+ask bounces back to the picker.
+        The picker is <code>corepro-launch.exe</code> (WIN32, no console) — not PowerShell.
+      </p>
+
+      <h2>Close / tray / Exit</h2>
+      <ul>
+        <li>Window <strong>X</strong> and Hide / Minimize to tray hide the UI. The node stays up.
+            One tray icon — the Desktop GUI. Do not also run <code>gpenode-tray</code>.</li>
+        <li>File → <strong>Exit</strong> and that icon's <strong>Quit and stop node</strong> stop the Windows service
+            <code>DogecoinGPENode</code> if present (so it cannot restart the node), then
+            RPC-stop <code>dogecoind</code> and wait for flush.</li>
+        <li>Hybrid: the same icon can Show Desktop GUI or Open Operator TUI while the node is still running.</li>
+        <li>Never force-kill <code>dogecoind</code> during IBD or flush.</li>
+      </ul>
+
+      <h2>Testnet shortcuts</h2>
+      <ul>
+        <li>Client / Hybrid Start Menu + desktop: <strong>Dogecoin Core Pro Testnet</strong> →
+            <code>corepro-launch.exe --testnet</code>.</li>
+        <li>Server Start Menu: <strong>Dogecoin Operator TUI Testnet</strong> →
+            <code>gpenode-tui.exe --testnet</code>.</li>
+        <li>Linux: applications menu entry + <code>dogecoin-core-pro --testnet</code>.</li>
+        <li>TUI goes green. ImGui uses the Matrix theme. RPC 44555, datadir <code>testnet3</code>.</li>
+        <li>Does not start or stop the mainnet service. Stop mainnet first (one <code>dogecoind</code>).</li>
+      </ul>
+      <p>Full page: <a href="testnet.html">Testnet</a>.</p>
+    </main>
+  </div>
+  <script src="../assets/nav.js"></script>
+</body>
+</html>

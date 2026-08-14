@@ -1,0 +1,24 @@
+Package: dogecoin-core-pro
+Version: __VERSION__-1
+Section: net
+Priority: optional
+Architecture: __ARCH__
+Depends: adduser, debconf (>= 0.5) | debconf-2.0, systemd | systemd-sysv, libdb5.3++ | libdb5.3++t64, libevent-2.1-7 | libevent-2.1-7t64, libzmq5, libssl3 | libssl3t64
+Conflicts: dogecoin-gpenode, dogecoind
+Replaces: dogecoin-gpenode, dogecoind
+Provides: dogecoin-gpenode
+Maintainer: The Retarded Elon <noreply@gopastearth.com>
+Homepage: https://github.com/TheRetardedElon/Dogecoin-Takeback
+Description: Dogecoin Core Pro (Client / Server / Hybrid)
+ One dogecoind plus optional ImGui desktop GUI and/or operator TUI.
+ Same mainnet consensus as Core Pro / GPENode. Not a second coin.
+ .
+ First install asks: Client, Server, or Hybrid (debconf).
+ Reconfigure with: sudo dpkg-reconfigure dogecoin-core-pro
+ Preseed: dogecoin-core-pro dogecoin-core-pro/install-role select server
+ .
+ Client: user-session node (~/.dogecoin). Server/Hybrid: systemd unit
+ dogecoin-core-pro and datadir /var/lib/dogecoin-core-pro.
+ RPC binds to 127.0.0.1 only.
+ .
+ This package absorbs dogecoin-gpenode (transitional Provides/Replaces).

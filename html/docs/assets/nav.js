@@ -25,6 +25,9 @@
   html += link(p + "roadmap.html", "Roadmap");
 
   html += '<div class="nav-section">Understanding</div>';
+  html += link(p + "how-it-works.html", "How it works");
+  html += link(p + "install-roles.html", "Install roles");
+  html += link(p + "testnet.html", "Testnet");
   html += link(p + "architecture.html", "Architecture");
   html += link(p + "module-map.html", "Module map");
   html += link(p + "diagrams.html", "Diagrams");

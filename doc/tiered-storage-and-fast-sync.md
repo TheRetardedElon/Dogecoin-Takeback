@@ -263,10 +263,10 @@ flowchart TB
 
 | Work item | Notes |
 |-----------|--------|
-| P4.1 `dbwrapper` abstraction audit | |
-| P4.2 RocksDB (or libmdbx) backend | Optional build / runtime |
-| P4.3 Migration / reindex path | |
-| P4.4 AssumeUTXO hash stability | `hash_serialized` must remain well-defined |
+| P4.1 `dbwrapper` abstraction audit | **Done (first slice):** `CDbBackend` + batch/iterator bytes; LevelDB adapter |
+| P4.2 RocksDB (or libmdbx) backend | **MDBX compiled in** (`src/mdbx/`). New dir stays LevelDB. Stamp auto-opens MDBX. `-migratedb=mdbx -swapdb` applies a copy. |
+| P4.3 Migration / reindex path | Stamp `ENGINE` + refuse mismatch. No in-place convert. New datadir / Fast Sync |
+| P4.4 AssumeUTXO hash stability | `hash_serialized` unchanged — engine must store identical values |
 
 **Orthogonal** to dual chainstate views and to P1 CDN.
 
