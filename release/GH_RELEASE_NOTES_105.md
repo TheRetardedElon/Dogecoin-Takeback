@@ -27,6 +27,14 @@ Testnet: `dogecoin-core-pro --testnet` or the **Dogecoin Core Pro Testnet** menu
 
 ## This release
 
+Windows setup/zip rebuilt **2026-08-16** (GUI only — `dogecoind` is still the 1.14.105 daemon):
+
+- Home / Chain never paint height `-1` on a busy RPC; last good tip is held
+- UTXO cache bar (`dbcache` fill). Near-full warns that a flush can pause IBD for minutes
+- Tray / minimized: probe every 12s; restore kicks an immediate refresh
+- Options → Performance: `-par` slider (0 = auto). Next node start
+- Linux `.deb` files are unchanged
+
 - **Testnet launch:** Start Menu + desktop **Dogecoin Core Pro Testnet** (green coin icon) → `corepro-launch.exe --testnet`
 - Same flag on `dogecoin-pro-gui --ui gfx --testnet`, `gpenode-tui --testnet`, `dogecoin-cli -testnet`
 - ImGui uses Matrix (green) on testnet; operator TUI is green with a TESTNET header

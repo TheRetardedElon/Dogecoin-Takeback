@@ -18,6 +18,8 @@ struct ProGuiSettings {
     bool prune = true;
     int pruneSizeGb = 6;
     int dbCacheMb = 1024;
+    /** -par: 0 = auto (default), 1 = single-thread, 2–16 = worker cap. Next node start. */
+    int scriptThreads = 0;
     std::string snapshotUrl;
     std::string snapshotSha256;
     bool startAtLogin = false; // GUI note only on Windows

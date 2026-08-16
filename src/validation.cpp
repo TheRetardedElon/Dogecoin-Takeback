@@ -85,6 +85,9 @@ bool fEnableReplacement = DEFAULT_ENABLE_REPLACEMENT;
 
 uint256 hashAssumeValid;
 
+/** -1 = not computed. Updated after prune / load; read by RPC without walking. */
+static std::atomic<int> nCachedPruneHeight{-1};
+
 //mlumin 5/2021: Changing this variable to a fee rate, because that's what it is, not a fee. Confusion bad.
 CFeeRate minRelayTxFeeRate = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);
 CAmount maxTxFee = DEFAULT_TRANSACTION_MAXFEE;
@@ -2158,6 +2161,8 @@ bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode, int n
         // Finally remove any pruned files
         if (fFlushForPrune)
             UnlinkPrunedFiles(setFilesToPrune);
+        if (fFlushForPrune)
+            RefreshCachedPruneHeight();
         nLastWrite = nNow;
     }
     // Flush best chain related state. This can only be done if the blocks / block index write was also done.
@@ -3520,6 +3525,30 @@ uint64_t CalculateCurrentUsage()
     return retval;
 }
 
+void RefreshCachedPruneHeight()
+{
+    AssertLockHeld(cs_main);
+    if (!fPruneMode || ActiveChain().Tip() == NULL) {
+        nCachedPruneHeight.store(-1, std::memory_order_relaxed);
+        return;
+    }
+    CBlockIndex* block = ActiveChain().Tip();
+    while (block->pprev && (block->pprev->nStatus & BLOCK_HAVE_DATA))
+        block = block->pprev;
+    nCachedPruneHeight.store(block->nHeight, std::memory_order_relaxed);
+}
+
+int GetCachedPruneHeight()
+{
+    AssertLockHeld(cs_main);
+    int h = nCachedPruneHeight.load(std::memory_order_relaxed);
+    if (h < 0 && fPruneMode && ActiveChain().Tip()) {
+        RefreshCachedPruneHeight();
+        h = nCachedPruneHeight.load(std::memory_order_relaxed);
+    }
+    return h;
+}
+
 /* Prune a block file (modify associated database entries)*/
 void PruneOneBlockFile(const int fileNumber)
 {
@@ -4045,6 +4074,7 @@ void UnloadBlockIndex()
     }
     mapBlockIndex.clear();
     fHavePruned = false;
+    nCachedPruneHeight.store(-1, std::memory_order_relaxed);
 }
 
 bool LoadBlockIndex(const CChainParams& chainparams)

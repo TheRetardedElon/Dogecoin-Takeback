@@ -73,6 +73,101 @@ static bool FileExists(const char* path)
 #endif
 }
 
+/** IBD can stall getblockchaininfo; never paint the -1 sentinel. */
+static int DisplayBlocks(const NodeSnapshot& s, int fallback = 0)
+{
+    if (s.blocks >= 0)
+        return s.blocks;
+    return fallback > 0 ? fallback : -1;
+}
+
+static int DisplayHeaders(const NodeSnapshot& s, int fallback = 0)
+{
+    if (s.headers >= 0)
+        return s.headers;
+    return fallback > 0 ? fallback : -1;
+}
+
+static void DrawDbcacheGauge(const NodeSnapshot& s)
+{
+    if (s.dbcacheLimitBytes <= 0)
+        return;
+    const double used = (double)s.dbcacheBytes;
+    const double lim = (double)s.dbcacheLimitBytes;
+    float frac = (float)(used / lim);
+    if (frac < 0.f)
+        frac = 0.f;
+    if (frac > 1.f)
+        frac = 1.f;
+    char ov[72];
+    std::snprintf(ov, sizeof(ov), "%.1f / %.1f GiB  (%.0f%%)",
+                  used / (1024.0 * 1024.0 * 1024.0),
+                  lim / (1024.0 * 1024.0 * 1024.0),
+                  frac * 100.0);
+    ImGui::TextUnformatted("UTXO cache");
+    ImGui::ProgressBar(frac, ImVec2(-1, 0), ov);
+    if (frac >= 0.92f)
+        ImGui::TextDisabled("Cache near full — a disk flush can pause IBD for minutes. Not a freeze.");
+}
+
+static void DrawBlocksHeadersLine(const char* prefix, int blocks, int headers)
+{
+    if (blocks < 0 && headers <= 0)
+        ImGui::Text("%s —", prefix);
+    else if (headers > 0 && blocks >= 0)
+        ImGui::Text("%s %d  /  %d  headers", prefix, blocks, headers);
+    else if (blocks >= 0)
+        ImGui::Text("%s %d", prefix, blocks);
+    else
+        ImGui::Text("%s —  /  %d  headers", prefix, headers);
+}
+
+/** Keep last height/wallet/peers when the probe times out but dogecoind is still up. */
+static void HoldLastGoodOnProbeMiss(NodeSnapshot& incoming, const NodeSnapshot& previous)
+{
+    if (incoming.connected || previous.blocks < 0)
+        return;
+    if (!IsDogecoindRunning())
+        return;
+    incoming.stale = true;
+    incoming.connected = true;
+    incoming.rpcWarmup = previous.rpcWarmup;
+    incoming.blocks = previous.blocks;
+    incoming.headers = previous.headers;
+    incoming.verificationProgress = previous.verificationProgress;
+    incoming.initialBlockDownload = previous.initialBlockDownload;
+    incoming.bestBlockHash = previous.bestBlockHash;
+    incoming.dbEngine = previous.dbEngine;
+    incoming.chain = previous.chain;
+    incoming.hasWallet = previous.hasWallet;
+    incoming.balance = previous.balance;
+    incoming.unconfirmed = previous.unconfirmed;
+    incoming.walletEncrypted = previous.walletEncrypted;
+    incoming.walletLocked = previous.walletLocked;
+    incoming.walletName = previous.walletName;
+    incoming.hasIbdInfo = previous.hasIbdInfo;
+    incoming.ibdSummary = previous.ibdSummary;
+    incoming.dbcacheBytes = previous.dbcacheBytes;
+    incoming.dbcacheLimitBytes = previous.dbcacheLimitBytes;
+    incoming.assumeUtxoValidated = previous.assumeUtxoValidated;
+    incoming.assumeUtxoFailed = previous.assumeUtxoFailed;
+    incoming.assumeUtxoDualCollapsed = previous.assumeUtxoDualCollapsed;
+    incoming.assumeUtxoProgress = previous.assumeUtxoProgress;
+    incoming.snapshotChainstateActive = previous.snapshotChainstateActive;
+    incoming.hasMining = previous.hasMining;
+    incoming.miningBlocks = previous.miningBlocks;
+    incoming.difficulty = previous.difficulty;
+    incoming.networkHashPs = previous.networkHashPs;
+    incoming.pooledTx = previous.pooledTx;
+    incoming.connections = previous.connections;
+    incoming.peerCount = previous.peerCount;
+    incoming.peers = previous.peers;
+    incoming.peerLines = previous.peerLines;
+    incoming.subversion = previous.subversion;
+    incoming.version = previous.version;
+    incoming.status = previous.status;
+}
+
 static bool WalletExistsIn(const char* datadir)
 {
     if (!datadir || !datadir[0])
@@ -635,6 +730,13 @@ bool App::TryStartLocalNode()
         extra = "-regtest";
         launchDir = stripNet(defaultDatadir[0] ? defaultDatadir : datadirHint, "\\regtest", "/regtest");
     }
+    if (cfg.scriptThreads < 0)
+        cfg.scriptThreads = 0;
+    if (cfg.scriptThreads > 16)
+        cfg.scriptThreads = 16;
+    if (!extra.empty())
+        extra += " ";
+    extra += "-par=" + std::to_string(cfg.scriptThreads);
     std::string err;
     if (!StartDogecoind(dogecoindPath, launchDir, err, LaunchPruneMiB(), cfg.dbCacheMb,
                         cfg.archivePath, cfg.preferMdbx ? "mdbx" : "", extra)) {
@@ -1304,6 +1406,7 @@ void App::DoHideToTray()
     if (!hostWindow)
         return;
     hiddenInTray = true;
+    probeWorker.SetBackground(true);
     glfwHideWindow(hostWindow);
 #if defined(_WIN32)
     WinTrayDismissHelper();
@@ -1381,6 +1484,7 @@ void App::RestoreFromTray()
     if (!hostWindow)
         return;
     hiddenInTray = false;
+    probeWorker.SetBackground(false);
     glfwShowWindow(hostWindow);
     glfwFocusWindow(hostWindow);
 #if defined(_WIN32)
@@ -1405,6 +1509,8 @@ void App::TickTray()
 #endif
     if (hiddenInTray && hostWindow && glfwGetWindowAttrib(hostWindow, GLFW_VISIBLE))
         hiddenInTray = false;
+    const bool iconified = hostWindow && glfwGetWindowAttrib(hostWindow, GLFW_ICONIFIED);
+    probeWorker.SetBackground(hiddenInTray || iconified);
 }
 
 void App::Shutdown()
@@ -1825,6 +1931,7 @@ void App::TickNodeProbe()
     if (!probeWorker.Consume(next))
         return;
     lastProbeTime = now;
+    HoldLastGoodOnProbeMiss(next, snap);
     snap = std::move(next);
 
     if (snap.connected && snap.blocks > 0) {
@@ -2370,11 +2477,13 @@ void App::DrawHomePanel(const std::string& id, int index)
             ImGui::TextColored(ImVec4(0.4f, 0.9f, 0.4f, 1.f), "Connected");
         else
             ImGui::TextColored(ImVec4(1.f, 0.7f, 0.2f, 1.f), "Waiting for node");
+        if (snap.stale) {
+            ImGui::SameLine();
+            ImGui::TextDisabled("updating…");
+        }
         ImGui::SetWindowFontScale(1.2f);
-        if (snap.headers > 0)
-            ImGui::Text("Blocks  %d  /  %d  headers", snap.blocks, snap.headers);
-        else
-            ImGui::Text("Blocks  %d", snap.blocks);
+        DrawBlocksHeadersLine("Blocks ", DisplayBlocks(snap, cfg.lastKnownHeight),
+                              DisplayHeaders(snap, cfg.lastKnownHeaders));
         ImGui::SetWindowFontScale(1.0f);
         float prog = (float)snap.verificationProgress;
         if (prog < 0)
@@ -2384,6 +2493,7 @@ void App::DrawHomePanel(const std::string& id, int index)
         char ov[32];
         std::snprintf(ov, sizeof(ov), "%.1f%%", prog * 100.0);
         ImGui::ProgressBar(prog, ImVec2(-1, 0), ov);
+        DrawDbcacheGauge(snap);
         if (snap.initialBlockDownload) {
             ImGui::TextColored(ImVec4(1.f, 0.85f, 0.25f, 1.f), "Initial block download — resumes after a clean Exit");
             if (cfg.lastKnownHeight > 0 && snap.blocks + 50 < cfg.lastKnownHeight)
@@ -2728,7 +2838,10 @@ void App::DrawChain()
         return;
     }
     ImGui::Text("Best: %s", snap.bestBlockHash.empty() ? "--" : snap.bestBlockHash.c_str());
-    ImGui::Text("Height: %d / headers %d", snap.blocks, snap.headers);
+    DrawBlocksHeadersLine("Height:", DisplayBlocks(snap, cfg.lastKnownHeight),
+                          DisplayHeaders(snap, cfg.lastKnownHeaders));
+    if (snap.stale)
+        ImGui::TextDisabled("RPC busy — last height held (not a rewind).");
     float prog = (float)snap.verificationProgress;
     if (prog < 0)
         prog = 0;
@@ -2737,6 +2850,7 @@ void App::DrawChain()
     char ov[32];
     std::snprintf(ov, sizeof(ov), "%.1f%%", prog * 100.0);
     ImGui::ProgressBar(prog, ImVec2(-1, 0), ov);
+    DrawDbcacheGauge(snap);
     if (snap.initialBlockDownload)
         ImGui::TextColored(ImVec4(1.f, 0.75f, 0.2f, 1.f), "initialblockdownload = true");
     if (snap.hasIbdInfo)
@@ -3336,6 +3450,7 @@ void App::DrawOptions()
             ImGui::Checkbox("Prune block storage", &cfg.prune);
             ImGui::InputInt("Prune size (GB)", &cfg.pruneSizeGb);
             ImGui::InputInt("dbcache (MiB)", &cfg.dbCacheMb);
+            ImGui::TextDisabled("Keep 1024–4096 MiB if this PC has the RAM. Fewer flushes during IBD.");
             ImGui::Text("Live engine (from node):  %s",
                         snap.dbEngine.empty() ? "(probe node)" : snap.dbEngine.c_str());
             if (ImGui::Checkbox("Next fresh start: MDBX (empty/wiped datadir only)", &cfg.preferMdbx)) {
@@ -3388,6 +3503,47 @@ void App::DrawOptions()
             ImGui::Checkbox("Start on system login (Windows note - configure OS startup separately)",
                             &cfg.startAtLogin);
             ImGui::TextDisabled("Reverting prune requires re-downloading the chain.");
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Performance")) {
+            optionsTab = 9;
+            ImGui::TextUnformatted("Script verification threads  (-par)");
+            ImGui::TextWrapped(
+                "Already in the daemon. 0 = auto (all cores, max 16). "
+                "Does not change consensus — only how many workers check signatures. "
+                "Takes effect on the next clean node start (File → Exit, then reopen). "
+                "Do not restart mid-IBD just for this.");
+            int par = cfg.scriptThreads;
+            if (par < 0) par = 0;
+            if (par > 16) par = 16;
+            if (ImGui::SliderInt("##par", &par, 0, 16, par == 0 ? "auto" : "%d")) {
+                cfg.scriptThreads = par;
+            }
+            ImGui::SameLine();
+            ImGui::TextUnformatted(par == 0 ? "auto" : "threads");
+            if (ImGui::Button("Save -par to dogecoin.conf")) {
+                CollectUiToSettings();
+                SaveSettings(settingsPath, cfg);
+                if (datadirHint[0]) {
+                    std::string conf = std::string(datadirHint) + "/dogecoin.conf";
+                    UpsertNodeConfKey(conf, "par", std::to_string(cfg.scriptThreads));
+                    optionsStatus = "Wrote par=" + std::to_string(cfg.scriptThreads) +
+                                    ". Next node start uses it. Leave IBD running.";
+                } else {
+                    optionsStatus = "Saved GUI setting. Set datadir hint to also write dogecoin.conf.";
+                }
+            }
+            ImGui::Separator();
+            ImGui::TextUnformatted("UTXO cache  (-dbcache)");
+            ImGui::TextWrapped(
+                "Same value as Options → Main. This is the safe prefetch: hot coins stay in RAM "
+                "so IBD does not hit disk every transaction. 2048 MiB is already a strong default.");
+            ImGui::InputInt("dbcache (MiB)##perf", &cfg.dbCacheMb);
+            if (cfg.dbCacheMb < 300)
+                cfg.dbCacheMb = 300;
+            if (cfg.dbCacheMb > 16384)
+                cfg.dbCacheMb = 16384;
+            ImGui::TextDisabled("assumevalid stays on (default). Fast Sync is only for a fresh empty folder.");
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Hybrid")) {
@@ -3482,6 +3638,7 @@ void App::DrawOptions()
                 "Arcade stay on normal HTTPS.");
             if (ImGui::Button("Open the tor folder")) {
 #if defined(_WIN32)
+                InvalidateTorStatusCache();
                 if (!dropDir.empty()) {
                     CreateDirectoryA(dropDir.c_str(), nullptr);
                     const std::string readme = dropDir + "\\README.txt";
@@ -4788,20 +4945,26 @@ void App::DrawWindowChrome()
 #endif
 
     char statusBuf[80];
+    const int tb = DisplayBlocks(snap, cfg.lastKnownHeight);
+    const int th = DisplayHeaders(snap, cfg.lastKnownHeaders);
     if (IsTestnet() && !snap.connected)
         std::snprintf(statusBuf, sizeof(statusBuf), "TESTNET  offline");
-    else if (IsTestnet() && snap.initialBlockDownload && snap.headers > snap.blocks)
+    else if (IsTestnet() && snap.initialBlockDownload && th > tb && tb >= 0)
         std::snprintf(statusBuf, sizeof(statusBuf), "TESTNET  %d / %d   %.0f%%",
-                      snap.blocks, snap.headers, snap.verificationProgress * 100.0);
+                      tb, th, snap.verificationProgress * 100.0);
+    else if (IsTestnet() && snap.connected && tb >= 0)
+        std::snprintf(statusBuf, sizeof(statusBuf), "TESTNET  %d blocks", tb);
     else if (IsTestnet() && snap.connected)
-        std::snprintf(statusBuf, sizeof(statusBuf), "TESTNET  %d blocks", snap.blocks);
+        std::snprintf(statusBuf, sizeof(statusBuf), "TESTNET  syncing…");
     else if (!snap.connected)
         std::snprintf(statusBuf, sizeof(statusBuf), "offline");
-    else if (snap.initialBlockDownload && snap.headers > snap.blocks)
+    else if (snap.initialBlockDownload && th > tb && tb >= 0)
         std::snprintf(statusBuf, sizeof(statusBuf), "%d / %d blocks   %.0f%%",
-                      snap.blocks, snap.headers, snap.verificationProgress * 100.0);
+                      tb, th, snap.verificationProgress * 100.0);
+    else if (snap.connected && tb >= 0)
+        std::snprintf(statusBuf, sizeof(statusBuf), "%d blocks", tb);
     else if (snap.connected)
-        std::snprintf(statusBuf, sizeof(statusBuf), "%d blocks", snap.blocks);
+        std::snprintf(statusBuf, sizeof(statusBuf), "syncing…");
     else
         std::snprintf(statusBuf, sizeof(statusBuf), "offline");
 

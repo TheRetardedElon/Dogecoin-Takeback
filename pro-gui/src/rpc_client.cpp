@@ -181,7 +181,8 @@ std::string RpcClient::resolveAuthHeader() const
     return {};
 }
 
-RpcResult RpcClient::call(const std::string& method, const std::string& paramsJson) const
+RpcResult RpcClient::call(const std::string& method, const std::string& paramsJson,
+                          int timeoutMs) const
 {
     RpcResult r;
     if (!EnsureWsa()) {
@@ -236,13 +237,14 @@ RpcResult RpcClient::call(const std::string& method, const std::string& paramsJs
         }
         if (ready) {
             SetNonBlocking(s, false);
+            const int ms = timeoutMs < 200 ? 200 : timeoutMs;
 #if defined(_WIN32)
-            DWORD rcv = 1500;
+            DWORD rcv = (DWORD)ms;
             setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char*)&rcv, sizeof(rcv));
 #else
             struct timeval rcv;
-            rcv.tv_sec = 1;
-            rcv.tv_usec = 500000;
+            rcv.tv_sec = ms / 1000;
+            rcv.tv_usec = (ms % 1000) * 1000;
             setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &rcv, sizeof(rcv));
 #endif
             break;
@@ -401,6 +403,13 @@ int RpcClient::jsonInt(const std::string& json, const char* key, int def)
     return std::atoi(v.c_str());
 }
 
+int64_t RpcClient::jsonInt64(const std::string& json, const char* key, int64_t def)
+{
+    std::string v = jsonString(json, key);
+    if (v.empty() || v == "null") return def;
+    return (int64_t)std::strtoll(v.c_str(), nullptr, 10);
+}
+
 double RpcClient::jsonDouble(const std::string& json, const char* key, double def)
 {
     std::string v = jsonString(json, key);
@@ -424,7 +433,8 @@ NodeSnapshot RpcClient::refreshSnapshot() const
         return s;
     }
 
-    auto chain = call("getblockchaininfo");
+    // IBD holds cs_main while connecting blocks; 1.5s often returns empty.
+    auto chain = call("getblockchaininfo", "[]", 4000);
     if (!chain.ok) {
         s.status = chain.error.empty() ? "RPC not ready" : chain.error;
         s.rpcWarmup = (chain.error.find("warm") != std::string::npos ||
@@ -547,6 +557,8 @@ NodeSnapshot RpcClient::refreshSnapshot() const
         if (s.ibdSummary == "getibdinfo")
             s.ibdSummary = ibd.resultJson.substr(0, std::min<size_t>(160, ibd.resultJson.size()));
 
+        s.dbcacheBytes = jsonInt64(ibd.resultJson, "dbcache_bytes");
+        s.dbcacheLimitBytes = jsonInt64(ibd.resultJson, "dbcache_limit_bytes");
         s.assumeUtxoValidated = jsonBool(ibd.resultJson, "assumeutxo_validated");
         s.assumeUtxoFailed = jsonBool(ibd.resultJson, "assumeutxo_failed");
         s.assumeUtxoDualCollapsed = jsonBool(ibd.resultJson, "assumeutxo_dual_collapsed");

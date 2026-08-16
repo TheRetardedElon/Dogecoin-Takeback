@@ -35,6 +35,13 @@ void RpcProbeWorker::Kick()
     cv.notify_all();
 }
 
+void RpcProbeWorker::SetBackground(bool bg)
+{
+    const bool wasBg = background.exchange(bg);
+    if (wasBg && !bg)
+        Kick();
+}
+
 bool RpcProbeWorker::Consume(NodeSnapshot& out)
 {
     std::lock_guard<std::mutex> lock(mu);
@@ -69,6 +76,10 @@ void RpcProbeWorker::Loop()
             wake();
         idleFails = ok ? 0 : idleFails + 1;
         int waitMs = ok ? 600 : (idleFails < 4 ? 700 : 1200);
+        if (background.load() && ok)
+            waitMs = 12000;
+        else if (background.load())
+            waitMs = 4000;
         if (kick.exchange(false))
             waitMs = 50;
 

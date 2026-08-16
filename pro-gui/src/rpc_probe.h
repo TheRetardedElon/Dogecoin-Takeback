@@ -21,6 +21,8 @@ public:
     void SetConfig(const RpcConfig& cfg);
     void SetWake(void (*fn)());
     void Kick();
+    /** Hidden / minimized: poll slowly. Restore Kick()s immediately. */
+    void SetBackground(bool bg);
     bool Consume(NodeSnapshot& out);
     bool Busy() const { return busy.load(); }
 
@@ -38,4 +40,5 @@ private:
     std::atomic<bool> running{false};
     std::atomic<bool> busy{false};
     std::atomic<bool> kick{false};
+    std::atomic<bool> background{false};
 };

@@ -1,6 +1,7 @@
 #include "node_launch.h"
 #include "rpc_client.h"
 
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -145,10 +146,20 @@ std::string FindProGuiExe()
 
 bool IsDogecoindRunning()
 {
+    static bool last = false;
+    static long long at = 0;
+    const long long now = std::chrono::duration_cast<std::chrono::milliseconds>(
+                              std::chrono::steady_clock::now().time_since_epoch())
+                              .count();
+    if (at && (now - at) < 400)
+        return last;
+    at = now;
 #if defined(_WIN32)
     HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (snap == INVALID_HANDLE_VALUE)
+    if (snap == INVALID_HANDLE_VALUE) {
+        last = false;
         return false;
+    }
     PROCESSENTRY32 pe {};
     pe.dwSize = sizeof(pe);
     bool found = false;
@@ -161,10 +172,11 @@ bool IsDogecoindRunning()
         } while (Process32Next(snap, &pe));
     }
     CloseHandle(snap);
-    return found;
+    last = found;
 #else
-    return system("pgrep -x dogecoind >/dev/null 2>&1") == 0;
+    last = system("pgrep -x dogecoind >/dev/null 2>&1") == 0;
 #endif
+    return last;
 }
 
 bool StartDogecoind(const std::string& exePath, const std::string& datadirHint, std::string& errOut,

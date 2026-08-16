@@ -1237,51 +1237,47 @@ UniValue getblockchaininfo(const JSONRPCRequest& request)
             + HelpExampleRpc("getblockchaininfo", "")
         );
 
-    LOCK(cs_main);
-
     UniValue obj(UniValue::VOBJ);
-    obj.pushKV("chain",                 Params().NetworkIDString());
-    obj.pushKV("blocks",                (int)ActiveChain().Height());
-    obj.pushKV("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1);
-    obj.pushKV("bestblockhash",         ActiveChain().Tip()->GetBlockHash().GetHex());
-    obj.pushKV("difficulty",            (double)GetDifficulty());
-    obj.pushKV("mediantime",            (int64_t)ActiveChain().Tip()->GetMedianTimePast());
-    obj.pushKV("verificationprogress",  GuessVerificationProgress(Params().TxData(), ActiveChain().Tip()));
-    obj.pushKV("initialblockdownload",  IsInitialBlockDownload());
-    obj.pushKV("chainwork",             ActiveChain().Tip()->nChainWork.GetHex());
+    {
+        LOCK(cs_main);
+
+        obj.pushKV("chain",                 Params().NetworkIDString());
+        obj.pushKV("blocks",                (int)ActiveChain().Height());
+        obj.pushKV("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1);
+        obj.pushKV("bestblockhash",         ActiveChain().Tip()->GetBlockHash().GetHex());
+        obj.pushKV("difficulty",            (double)GetDifficulty());
+        obj.pushKV("mediantime",            (int64_t)ActiveChain().Tip()->GetMedianTimePast());
+        obj.pushKV("verificationprogress",  GuessVerificationProgress(Params().TxData(), ActiveChain().Tip()));
+        obj.pushKV("initialblockdownload",  IsInitialBlockDownload());
+        obj.pushKV("chainwork",             ActiveChain().Tip()->nChainWork.GetHex());
+        obj.pushKV("pruned",                fPruneMode);
+        if (fPruneMode) {
+            obj.pushKV("pruneheight", GetCachedPruneHeight());
+            bool automatic_pruning = (GetArg("-prune", 0) != 1);
+            obj.pushKV("automatic_pruning",  automatic_pruning);
+            if (automatic_pruning) {
+                obj.pushKV("prune_target_size",  nPruneTarget);
+            }
+        }
+
+        const Consensus::Params& consensusParams = Params().GetConsensus(0);
+        CBlockIndex* tip = ActiveChain().Tip();
+        UniValue softforks(UniValue::VARR);
+        UniValue bip9_softforks(UniValue::VOBJ);
+        softforks.push_back(SoftForkDesc("bip34", 2, tip, consensusParams));
+        softforks.push_back(SoftForkDesc("bip66", 3, tip, consensusParams));
+        softforks.push_back(SoftForkDesc("bip65", 4, tip, consensusParams));
+        BIP9SoftForkDescPushBack(bip9_softforks, "csv", consensusParams, Consensus::DEPLOYMENT_CSV);
+        BIP9SoftForkDescPushBack(bip9_softforks, "segwit", consensusParams, Consensus::DEPLOYMENT_SEGWIT);
+        obj.pushKV("softforks",             softforks);
+        obj.pushKV("bip9_softforks", bip9_softforks);
+        obj.pushKV("warnings", GetWarnings("statusbar"));
+    }
+
+    // Disk / ENGINE reads do not need cs_main (validation can proceed).
     obj.pushKV("size_on_disk",          CalculateCurrentUsage());
     obj.pushKV("dbengine",              DbEngineName(DetectExistingEngine(GetDataDir() / "chainstate")));
     obj.pushKV("blockindex_dbengine",   DbEngineName(DetectExistingEngine(GetDataDir() / "blocks" / "index")));
-    obj.pushKV("pruned",                fPruneMode);
-    if (fPruneMode) {
-        CBlockIndex* block = ActiveChain().Tip();
-        assert(block);
-        while (block->pprev && (block->pprev->nStatus & BLOCK_HAVE_DATA)) {
-            block = block->pprev;
-        }
-
-        obj.pushKV("pruneheight",        block->nHeight);
-
-        // if 0, execution bypasses the whole if block.
-        bool automatic_pruning = (GetArg("-prune", 0) != 1);
-        obj.pushKV("automatic_pruning",  automatic_pruning);
-        if (automatic_pruning) {
-            obj.pushKV("prune_target_size",  nPruneTarget);
-        }
-    }
-
-    const Consensus::Params& consensusParams = Params().GetConsensus(0);
-    CBlockIndex* tip = ActiveChain().Tip();
-    UniValue softforks(UniValue::VARR);
-    UniValue bip9_softforks(UniValue::VOBJ);
-    softforks.push_back(SoftForkDesc("bip34", 2, tip, consensusParams));
-    softforks.push_back(SoftForkDesc("bip66", 3, tip, consensusParams));
-    softforks.push_back(SoftForkDesc("bip65", 4, tip, consensusParams));
-    BIP9SoftForkDescPushBack(bip9_softforks, "csv", consensusParams, Consensus::DEPLOYMENT_CSV);
-    BIP9SoftForkDescPushBack(bip9_softforks, "segwit", consensusParams, Consensus::DEPLOYMENT_SEGWIT);
-    obj.pushKV("softforks",             softforks);
-    obj.pushKV("bip9_softforks", bip9_softforks);
-    obj.pushKV("warnings", GetWarnings("statusbar"));
     return obj;
 }
 
@@ -1901,56 +1897,58 @@ UniValue getibdinfo(const JSONRPCRequest& request)
             + HelpExampleRpc("getibdinfo", "")
         );
 
-    LOCK(cs_main);
-
     UniValue obj(UniValue::VOBJ);
-    obj.pushKV("initialblockdownload", IsInitialBlockDownload());
-    obj.pushKV("blocks", (int)ActiveChain().Height());
-    obj.pushKV("headers", pindexBestHeader ? pindexBestHeader->nHeight : -1);
-    obj.pushKV("verificationprogress", GuessVerificationProgress(Params().TxData(), ActiveChain().Tip()));
-    if (ActiveCoinsTip())
-        obj.pushKV("dbcache_bytes", (uint64_t)ActiveCoinsTip()->DynamicMemoryUsage());
-    else
-        obj.pushKV("dbcache_bytes", 0);
-    obj.pushKV("dbcache_limit_bytes", (uint64_t)nCoinCacheUsage);
+    {
+        LOCK(cs_main);
+
+        obj.pushKV("initialblockdownload", IsInitialBlockDownload());
+        obj.pushKV("blocks", (int)ActiveChain().Height());
+        obj.pushKV("headers", pindexBestHeader ? pindexBestHeader->nHeight : -1);
+        obj.pushKV("verificationprogress", GuessVerificationProgress(Params().TxData(), ActiveChain().Tip()));
+        if (ActiveCoinsTip())
+            obj.pushKV("dbcache_bytes", (uint64_t)ActiveCoinsTip()->DynamicMemoryUsage());
+        else
+            obj.pushKV("dbcache_bytes", 0);
+        obj.pushKV("dbcache_limit_bytes", (uint64_t)nCoinCacheUsage);
+        obj.pushKV("pruned", fPruneMode);
+        if (fPruneMode && nPruneTarget != std::numeric_limits<uint64_t>::max()) {
+            obj.pushKV("prune_target_bytes", (uint64_t)nPruneTarget);
+        }
+        obj.pushKV("ibd_rescue", GetBoolArg("-ibdrescue", true));
+        if (IsActiveChainstateInitialized()) {
+            obj.pushKV("active_chainstate", ActiveChainstate().GetName());
+            obj.pushKV("active_chainstate_height", ActiveChainstate().Height());
+        }
+        obj.pushKV("background_present", HasBackgroundChainstate());
+        obj.pushKV("snapshot_active", IsSnapshotChainstateActive());
+        obj.pushKV("background_validation_status", BackgroundValidationStatusString());
+        obj.pushKV("background_validation_height", GetBackgroundValidationHeight());
+        obj.pushKV("background_validation_target", GetBackgroundValidationTargetHeight());
+        obj.pushKV("assumeutxo_validated", IsAssumeUtxoValidated());
+        obj.pushKV("assumeutxo_failed", IsAssumeUtxoFailed());
+        obj.pushKV("assumeutxo_dual_collapsed", IsAssumeUtxoDualCollapsed());
+        obj.pushKV("assumeutxo_progress", GetAssumeUtxoValidationProgress());
+        obj.pushKV("assumeutxo_attested_count", (int)Params().Assumeutxo().size());
+        if (HasBackgroundChainstate() && BackgroundChainstate()) {
+            obj.pushKV("background_chainstate", BackgroundChainstate()->GetName());
+            obj.pushKV("background_idle", BackgroundChainstate()->IsIdle());
+            obj.pushKV("background_height", BackgroundChainstate()->Height());
+            obj.pushKV("background_has_snapshot", BackgroundChainstate()->HasSnapshot());
+            if (BackgroundChainstate()->HasSnapshot()) {
+                obj.pushKV("snapshot_basehash", BackgroundChainstate()->SnapshotBaseHash().GetHex());
+                obj.pushKV("snapshot_coins", (uint64_t)BackgroundChainstate()->SnapshotCoinsCount());
+            }
+        }
+        if (IsSnapshotChainstateActive() && ActiveChainstate().HasSnapshot()) {
+            obj.pushKV("snapshot_basehash", ActiveChainstate().SnapshotBaseHash().GetHex());
+            obj.pushKV("snapshot_coins", (uint64_t)ActiveChainstate().SnapshotCoinsCount());
+            if (ActiveChainstate().HasSnapshotCoinsHash()) {
+                obj.pushKV("snapshot_coins_hash", ActiveChainstate().SnapshotCoinsHash().GetHex());
+            }
+        }
+        obj.pushKV("stats", IBDStats::ToUniValue(IBDStats::GetSnapshot()));
+    }
     obj.pushKV("size_on_disk", (uint64_t)CalculateCurrentUsage());
-    obj.pushKV("pruned", fPruneMode);
-    if (fPruneMode && nPruneTarget != std::numeric_limits<uint64_t>::max()) {
-        obj.pushKV("prune_target_bytes", (uint64_t)nPruneTarget);
-    }
-    obj.pushKV("ibd_rescue", GetBoolArg("-ibdrescue", true));
-    if (IsActiveChainstateInitialized()) {
-        obj.pushKV("active_chainstate", ActiveChainstate().GetName());
-        obj.pushKV("active_chainstate_height", ActiveChainstate().Height());
-    }
-    obj.pushKV("background_present", HasBackgroundChainstate());
-    obj.pushKV("snapshot_active", IsSnapshotChainstateActive());
-    obj.pushKV("background_validation_status", BackgroundValidationStatusString());
-    obj.pushKV("background_validation_height", GetBackgroundValidationHeight());
-    obj.pushKV("background_validation_target", GetBackgroundValidationTargetHeight());
-    obj.pushKV("assumeutxo_validated", IsAssumeUtxoValidated());
-    obj.pushKV("assumeutxo_failed", IsAssumeUtxoFailed());
-    obj.pushKV("assumeutxo_dual_collapsed", IsAssumeUtxoDualCollapsed());
-    obj.pushKV("assumeutxo_progress", GetAssumeUtxoValidationProgress());
-    obj.pushKV("assumeutxo_attested_count", (int)Params().Assumeutxo().size());
-    if (HasBackgroundChainstate() && BackgroundChainstate()) {
-        obj.pushKV("background_chainstate", BackgroundChainstate()->GetName());
-        obj.pushKV("background_idle", BackgroundChainstate()->IsIdle());
-        obj.pushKV("background_height", BackgroundChainstate()->Height());
-        obj.pushKV("background_has_snapshot", BackgroundChainstate()->HasSnapshot());
-        if (BackgroundChainstate()->HasSnapshot()) {
-            obj.pushKV("snapshot_basehash", BackgroundChainstate()->SnapshotBaseHash().GetHex());
-            obj.pushKV("snapshot_coins", (uint64_t)BackgroundChainstate()->SnapshotCoinsCount());
-        }
-    }
-    if (IsSnapshotChainstateActive() && ActiveChainstate().HasSnapshot()) {
-        obj.pushKV("snapshot_basehash", ActiveChainstate().SnapshotBaseHash().GetHex());
-        obj.pushKV("snapshot_coins", (uint64_t)ActiveChainstate().SnapshotCoinsCount());
-        if (ActiveChainstate().HasSnapshotCoinsHash()) {
-            obj.pushKV("snapshot_coins_hash", ActiveChainstate().SnapshotCoinsHash().GetHex());
-        }
-    }
-    obj.pushKV("stats", IBDStats::ToUniValue(IBDStats::GetSnapshot()));
     return obj;
 }
 

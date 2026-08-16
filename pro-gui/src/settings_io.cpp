@@ -62,6 +62,7 @@ bool LoadSettings(const std::string& path, ProGuiSettings& out)
         setB("prune", out.prune);
         setI("pruneSizeGb", out.pruneSizeGb);
         setI("dbCacheMb", out.dbCacheMb);
+        setI("scriptThreads", out.scriptThreads);
         setS("snapshotUrl", out.snapshotUrl);
         setS("snapshotSha256", out.snapshotSha256);
         setB("startAtLogin", out.startAtLogin);
@@ -122,6 +123,7 @@ bool SaveSettings(const std::string& path, const ProGuiSettings& in)
     wb("prune", in.prune);
     wi("pruneSizeGb", in.pruneSizeGb);
     wi("dbCacheMb", in.dbCacheMb);
+    wi("scriptThreads", in.scriptThreads);
     w("snapshotUrl", in.snapshotUrl);
     w("snapshotSha256", in.snapshotSha256);
     wb("startAtLogin", in.startAtLogin);
@@ -334,6 +336,7 @@ bool ExportNodeConfFragment(const std::string& path, const ProGuiSettings& in)
     f << "dnsseed=" << (in.dnsSeed ? "1" : "0") << "\n";
     f << "maxconnections=" << in.maxConnections << "\n";
     f << "dbcache=" << in.dbCacheMb << "\n";
+    f << "par=" << in.scriptThreads << "\n";
     if (in.preferMdbx)
         f << "dbengine=mdbx\n";
     else

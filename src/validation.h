@@ -300,6 +300,12 @@ double GuessVerificationProgress(const ChainTxData& data, CBlockIndex* pindex);
 /** Calculate the amount of disk space the block & undo files currently use */
 uint64_t CalculateCurrentUsage();
 
+/** Lowest stored-block height in prune mode. Requires cs_main. Walks the index
+ *  only on first use or after a prune — not on every getblockchaininfo. */
+int GetCachedPruneHeight();
+/** Recompute the prune-height cache. Requires cs_main. */
+void RefreshCachedPruneHeight();
+
 /**
  * Prune block and undo files (blk???.dat and undo???.dat) so that the disk space used is less than a user-defined target.
  * The user sets the target (in MB) on the command line or in config file.  This will be run on startup and whenever new

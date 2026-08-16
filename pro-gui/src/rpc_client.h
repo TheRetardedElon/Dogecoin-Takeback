@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -24,6 +25,8 @@ struct RpcResult {
 struct NodeSnapshot {
     bool connected = false;
     bool rpcWarmup = false;
+    /** Last good height held because this probe timed out. Not a rewind. */
+    bool stale = false;
     std::string status;
 
     // getblockchaininfo
@@ -70,6 +73,8 @@ struct NodeSnapshot {
     // getibdinfo if available (Core Pro)
     bool hasIbdInfo = false;
     std::string ibdSummary;
+    int64_t dbcacheBytes = 0;
+    int64_t dbcacheLimitBytes = 0;
     bool assumeUtxoValidated = false;
     bool assumeUtxoFailed = false;
     bool assumeUtxoDualCollapsed = false;
@@ -96,13 +101,15 @@ public:
     bool portOpen(int timeoutMs = 400) const;
 
     /** JSON-RPC call. paramsJson is raw JSON array, e.g. "[]" or "[\"addr\"]". */
-    RpcResult call(const std::string& method, const std::string& paramsJson = "[]") const;
+    RpcResult call(const std::string& method, const std::string& paramsJson = "[]",
+                   int timeoutMs = 1500) const;
 
     /** Refresh multi-call snapshot for the shell. */
     NodeSnapshot refreshSnapshot() const;
 
     static std::string jsonString(const std::string& json, const char* key);
     static int jsonInt(const std::string& json, const char* key, int def = -1);
+    static int64_t jsonInt64(const std::string& json, const char* key, int64_t def = 0);
     static double jsonDouble(const std::string& json, const char* key, double def = 0.0);
     static bool jsonBool(const std::string& json, const char* key, bool def = false);
 
