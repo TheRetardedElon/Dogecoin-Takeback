@@ -4,13 +4,13 @@
 
 > **Not a wrapper. Not an EVM “DOGE app layer.” Not Qt.**  
 > Full **Dogecoin Core (1.14 DNA)** node + wallet. Consensus (AuxPoW, subsidy, scripts) is **untouched**.  
-> Latest release: **[v1.14.105](https://github.com/TheRetardedElon/Dogecoin-Takeback/releases/tag/v1.14.105)**
+> Latest release: **[v1.14.106](https://github.com/TheRetardedElon/Dogecoin-Takeback/releases/tag/v1.14.106)**
 
 <p align="center">
   <img src="https://i.imgur.com/OJMui2T.png" alt="Dogecoin Core Pro — Home" width="860" />
 </p>
 
-<p align="center"><b>Dogecoin Core Pro</b> · v1.14.105 · ImGui desktop · Client / Server / Hybrid</p>
+<p align="center"><b>Dogecoin Core Pro</b> · v1.14.106 · ImGui desktop · Client / Server / Hybrid</p>
 
 ---
 
@@ -50,13 +50,13 @@ The desktop is **ImGui** (`dogecoin-pro-gui`). `dogecoin-qt` is **not shipped**.
 
 ## Install
 
-Download **[v1.14.105](https://github.com/TheRetardedElon/Dogecoin-Takeback/releases/tag/v1.14.105)**.
+Download **[v1.14.106](https://github.com/TheRetardedElon/Dogecoin-Takeback/releases/tag/v1.14.106)**.
 
 | File | Who |
 |------|-----|
-| `dogecoin-1.14.105-win64-setup-rpcsecure.exe` | Windows |
-| `dogecoin-1.14.105-win64.zip` | Windows portable |
-| `dogecoin-core-pro_1.14.105-1_amd64.deb` | Debian / Ubuntu (or apt, below) |
+| `dogecoin-1.14.106-win64-setup-rpcsecure.exe` | Windows |
+| `dogecoin-1.14.106-win64.zip` | Windows portable |
+| `dogecoin-core-pro_1.14.105-1_amd64.deb` | Debian / Ubuntu (or apt, below) — daemon unchanged |
 
 The installer asks **how this machine is used** (same question on Linux apt):
 
@@ -70,7 +70,7 @@ The installer asks **how this machine is used** (same question on Linux apt):
 
 Each new install gets a **unique RPC password** on `127.0.0.1` only. See `RPC-CREDENTIALS.txt` in the datadir.
 
-**Close / tray:** window **X** (and Hide / Minimize to tray) hide the UI. The node stays up. There is **one** tray icon — the Desktop GUI's. File → **Exit** and that icon's **Quit and stop node** stop the Windows service if present (`DogecoinGPENode`), then RPC-stop `dogecoind` and wait for flush. Hybrid: the same icon can **Show Desktop GUI** or **Open Operator TUI**.
+**Close / tray:** window **X** (and Hide / Minimize to tray) hide the UI. The node stays up. There is **one** tray icon — the Desktop GUI's. File → **Exit** and that icon's **Quit and stop node** RPC-stop `dogecoind`, wait for flush, then stop the OS service (`DogecoinGPENode` / systemd `dogecoin-core-pro`) so it cannot auto-restart. Core Pro will not attach to official `dogecoin-qt` / a foreign `dogecoind`. Hybrid: the same icon can **Show Desktop GUI** or **Open Operator TUI**.
 
 Operators: same Windows packages on [Dogecoin-GPENode v1.14.105-gpenode](https://github.com/TheRetardedElon/Dogecoin-GPENode/releases/tag/v1.14.105-gpenode).
 

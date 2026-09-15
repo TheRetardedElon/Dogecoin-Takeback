@@ -659,9 +659,21 @@ bool App::TryStartLocalNode()
     bootDetail = dogecoindPath;
     nodeLaunchStatus = "Starting " + dogecoindPath;
 
-    // One node. If IBD is already running, never start the service (that
+    // Never attach to official Core / a foreign dogecoind (shared datadir corrupts).
+    {
+        std::string foreign;
+        if (ForeignDogecoinNodeRunning(foreign)) {
+            nodeLaunchStatus = foreign;
+            SetCheck("start", CheckItem::State::Fail, "another Dogecoin Core is running");
+            bootHeadline = "Another Dogecoin Core is running";
+            bootDetail = foreign;
+            return false;
+        }
+    }
+
+    // One node. If OUR IBD is already running, never start the service (that
     // launches a second dogecoind on the same datadir and kills the first).
-    if (IsDogecoindRunning()) {
+    if (OurDogecoindRunning() || IsDogecoindRunning()) {
         nodeLaunchAttempted = true;
         weStartedNode = false;
         SetCheck("start", CheckItem::State::Done, "dogecoind already running");
@@ -674,14 +686,18 @@ bool App::TryStartLocalNode()
         return true;
     }
 
-#if defined(_WIN32)
-    // The Windows service is mainnet. Testnet is a separate process + testnet3 datadir.
+    // OS service is mainnet. Testnet is a separate process + testnet3 datadir.
     if (cfg.network != "test" && cfg.network != "regtest") {
         std::string svcErr;
         const CoreProServiceState svc = QueryCoreProService();
         if (svc == CoreProServiceState::Stopped || svc == CoreProServiceState::Other) {
             bootHeadline = "Starting node service...";
-            bootDetail = "DogecoinGPENode (one dogecoind, no extra console)";
+            bootDetail =
+#if defined(_WIN32)
+                "DogecoinGPENode (one dogecoind, no extra console)";
+#else
+                "systemd dogecoin-core-pro (one dogecoind)";
+#endif
             if (StartCoreProService(svcErr)) {
                 nodeLaunchAttempted = true;
                 weStartedNode = true;
@@ -702,7 +718,6 @@ bool App::TryStartLocalNode()
             return true;
         }
     }
-#endif
 
     std::string extra;
     std::string launchDir = datadirHint;
@@ -1180,10 +1195,14 @@ void App::RequestExit()
     stopRequested = false;
     shutdownComplete = false;
     wantsClose = false;
-    const bool stopNode = stopNodeOnExit || forceStopNodeOnExit;
+    std::string foreign;
+    const bool foreignNode = ForeignDogecoinNodeRunning(foreign);
+    const bool ours = OurDogecoindRunning() || weStartedNode;
+    const bool stopNode = (stopNodeOnExit || forceStopNodeOnExit) && ours && !foreignNode;
     if (!stopNode) {
         shutdownHeadline = "Closing the desktop UI...";
-        shutdownDetail = "dogecoind stays running. Reopen from the system tray.";
+        shutdownDetail = foreignNode ? "Official Dogecoin Core was left running."
+                                     : "dogecoind stays running. Reopen from the system tray.";
         shutdownChecks = {
             {"gui", "Close control plane panels", CheckItem::State::Done},
             {"rpcstop", "Leave dogecoind running", CheckItem::State::Skip},
@@ -1198,6 +1217,7 @@ void App::RequestExit()
         {"gui", "Close control plane panels", CheckItem::State::Done},
         {"rpcstop", "Ask dogecoind to stop (RPC stop)", CheckItem::State::Pending},
         {"flush", "Flush wallet / chainstate / close DB", CheckItem::State::Pending},
+        {"svc", "Stop Windows service (if installed)", CheckItem::State::Pending},
         {"exit", "Node process exited", CheckItem::State::Pending},
     };
 }
@@ -1506,6 +1526,8 @@ void App::TickTray()
 #else
     if (LinuxTrayPollShow())
         RestoreFromTray();
+    if (LinuxTrayPollQuit())
+        RequestStopNodeAndExit();
 #endif
     if (hiddenInTray && hostWindow && glfwGetWindowAttrib(hostWindow, GLFW_VISIBLE))
         hiddenInTray = false;
@@ -1852,10 +1874,14 @@ void App::TickBoot()
 void App::TickShutdown()
 {
     const double now = ImGui::GetTime();
-    const bool stopNode = stopNodeOnExit || forceStopNodeOnExit;
+    std::string foreign;
+    const bool foreignNode = ForeignDogecoinNodeRunning(foreign);
+    const bool ours = OurDogecoindRunning() || weStartedNode;
+    const bool stopNode = (stopNodeOnExit || forceStopNodeOnExit) && ours && !foreignNode;
     if (!stopNode) {
-        SetCheck("rpcstop", CheckItem::State::Skip, "Leave node running");
+        SetCheck("rpcstop", CheckItem::State::Skip, foreignNode ? "Leave official Core running" : "Leave node running");
         SetCheck("flush", CheckItem::State::Skip);
+        SetCheck("svc", CheckItem::State::Skip);
         if (now - shutdownStartTime > 0.7) {
             SetCheck("exit", CheckItem::State::Done, "GUI exiting");
             shutdownComplete = true;
@@ -1892,9 +1918,16 @@ void App::TickShutdown()
 
     // Wait for process exit (proper DB close)
     if (!IsDogecoindRunning()) {
-#if defined(_WIN32)
         std::string svcErr;
-        StopCoreProServiceWait(20000, svcErr);
+        SetCheck("svc", CheckItem::State::Active, "Stopping node service...");
+        if (StopCoreProServiceWait(20000, svcErr))
+            SetCheck("svc", CheckItem::State::Done, "service stopped");
+        else if (QueryCoreProService() == CoreProServiceState::Missing)
+            SetCheck("svc", CheckItem::State::Skip, "no OS service");
+        else
+            SetCheck("svc", CheckItem::State::Fail, svcErr.empty() ? "service stop timed out" : svcErr.c_str());
+#if defined(_WIN32)
+        WinTrayDismissHelper();
 #endif
         SetCheck("flush", CheckItem::State::Done);
         SetCheck("exit", CheckItem::State::Done, "dogecoind exited cleanly");

@@ -26,14 +26,23 @@ bool StartDogecoind(const std::string& exePath, const std::string& datadirHint, 
 /** True if a process named dogecoind is running (best-effort Windows). */
 bool IsDogecoindRunning();
 
-#if defined(_WIN32)
+/**
+ * Official Core (dogecoin-qt) or a dogecoind.exe that is not this Core Pro
+ * install. Core Pro must not attach to that RPC or share the datadir.
+ */
+bool ForeignDogecoinNodeRunning(std::string& detailOut);
+
+/** dogecoind image path is this install, or Core Pro service/systemd unit is running. */
+bool OurDogecoindRunning();
+
 enum class CoreProServiceState { Missing, Stopped, Running, Other };
 
 CoreProServiceState QueryCoreProService();
-/** Start Windows service DogecoinGPENode (Hybrid/Server). */
+/** Start Windows service DogecoinGPENode or systemd dogecoin-core-pro (Hybrid/Server). */
 bool StartCoreProService(std::string& errOut);
-/** SCM stop and wait until STOPPED (does not RPC-stop; caller should). */
+/** Stop the OS service/unit and wait (does not RPC-stop; caller should). */
 bool StopCoreProServiceWait(int waitMs, std::string& errOut);
+#if defined(_WIN32)
 /** RPC-stop, wait for process, then SCM-stop, then SCM-start. */
 bool RestartCoreProNode(const std::string& host, int port,
                         const std::string& cookiePath,

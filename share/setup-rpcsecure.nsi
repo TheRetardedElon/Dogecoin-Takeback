@@ -6,7 +6,7 @@ SetCompressor /SOLID lzma
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
 !ifndef VERSION
-!define VERSION 1.14.105
+!define VERSION 1.14.106
 !endif
 !define COMPANY "Dogecoin Core project"
 !define URL https://github.com/TheRetardedElon/Dogecoin-Takeback
@@ -72,7 +72,7 @@ UninstPage custom un.PurgePage un.PurgePageLeave
 !insertmacro MUI_LANGUAGE English
 
 # Installer attributes
-OutFile /mnt/c/dogedev/release/dogecoin-1.14.105-win64-setup-rpcsecure.exe
+OutFile /mnt/c/dogedev/release/dogecoin-1.14.106-win64-setup-rpcsecure.exe
 !if "64" == "64"
 InstallDir $PROGRAMFILES64\Dogecoin
 !else

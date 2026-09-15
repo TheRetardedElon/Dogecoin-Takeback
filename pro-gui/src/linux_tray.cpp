@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 static volatile sig_atomic_t g_show = 0;
+static volatile sig_atomic_t g_quit = 0;
 static std::string g_pidPath;
 
 static std::string PidPath()
@@ -30,6 +31,11 @@ static void OnUsr1(int)
     g_show = 1;
 }
 
+static void OnUsr2(int)
+{
+    g_quit = 1;
+}
+
 void LinuxTrayInit()
 {
     g_pidPath = PidPath();
@@ -38,6 +44,8 @@ void LinuxTrayInit()
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
     sigaction(SIGUSR1, &sa, nullptr);
+    sa.sa_handler = OnUsr2;
+    sigaction(SIGUSR2, &sa, nullptr);
     LinuxTrayWritePid();
 }
 
@@ -98,6 +106,14 @@ bool LinuxTrayPollShow()
     if (!g_show)
         return false;
     g_show = 0;
+    return true;
+}
+
+bool LinuxTrayPollQuit()
+{
+    if (!g_quit)
+        return false;
+    g_quit = 0;
     return true;
 }
 

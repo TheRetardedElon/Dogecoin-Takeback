@@ -1,6 +1,8 @@
 #include "node_launch.h"
 #include "rpc_client.h"
 
+#include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
@@ -16,8 +18,12 @@
 #include <windows.h>
 #include <winsvc.h>
 #include <tlhelp32.h>
+#ifndef PROCESS_QUERY_LIMITED_INFORMATION
+#define PROCESS_QUERY_LIMITED_INFORMATION 0x1000
+#endif
 #else
 #include <cstdlib>
+#include <dirent.h>
 #include <limits.h>
 #include <unistd.h>
 #endif
@@ -58,6 +64,209 @@ std::string MakeAbsolutePath(const std::string& path)
 #endif
 }
 
+static std::string ToLowerCopy(std::string s)
+{
+    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return (char)std::tolower(c); });
+    return s;
+}
+
+static bool PathHasFile(const std::string& dir, const char* name)
+{
+    if (dir.empty() || !name)
+        return false;
+    return FileExists(dir + "\\" + name) || FileExists(dir + "/" + name);
+}
+
+static bool DirLooksLikeCoreProInstall(const std::string& dir)
+{
+    if (dir.empty())
+        return false;
+    return PathHasFile(dir, "corepro-launch.exe") || PathHasFile(dir, "dogecoin-pro-gui.exe") ||
+           PathHasFile(dir, "gpenode-ops.exe") || PathHasFile(dir, "dogecoin-pro-gui-smoke.exe") ||
+           PathHasFile(dir, "corepro-launch") || PathHasFile(dir, "dogecoin-pro-gui") ||
+           PathHasFile(dir, "gpenode-ops");
+}
+
+static bool DirLooksLikeOfficialCoreOnly(const std::string& dir)
+{
+    if (dir.empty() || DirLooksLikeCoreProInstall(dir))
+        return false;
+    return PathHasFile(dir, "dogecoin-qt.exe") || PathHasFile(dir, "dogecoin-qt");
+}
+
+#if defined(_WIN32)
+static std::string ThisExeDir()
+{
+    char buf[MAX_PATH];
+    if (!GetModuleFileNameA(nullptr, buf, MAX_PATH))
+        return {};
+    return Dirname(MakeAbsolutePath(buf));
+}
+
+static std::string OurInstallRoot()
+{
+    std::string d = ThisExeDir();
+    if (d.empty())
+        return {};
+    std::string leaf = d;
+    auto slash = leaf.find_last_of("/\\");
+    if (slash != std::string::npos)
+        leaf = leaf.substr(slash + 1);
+    if (ToLowerCopy(leaf) == "daemon" || ToLowerCopy(leaf) == "bin")
+        return Dirname(d);
+    return d;
+}
+
+static bool PathIsUnder(const std::string& file, const std::string& root)
+{
+    if (file.empty() || root.empty())
+        return false;
+    std::string f = ToLowerCopy(MakeAbsolutePath(file));
+    std::string r = ToLowerCopy(MakeAbsolutePath(root));
+    while (!r.empty() && (r.back() == '\\' || r.back() == '/'))
+        r.pop_back();
+    if (f.size() < r.size())
+        return false;
+    if (f.compare(0, r.size(), r) != 0)
+        return false;
+    return f.size() == r.size() || f[r.size()] == '\\' || f[r.size()] == '/';
+}
+
+static bool QueryProcessImagePath(DWORD pid, std::string& out)
+{
+    HANDLE h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+    if (!h)
+        return false;
+    char buf[MAX_PATH];
+    DWORD n = MAX_PATH;
+    BOOL ok = QueryFullProcessImageNameA(h, 0, buf, &n);
+    CloseHandle(h);
+    if (!ok || !buf[0])
+        return false;
+    out = MakeAbsolutePath(buf);
+    return true;
+}
+
+struct ProcHit {
+    std::string exeName;
+    std::string imagePath;
+    DWORD pid = 0;
+};
+
+static std::vector<ProcHit> SnapshotNamed(const char* exeA)
+{
+    std::vector<ProcHit> hits;
+    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snap == INVALID_HANDLE_VALUE)
+        return hits;
+    PROCESSENTRY32 pe {};
+    pe.dwSize = sizeof(pe);
+    if (Process32First(snap, &pe)) {
+        do {
+            if (_stricmp(pe.szExeFile, exeA) != 0)
+                continue;
+            ProcHit h;
+            h.exeName = pe.szExeFile;
+            h.pid = pe.th32ProcessID;
+            QueryProcessImagePath(pe.th32ProcessID, h.imagePath);
+            hits.push_back(h);
+        } while (Process32Next(snap, &pe));
+    }
+    CloseHandle(snap);
+    return hits;
+}
+#else
+static std::string ThisExeDir()
+{
+    char buf[PATH_MAX];
+    ssize_t n = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
+    if (n <= 0)
+        return {};
+    buf[n] = 0;
+    return Dirname(MakeAbsolutePath(buf));
+}
+
+static std::string OurInstallRoot()
+{
+    std::string d = ThisExeDir();
+    if (d.empty())
+        return {};
+    std::string leaf = d;
+    auto slash = leaf.find_last_of('/');
+    if (slash != std::string::npos)
+        leaf = leaf.substr(slash + 1);
+    if (leaf == "daemon" || leaf == "bin")
+        return Dirname(d);
+    if (d == "/usr/bin" || d == "/usr/local/bin")
+        return "/usr/lib/dogecoin-core-pro";
+    return d;
+}
+
+static bool PathIsUnder(const std::string& file, const std::string& root)
+{
+    if (file.empty() || root.empty())
+        return false;
+    std::string f = MakeAbsolutePath(file);
+    std::string r = MakeAbsolutePath(root);
+    while (!r.empty() && r.back() == '/')
+        r.pop_back();
+    if (f.size() < r.size())
+        return false;
+    if (f.compare(0, r.size(), r) != 0)
+        return false;
+    return f.size() == r.size() || f[r.size()] == '/';
+}
+
+struct ProcHit {
+    std::string exeName;
+    std::string imagePath;
+    unsigned long pid = 0;
+};
+
+static std::string ProcComm(const char* pid)
+{
+    std::string p = std::string("/proc/") + pid + "/comm";
+    std::ifstream f(p.c_str());
+    std::string s;
+    std::getline(f, s);
+    while (!s.empty() && (s.back() == '\n' || s.back() == '\r'))
+        s.pop_back();
+    return s;
+}
+
+static std::string ProcExe(const char* pid)
+{
+    char buf[PATH_MAX];
+    std::string p = std::string("/proc/") + pid + "/exe";
+    ssize_t n = readlink(p.c_str(), buf, sizeof(buf) - 1);
+    if (n <= 0)
+        return {};
+    buf[n] = 0;
+    return MakeAbsolutePath(buf);
+}
+
+static std::vector<ProcHit> SnapshotNamed(const char* comm)
+{
+    std::vector<ProcHit> hits;
+    DIR* d = opendir("/proc");
+    if (!d)
+        return hits;
+    while (dirent* e = readdir(d)) {
+        if (e->d_name[0] < '1' || e->d_name[0] > '9')
+            continue;
+        if (ProcComm(e->d_name) != comm)
+            continue;
+        ProcHit h;
+        h.exeName = comm;
+        h.pid = std::strtoul(e->d_name, nullptr, 10);
+        h.imagePath = ProcExe(e->d_name);
+        hits.push_back(h);
+    }
+    closedir(d);
+    return hits;
+}
+#endif
+
 std::vector<std::string> FindDogecoindCandidates(const std::string& assetsRoot)
 {
     std::vector<std::string> out;
@@ -66,10 +275,14 @@ std::vector<std::string> FindDogecoindCandidates(const std::string& assetsRoot)
         if (p.empty())
             return;
         std::string abs = MakeAbsolutePath(p);
-        if (FileExists(abs))
-            out.push_back(abs);
-        else if (FileExists(p))
-            out.push_back(MakeAbsolutePath(p));
+        if (!FileExists(abs) && FileExists(p))
+            abs = MakeAbsolutePath(p);
+        if (!FileExists(abs))
+            return;
+        const std::string dir = Dirname(abs);
+        if (DirLooksLikeOfficialCoreOnly(dir) || DirLooksLikeOfficialCoreOnly(Dirname(dir)))
+            return;
+        out.push_back(abs);
     };
 
 #if defined(_WIN32)
@@ -92,6 +305,7 @@ std::vector<std::string> FindDogecoindCandidates(const std::string& assetsRoot)
     add(base + "/dogecoind");
     add(base + "/../dogecoind");
     add(base + "/../../src/dogecoind");
+    add("/usr/lib/dogecoin-core-pro/dogecoind");
     add("/usr/local/bin/dogecoind");
     add("/usr/bin/dogecoind");
 #endif
@@ -179,6 +393,72 @@ bool IsDogecoindRunning()
     return last;
 }
 
+#if defined(_WIN32)
+static const char* kDogeProc = "dogecoind.exe";
+static const char* kQtProc = "dogecoin-qt.exe";
+#else
+static const char* kDogeProc = "dogecoind";
+static const char* kQtProc = "dogecoin-qt";
+#endif
+
+static bool ImageIsOurDogecoind(const std::string& imagePath)
+{
+    if (imagePath.empty())
+        return false;
+    const std::string root = OurInstallRoot();
+    if (PathIsUnder(imagePath, root) || DirLooksLikeCoreProInstall(Dirname(imagePath)))
+        return true;
+    if (imagePath.find("dogecoin-core-pro") != std::string::npos)
+        return true;
+    return FileExists("/usr/lib/dogecoin-core-pro/dogecoind") &&
+           (imagePath == "/usr/bin/dogecoind" || imagePath == "/usr/lib/dogecoin-core-pro/dogecoind");
+}
+
+bool OurDogecoindRunning()
+{
+    if (QueryCoreProService() == CoreProServiceState::Running)
+        return true;
+    for (const auto& h : SnapshotNamed(kDogeProc)) {
+        if (ImageIsOurDogecoind(h.imagePath))
+            return true;
+    }
+    return false;
+}
+
+bool ForeignDogecoinNodeRunning(std::string& detailOut)
+{
+    detailOut.clear();
+    for (const auto& h : SnapshotNamed(kQtProc)) {
+        detailOut = "Official Dogecoin Core (dogecoin-qt) is running";
+        if (!h.imagePath.empty())
+            detailOut += ":\n" + h.imagePath;
+        detailOut += "\nClose it before starting Core Pro. They cannot share a datadir.";
+        return true;
+    }
+    for (const auto& h : SnapshotNamed(kDogeProc)) {
+        if (ImageIsOurDogecoind(h.imagePath))
+            continue;
+        if (QueryCoreProService() == CoreProServiceState::Running && h.imagePath.empty())
+            continue;
+        if (!h.imagePath.empty() &&
+            (DirLooksLikeOfficialCoreOnly(Dirname(h.imagePath)) ||
+             DirLooksLikeOfficialCoreOnly(Dirname(Dirname(h.imagePath))))) {
+            detailOut = "Official dogecoind is running:\n" + h.imagePath +
+                        "\nClose Dogecoin Core before starting Core Pro.";
+            return true;
+        }
+        if (h.imagePath.empty()) {
+            detailOut = "A dogecoind process is running that is not this Core Pro install. "
+                        "Close official Dogecoin Core (and any other node) first.";
+            return true;
+        }
+        detailOut = "Another dogecoind is running:\n" + h.imagePath +
+                    "\nCore Pro will not attach to it. Close that process first.";
+        return true;
+    }
+    return false;
+}
+
 bool StartDogecoind(const std::string& exePath, const std::string& datadirHint, std::string& errOut,
                     int pruneMiB, int dbCacheMb, const std::string& archivePath,
                     const std::string& dbEngine, const std::string& extraArgs)
@@ -191,8 +471,13 @@ bool StartDogecoind(const std::string& exePath, const std::string& datadirHint, 
     }
 
     if (IsDogecoindRunning()) {
+        std::string foreign;
+        if (ForeignDogecoinNodeRunning(foreign)) {
+            errOut = foreign.empty() ? "another Dogecoin Core is running" : foreign;
+            return false;
+        }
         errOut = "dogecoind already running";
-        return true; // not a failure — RPC should come up
+        return true; // our node — RPC should come up
     }
 
     // CRITICAL: pruned datadirs abort AppInit without -prune=
@@ -476,6 +761,59 @@ bool RestartCoreProNode(const std::string& host, int port,
         return false;
     }
     return StartCoreProService(errOut);
+}
+#else
+static bool SystemctlQuiet(const std::string& args)
+{
+    std::string cmd = "systemctl " + args + " >/dev/null 2>&1";
+    return std::system(cmd.c_str()) == 0;
+}
+
+CoreProServiceState QueryCoreProService()
+{
+    if (!SystemctlQuiet("cat dogecoin-core-pro.service") &&
+        !SystemctlQuiet("cat dogecoin-gpenode.service"))
+        return CoreProServiceState::Missing;
+    if (SystemctlQuiet("is-active dogecoin-core-pro") ||
+        SystemctlQuiet("is-active dogecoin-gpenode"))
+        return CoreProServiceState::Running;
+    return CoreProServiceState::Stopped;
+}
+
+bool StartCoreProService(std::string& errOut)
+{
+    errOut.clear();
+    if (QueryCoreProService() == CoreProServiceState::Missing) {
+        errOut = "systemd unit dogecoin-core-pro is not installed";
+        return false;
+    }
+    if (SystemctlQuiet("start dogecoin-core-pro") || SystemctlQuiet("start dogecoin-gpenode")) {
+        for (int i = 0; i < 40; ++i) {
+            if (QueryCoreProService() == CoreProServiceState::Running)
+                return true;
+            usleep(200 * 1000);
+        }
+        return IsDogecoindRunning();
+    }
+    errOut = "Could not start dogecoin-core-pro (try: sudo systemctl start dogecoin-core-pro)";
+    return false;
+}
+
+bool StopCoreProServiceWait(int waitMs, std::string& errOut)
+{
+    errOut.clear();
+    if (QueryCoreProService() == CoreProServiceState::Missing)
+        return true;
+    (void)SystemctlQuiet("stop dogecoin-core-pro");
+    (void)SystemctlQuiet("stop dogecoin-gpenode");
+    const int steps = std::max(1, waitMs / 250);
+    for (int i = 0; i < steps; ++i) {
+        if (QueryCoreProService() != CoreProServiceState::Running)
+            return true;
+        usleep(250 * 1000);
+    }
+    errOut = "systemd unit did not stop (Restart=on-failure may need sudo systemctl stop)";
+    return false;
 }
 #endif
 
